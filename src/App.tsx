@@ -1,0 +1,837 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Download, 
+  Upload, 
+  Type as TypeIcon, 
+  Settings, 
+  ChevronRight, 
+  ChevronLeft, 
+  CheckCircle2, 
+  AlertCircle,
+  RefreshCw,
+  FileText,
+  Camera,
+  Moon,
+  Sun,
+  Trash2
+} from 'lucide-react';
+import { cn } from './lib/utils';
+import { AppStep, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT } from './types';
+import { generateTemplatePDF, pdfToImages } from './lib/pdf';
+import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
+import { loadImage, processCharacterImage, normalizeManualDrawing } from './lib/imageProcessing';
+import { vectorizeImage } from './lib/vectorizer';
+import { buildFont } from './lib/fontBuilder';
+import { CameraCapture } from './components/CameraCapture';
+import { GlyphEditor } from './components/GlyphEditor';
+
+export default function App() {
+  const [step, setStep] = useState<AppStep>(1);
+  const [apiKey, setApiKey] = useState<string>(localStorage.getItem('gemini_api_key') || '');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(!apiKey);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
+  
+  // App State
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [detectedChars, setDetectedChars] = useState<DetectedCharacter[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const [processingChar, setProcessingChar] = useState("");
+  const [fontConfig, setFontConfig] = useState<FontConfig>({
+    name: 'MyHandwriting',
+    author: 'Anonymous',
+    letterSpacing: 0,
+    fontSize: 48
+  });
+  const [fontUrl, setFontUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+    setIsSettingsOpen(false);
+  };
+
+  const handleDownloadTemplate = async () => {
+    const pdfBytes = await generateTemplatePDF();
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'HandFont_Template.pdf';
+    a.click();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (file.type === 'application/pdf') {
+      const buffer = await file.arrayBuffer();
+      const images = await pdfToImages(buffer);
+      setUploadedImages(prev => [...prev, ...images]);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setUploadedImages(prev => [...prev, event.target.result as string]);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    setStep(2);
+  };
+
+  useEffect(() => {
+    if (step === 4) {
+      processAndVectorize();
+    }
+  }, [step]);
+
+  const startAnalysis = async () => {
+    if (!apiKey) {
+      setIsSettingsOpen(true);
+      return;
+    }
+    
+    setIsAnalyzing(true);
+    setError(null);
+    try {
+      let allDetected: DetectedCharacter[] = [];
+      for (const imgData of uploadedImages) {
+        const results = await analyzeHandwriting(imgData, apiKey);
+        
+        if (!Array.isArray(results)) {
+          console.warn("Gemini returned non-array results", results);
+          continue;
+        }
+
+        // Process each detected character: crop and clean
+        const img = await loadImage(imgData);
+        const processed = await Promise.all(results.map(async (res) => {
+          try {
+            const cropped = await processCharacterImage(img, res.boundingBox);
+            return { ...res, imageData: cropped };
+          } catch (e) {
+            console.error(`Failed to process character ${res.char}`, e);
+            return { ...res, confidence: 0 }; // Mark as failed
+          }
+        }));
+        
+        allDetected = [...allDetected, ...processed];
+      }
+      
+      if (allDetected.length === 0) {
+        throw new Error("No characters were detected. Please ensure your handwriting is clear and the image is well-lit.");
+      }
+      
+      // Merge results (if multiple pages detected same char, take highest confidence)
+      const merged = CHARACTERS_TO_DETECT.map(targetChar => {
+        const found = allDetected.filter(d => d.char === targetChar)
+          .sort((a, b) => b.confidence - a.confidence)[0];
+        return found || { char: targetChar, confidence: 0, boundingBox: { x: 0, y: 0, width: 0, height: 0 } };
+      });
+
+      setDetectedChars(merged);
+      setStep(3);
+    } catch (err: any) {
+      setError(err.message || "Failed to analyze handwriting. Check your API key.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const processAndVectorize = async () => {
+    setIsProcessing(true);
+    setProcessingProgress(0);
+    try {
+      const charsToProcess = detectedChars.filter(c => c.imageData);
+      const total = charsToProcess.length;
+      if (total === 0) {
+        setStep(5);
+        return;
+      }
+      let count = 0;
+
+      const updatedChars = [...detectedChars];
+      
+      for (let i = 0; i < updatedChars.length; i++) {
+        const char = updatedChars[i];
+        if (!char.imageData) continue;
+
+        try {
+          setProcessingChar(char.char);
+          const svgPath = await vectorizeImage(char.imageData);
+          updatedChars[i] = { ...char, svgPath };
+        } catch (e) {
+          console.warn(`Failed to vectorize ${char.char}`, e);
+        }
+        
+        count++;
+        setProcessingProgress(Math.round((count / total) * 100));
+        // Small delay to allow UI to breathe
+        await new Promise(r => setTimeout(r, 10));
+      }
+
+      setDetectedChars(updatedChars);
+      setStep(5);
+    } catch (err: any) {
+      setError("Failed to vectorize characters.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReanalyzeChar = async (index: number) => {
+    if (!apiKey) {
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    const charToReanalyze = detectedChars[index].char;
+    
+    try {
+      // Try to find the character in any of the uploaded images
+      for (const image of uploadedImages) {
+        const result = await reanalyzeSpecificCharacter(charToReanalyze, image, apiKey);
+        if (result && result.confidence > 0.5) {
+          // Found it! Crop and update
+          try {
+            const cropped = await processCharacterImage(image, result.boundingBox);
+            setDetectedChars(prev => {
+              const next = [...prev];
+              next[index] = {
+                ...result,
+                imageData: cropped
+              };
+              return next;
+            });
+            return;
+          } catch (e) {
+            console.error("Failed to process re-analyzed image", e);
+            throw new Error("Found the character, but failed to process the image.");
+          }
+        }
+      }
+      setError(`Could not find character "${charToReanalyze}" in any uploaded images.`);
+    } catch (err) {
+      console.error("Re-analysis failed", err);
+      setError("Re-analysis failed. Please try again or draw manually.");
+    }
+  };
+
+  const generateFont = async () => {
+    try {
+      const buffer = await buildFont(detectedChars.filter(c => c.svgPath), fontConfig);
+      const blob = new Blob([buffer], { type: 'font/ttf' });
+      const url = URL.createObjectURL(blob);
+      setFontUrl(url);
+      
+      // Also register font in document for preview
+      const fontFace = new FontFace(fontConfig.name, buffer);
+      await fontFace.load();
+      document.fonts.add(fontFace);
+      
+      setStep(6);
+    } catch (err) {
+      setError("Failed to build font file.");
+    }
+  };
+
+  const downloadFont = () => {
+    if (!fontUrl) return;
+    const a = document.createElement('a');
+    a.href = fontUrl;
+    a.download = `${fontConfig.name}.ttf`;
+    a.click();
+  };
+
+  return (
+    <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
+      {/* Header */}
+      <header className="border-b-2 border-brutal-black p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 bg-white z-40">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow">
+            <TypeIcon size={28} />
+          </div>
+          <h1 className="text-5xl font-display uppercase tracking-tighter leading-none">HandFont</h1>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: 1, label: "01 TEMPLATE" },
+            { id: 2, label: "02 UPLOAD" },
+            { id: 3, label: "03 DETECT" },
+            { id: 4, label: "04 PROCESS" },
+            { id: 5, label: "05 VECTOR" },
+            { id: 6, label: "06 PREVIEW" }
+          ].map((s) => (
+            <div 
+              key={s.id}
+              className={cn(
+                "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all",
+                step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30"
+              )}
+            >
+              {s.label}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setIsSettingsOpen(true)}
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+          >
+            <Settings size={20} />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
+            <div className="space-y-2 font-mono text-sm">
+              <div className="flex justify-between">
+                <span>Step:</span>
+                <span className="font-bold">0{step}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>API:</span>
+                <span className={cn("font-bold", apiKey ? "text-green-600" : "text-red-600")}>
+                  {apiKey ? "CONNECTED" : "MISSING"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Pages:</span>
+                <span className="font-bold">{uploadedImages.length}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Instructions</h3>
+            <p className="text-xs leading-relaxed">
+              {step === 1 && "Start by downloading the template and filling it with your unique handwriting style."}
+              {step === 2 && "Upload your completed template pages. Ensure the lighting is even and the text is clear."}
+              {step === 3 && "Review the detected characters. Gemini has identified the bounding boxes for each glyph."}
+              {step === 5 && "The characters have been vectorized. Review the paths before generating the final font file."}
+              {step === 6 && "Your font is ready! Test it in the preview area and download the .ttf file."}
+            </p>
+          </div>
+
+          <div className="mt-auto pt-6">
+            {step === 3 && (
+              <button 
+                onClick={startAnalysis}
+                disabled={isAnalyzing}
+                className="w-full brutal-btn mb-3 flex items-center justify-center gap-2 bg-warning-yellow"
+              >
+                <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={16} />
+                Re-analyze All
+              </button>
+            )}
+            {step > 1 && (
+              <button 
+                onClick={() => setStep((prev) => (prev - 1) as AppStep)}
+                className="w-full brutal-btn mb-3"
+              >
+                ← Back
+              </button>
+            )}
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="w-full brutal-btn text-xs"
+            >
+              Update API Key
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <section className="flex-grow p-6 bg-neutral-100 overflow-y-auto">
+          <div className="max-w-4xl mx-auto">
+            <AnimatePresence mode="wait">
+              {/* Step 1: Welcome & Template */}
+              {step === 1 && (
+                <motion.div 
+                  key="step1"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  className="space-y-8"
+                >
+                  <div className="space-y-4">
+                    <h2 className="text-6xl font-display uppercase leading-none tracking-tighter">Handwriting to Digital Font.</h2>
+                    <p className="text-xl font-mono opacity-70">
+                      [VERSION_1.0] AI-POWERED VECTORIZATION ENGINE
+                    </p>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-8 mt-12">
+                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
+                        <Download size={24} />
+                      </div>
+                      <h3 className="text-2xl font-display uppercase mb-4">01. Download</h3>
+                      <p className="font-mono text-sm mb-8 opacity-70">
+                        Get the A4 PDF template. Fill it with a black pen.
+                      </p>
+                      <button 
+                        onClick={handleDownloadTemplate}
+                        className="w-full brutal-btn brutal-btn-primary"
+                      >
+                        Download PDF
+                      </button>
+                    </div>
+
+                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
+                        <Upload size={24} />
+                      </div>
+                      <h3 className="text-2xl font-display uppercase mb-4">02. Upload</h3>
+                      <p className="font-mono text-sm mb-8 opacity-70">
+                        Scan or photograph your template and upload it here.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <label className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 cursor-pointer">
+                          <Upload size={18} />
+                          Upload Photo or PDF
+                          <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
+                        </label>
+                        <button 
+                          onClick={() => setIsCameraOpen(true)}
+                          className="w-full brutal-btn flex items-center justify-center gap-2"
+                        >
+                          <Camera size={18} />
+                          Capture with Camera
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 2: Review Uploads */}
+              {step === 2 && (
+                <motion.div 
+                  key="step2"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <h2 className="text-3xl font-display uppercase">Review Uploads</h2>
+                    <button 
+                      onClick={startAnalysis}
+                      disabled={isAnalyzing}
+                      className="brutal-btn brutal-btn-primary flex items-center gap-2"
+                    >
+                      {isAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : "Start AI Analysis →"}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                    {uploadedImages.map((img, i) => (
+                      <div key={i} className="aspect-[3/4] brutal-border bg-white p-2 relative group brutal-shadow">
+                        <img src={img} className="w-full h-full object-cover" alt={`Page ${i+1}`} />
+                        <button 
+                          onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-4 right-4 p-2 bg-error-red text-white border-2 border-brutal-black opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="aspect-[3/4] brutal-border border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-neon-green/10 transition-colors">
+                      <Upload size={32} className="opacity-30" />
+                      <span className="font-mono text-xs font-bold uppercase">Add Photo/PDF</span>
+                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
+                    </label>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Detection Results */}
+              {step === 3 && (
+                <motion.div 
+                  key="step3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <h2 className="text-3xl font-display uppercase">Detected Glyphs</h2>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={startAnalysis}
+                        disabled={isAnalyzing}
+                        className="brutal-btn flex items-center gap-2"
+                      >
+                        <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={18} />
+                        Re-analyze
+                      </button>
+                      <button 
+                        onClick={() => setStep(4)}
+                        className="brutal-btn brutal-btn-primary"
+                      >
+                        Process & Vectorize →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                    {detectedChars.map((char, i) => (
+                      <div 
+                        key={i} 
+                        onClick={() => setEditingCharIndex(i)}
+                        className={cn(
+                          "aspect-square border-2 relative group overflow-hidden flex items-center justify-center cursor-pointer hover:scale-105 transition-transform",
+                          char.confidence > 0.8 ? "border-neon-green bg-neon-green/5" :
+                          char.confidence > 0.5 ? "border-warning-yellow bg-warning-yellow/5" :
+                          char.confidence > 0 ? "border-error-red bg-error-red/5" : "border-neutral-200 border-dashed"
+                        )}
+                      >
+                        <span className="absolute top-1 left-1 font-mono text-[9px] font-bold opacity-40">{char.char}</span>
+                        {char.imageData ? (
+                          <img src={char.imageData} className="w-full h-full object-contain p-2" alt={char.char} />
+                        ) : (
+                          <AlertCircle size={16} className="opacity-20" />
+                        )}
+                        
+                        {char.confidence > 0 && (
+                          <div className={cn(
+                            "absolute bottom-0 right-0 px-1 font-mono text-[8px] font-bold text-white",
+                            char.confidence > 0.8 ? "bg-neon-green text-brutal-black" :
+                            char.confidence > 0.5 ? "bg-warning-yellow text-brutal-black" : "bg-error-red"
+                          )}>
+                            {char.confidence.toFixed(2)}
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-brutal-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <RefreshCw size={16} className="text-white" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 4: Processing */}
+              {step === 4 && (
+                <motion.div 
+                  key="step4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center justify-center py-32 space-y-8 min-h-[400px]"
+                >
+                  <div className="relative">
+                    <RefreshCw size={80} className="text-brutal-black animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-xl font-display text-brutal-black">{processingProgress}%</div>
+                    </div>
+                  </div>
+                  <div className="text-center space-y-4">
+                    <div className="space-y-1">
+                      <h2 className="text-4xl font-display uppercase text-brutal-black">Vectorizing...</h2>
+                      <p className="font-mono text-sm opacity-60 text-brutal-black">CHARACTER: {processingChar || 'INITIALIZING'}</p>
+                    </div>
+                    <div className="w-64 h-4 brutal-border bg-white overflow-hidden">
+                      <div 
+                        className="h-full bg-neon-green transition-all duration-300" 
+                        style={{ width: `${processingProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 5: Vector Review */}
+              {step === 5 && (
+                <motion.div 
+                  key="step5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <div className="space-y-1">
+                      <h2 className="text-3xl font-display uppercase">Vector Paths</h2>
+                      <p className="font-mono text-[10px] opacity-60 uppercase">Review the mathematical paths generated from your ink.</p>
+                    </div>
+                    <button 
+                      onClick={generateFont}
+                      className="brutal-btn brutal-btn-primary"
+                    >
+                      Assemble Font →
+                    </button>
+                  </div>
+
+                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                    {detectedChars.map((char, i) => (
+                      <div 
+                        key={i} 
+                        className={cn(
+                          "aspect-square border-2 relative group flex items-center justify-center p-2",
+                          char.svgPath ? "border-neon-green bg-white" : "border-neutral-200 border-dashed bg-neutral-50"
+                        )}
+                      >
+                        <span className="absolute top-1 left-1 font-mono text-[8px] font-bold opacity-30">{char.char}</span>
+                        
+                        {char.svgPath ? (
+                          <svg viewBox="0 0 500 500" className="w-full h-full fill-brutal-black">
+                            <path d={char.svgPath} fillRule="evenodd" />
+                          </svg>
+                        ) : char.imageData ? (
+                          <div className="flex flex-col items-center gap-1 opacity-40">
+                            <AlertCircle size={12} />
+                            <span className="font-mono text-[8px]">FAILED</span>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-[8px] opacity-20">EMPTY</span>
+                        )}
+
+                        {/* Hover to see original */}
+                        {char.imageData && (
+                          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                            <img src={char.imageData} className="w-full h-full object-contain opacity-40" alt="Original" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="bg-brutal-black text-white font-mono text-[8px] px-1">ORIGINAL</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 6: Preview & Download */}
+              {step === 6 && (
+                <motion.div 
+                  key="step6"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 space-y-6">
+                      <div className="brutal-card brutal-shadow space-y-6">
+                        <h3 className="font-display uppercase text-xl">Font Config</h3>
+                        <div className="space-y-4">
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Name</label>
+                            <input 
+                              type="text" 
+                              value={fontConfig.name}
+                              onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
+                              className="w-full px-4 py-2 brutal-border font-mono outline-none focus:bg-neon-green/10"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Letter Spacing</label>
+                            <input 
+                              type="range" min="-50" max="100" 
+                              value={fontConfig.letterSpacing}
+                              onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
+                              className="w-full accent-brutal-black"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Preview Size</label>
+                            <input 
+                              type="range" min="12" max="120" 
+                              value={fontConfig.fontSize}
+                              onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
+                              className="w-full accent-brutal-black"
+                            />
+                          </div>
+                        </div>
+                        <button 
+                          onClick={downloadFont}
+                          className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2"
+                        >
+                          <Download size={20} />
+                          Download .TTF
+                        </button>
+                      </div>
+
+                      <div className="p-6 brutal-border bg-neon-green/5 space-y-4">
+                        <h4 className="font-display uppercase text-sm flex items-center gap-2">
+                          <AlertCircle size={16} />
+                          Installation
+                        </h4>
+                        <div className="font-mono text-[11px] space-y-2 leading-relaxed">
+                          <p>WIN: Right-click &gt; Install</p>
+                          <p>MAC: Double-click &gt; Install</p>
+                          <p>IOS: Use iFont app</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2 space-y-4">
+                      <h3 className="font-display uppercase text-xl">Live Preview</h3>
+                      <div className="brutal-card brutal-shadow min-h-[500px] flex flex-col">
+                        <textarea 
+                          className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-4"
+                          placeholder="Type to test your font..."
+                          style={{ 
+                            fontFamily: fontConfig.name, 
+                            fontSize: `${fontConfig.fontSize}px`,
+                            letterSpacing: `${fontConfig.letterSpacing / 10}px`
+                          }}
+                          defaultValue="THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. 0123456789 !?@#"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="border-t-2 border-brutal-black p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
+        <div className="flex gap-6">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-neon-green brutal-border" /> HIGH (0.8+)
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-warning-yellow brutal-border" /> MED (0.5-0.8)
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-error-red brutal-border" /> LOW (&lt;0.5)
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[10px] opacity-40">HANDFONT_ENGINE_STABLE_V1.0</span>
+          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
+        </div>
+      </footer>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
+              onClick={() => apiKey && setIsSettingsOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md p-8 brutal-shadow relative z-10 border-4 border-brutal-black"
+            >
+              <h2 className="text-3xl font-display uppercase mb-2">Gemini API Key</h2>
+              <p className="font-mono text-xs opacity-60 mb-6 uppercase">
+                [SECURE_STORAGE_V1] LOCAL_ONLY_ENCRYPTION
+              </p>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">API Key</label>
+                  <input 
+                    type="password" 
+                    placeholder="Enter key..."
+                    className="w-full px-4 py-3 bg-neutral-50 brutal-border font-mono outline-none focus:bg-neon-green/10"
+                    onChange={(e) => setApiKey(e.target.value)}
+                    value={apiKey}
+                  />
+                </div>
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-brutal-black text-xs font-bold uppercase underline flex items-center gap-1 hover:text-neon-green"
+                >
+                  Get a free key from Google AI Studio
+                  <ChevronRight size={14} />
+                </a>
+                <button 
+                  onClick={() => saveApiKey(apiKey)}
+                  className="w-full brutal-btn brutal-btn-primary"
+                >
+                  Save & Continue
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Error Toast */}
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-12 left-12 z-50 bg-error-red text-white px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4"
+          >
+            <AlertCircle size={24} />
+            <div className="flex flex-col">
+              <span className="font-display uppercase text-xs">System Error</span>
+              <span className="font-mono text-[10px]">{error}</span>
+            </div>
+            <button onClick={() => setError(null)} className="ml-4 hover:rotate-180 transition-transform">
+              <RefreshCw size={20} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Camera Capture Modal */}
+      {isCameraOpen && (
+        <CameraCapture 
+          onCapture={(img) => {
+            setUploadedImages(prev => [...prev, img]);
+            setStep(2);
+          }}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      )}
+
+      {/* Glyph Editor Modal */}
+      {editingCharIndex !== null && (
+        <GlyphEditor 
+          char={detectedChars[editingCharIndex].char}
+          initialImage={detectedChars[editingCharIndex].imageData}
+          onSave={async (newImg) => {
+            const normalized = await normalizeManualDrawing(newImg);
+            setDetectedChars(prev => {
+              const next = [...prev];
+              next[editingCharIndex] = {
+                ...next[editingCharIndex],
+                imageData: normalized,
+                confidence: 1.0 // Manual edit is high confidence
+              };
+              return next;
+            });
+            setEditingCharIndex(null);
+          }}
+          onClose={() => setEditingCharIndex(null)}
+          onReanalyze={() => handleReanalyzeChar(editingCharIndex)}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Arial Black', sans-serif;
+  --font-body: 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  
+  --color-neon-green: #00FF00;
+  --color-brutal-black: #141414;
+  --color-gallery-white: #FFFFFF;
+  --color-warning-yellow: #FFD700;
+  --color-error-red: #FF4B2B;
+}
+
+:root {
+  --neon-green: #00FF00;
+  --brutal-black: #141414;
+  --gallery-white: #FFFFFF;
+  --warning-yellow: #FFD700;
+  --error-red: #FF4B2B;
+}
+
+body {
+  background-color: var(--gallery-white);
+  color: var(--brutal-black);
+  font-family: var(--font-body);
+}
+
+@utility brutal-border {
+  border: 2px solid var(--brutal-black);
+}
+
+@utility brutal-shadow {
+  box-shadow: 4px 4px 0px var(--brutal-black);
+}
+
+@utility brutal-btn {
+  @apply px-6 py-3 font-display uppercase border-2 border-brutal-black bg-gallery-white transition-all duration-100 cursor-pointer;
+  &:hover {
+    @apply -translate-x-0.5 -translate-y-0.5 brutal-shadow;
+  }
+}
+
+@utility brutal-btn-primary {
+  @apply bg-neon-green;
+}
+
+@utility brutal-card {
+  @apply bg-gallery-white border-2 border-brutal-black p-6;
+}
