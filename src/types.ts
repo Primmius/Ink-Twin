@@ -9,6 +9,7 @@ export interface DetectedCharacter {
   char: string;
   boundingBox: BoundingBox;
   confidence: number;
+  thickness_variation?: number; // 0-1 score of stroke thickness consistency
   imageData?: string; // Base64 or Blob URL of the cropped image
   svgPath?: string;
 }

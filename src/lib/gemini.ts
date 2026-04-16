@@ -10,21 +10,28 @@ export async function analyzeHandwriting(imageData: string, apiKey: string): Pro
   const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper. 
 
 If it is a grid template:
-- Extract each character from its labeled box
-- Use the label to identify what character it is
-- Return bounding box for each box cell
+- Extract each character from its labeled box.
+- Use the label to identify what character it is.
+- IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include the grid lines, box borders, or the printed labels/characters in the bounding box.
 
 If it is freehand handwritten text:
-- Find every unique character visible in the image
-- For each character pick the single clearest instance
-- If the same character appears multiple times pick the cleanest one
-- Ignore bleed-through from other pages
-- Ignore margin notes and non-character marks
-- Ignore ruled lines on the paper
+- Scan the entire image to find every unique character visible.
+- For each unique character, pick the SINGLE clearest and cleanest instance.
+- If a character appears multiple times, select the one with the best stroke definition and least noise.
+- Strictly ignore bleed-through from other pages, ghosting, or background artifacts.
+- Ignore margin notes, non-character marks, doodles, or smudges.
+- Ignore ruled lines, grid lines, or any background patterns on the paper.
 
-In both cases return JSON only in the format currently used by this application: a JSON array of objects, where each object has "char", "boundingBox" (with x, y, width, height), and "confidence".
+For all characters:
+- Analyze the stroke thickness variations. Identify if the stroke width or boldness varies significantly within the character.
+- Ensure the bounding box tightly encloses ONLY the handwritten character stroke.
 
-Bounding box values must be percentages of total image width and height between 0 and 100.
+Return JSON only in this format: a JSON array of objects, where each object has:
+- "char": the character string
+- "boundingBox": {x, y, width, height} as percentages (0-100)
+- "confidence": 0-1 score
+- "thickness_variation": 0-1 score (0 = perfectly uniform thickness, 1 = extreme variation in stroke width)
+
 Return JSON only, no explanation, no markdown.`;
 
   const response = await ai.models.generateContent({
@@ -53,9 +60,10 @@ Return JSON only, no explanation, no markdown.`;
               },
               required: ["x", "y", "width", "height"]
             },
-            confidence: { type: Type.NUMBER }
+            confidence: { type: Type.NUMBER },
+            thickness_variation: { type: Type.NUMBER }
           },
-          required: ["char", "boundingBox", "confidence"]
+          required: ["char", "boundingBox", "confidence", "thickness_variation"]
         }
       }
     }
@@ -78,9 +86,12 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   const prompt = `Find the handwritten character "${char}" in this image. 
   The image may be a grid template or freehand text. 
   If it's a grid, look for the box labeled "${char}". 
-  If it's freehand, find the cleanest instance of "${char}".
-  Return its bounding box as percentages (x, y, width, height) between 0 and 100 and a confidence score. 
-  The box should tightly enclose the handwritten stroke.
+  If it's freehand, find the single cleanest and clearest instance of "${char}" in the text.
+  Ignore distractions like bleed-through, ruled lines, or non-character marks.
+  IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include grid lines, box borders, or printed labels.
+  Analyze stroke thickness variations for this character.
+  Return its bounding box as percentages (x, y, width, height) between 0 and 100, a confidence score, and thickness_variation (0-1).
+  The box should tightly enclose ONLY the handwritten stroke.
   If not found, return null. Return as JSON only.`;
 
   const response = await ai.models.generateContent({
@@ -107,9 +118,10 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
             },
             required: ["x", "y", "width", "height"]
           },
-          confidence: { type: Type.NUMBER }
+          confidence: { type: Type.NUMBER },
+          thickness_variation: { type: Type.NUMBER }
         },
-        required: ["char", "boundingBox", "confidence"]
+        required: ["char", "boundingBox", "confidence", "thickness_variation"]
       }
     }
   });
