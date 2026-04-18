@@ -1,0 +1,477 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Upload, 
+  FileText, 
+  Link as LinkIcon, 
+  Type, 
+  CheckCircle2, 
+  Sparkles, 
+  RefreshCw, 
+  Send, 
+  Copy, 
+  Edit3, 
+  ChevronRight,
+  Brain,
+  Trash2,
+  Trash
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import mammoth from 'mammoth';
+import { cn } from '../lib/utils';
+import { pdfToText, pdfToImages } from '../lib/pdf';
+import { HomeworkInput, AnswerMode, solveHomework, HomeworkResult } from '../lib/homeworkService';
+import { HomeworkHistory } from './HomeworkHistory';
+
+interface HomeworkSolverProps {
+  apiKey: string;
+  onSendToWriter: (text: string) => void;
+  onOpenSettings: () => void;
+}
+
+export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onOpenSettings }) => {
+  const [input, setInput] = useState<HomeworkInput>({});
+  const [inputText, setInputText] = useState('');
+  const [url, setUrl] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [answerMode, setAnswerMode] = useState<AnswerMode>('both');
+  const [result, setResult] = useState<HomeworkResult | null>(null);
+  const [editableAnswer, setEditableAnswer] = useState('');
+  const [followUp, setFollowUp] = useState('');
+  const [history, setHistory] = useState<HomeworkResult[]>([]);
+  const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url'>('upload');
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'detected' | 'error'>('idle');
+
+  // Loading messages rotation
+  useEffect(() => {
+    if (!isProcessing) return;
+    const messages = [
+      "Reading your homework...",
+      "Thinking really hard...",
+      "Almost done...",
+      "Checking the answer..."
+    ];
+    let i = 0;
+    setLoadingMessage(messages[0]);
+    const interval = setInterval(() => {
+      i = (i + 1) % messages.length;
+      setLoadingMessage(messages[i]);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
+  // Load history from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('homework_history');
+    if (saved) {
+      try {
+        setHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse history", e);
+      }
+    }
+  }, []);
+
+  const saveHistory = (newResult: HomeworkResult) => {
+    const updated = [newResult, ...history].slice(0, 10);
+    setHistory(updated);
+    localStorage.setItem('homework_history', JSON.stringify(updated));
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    localStorage.removeItem('homework_history');
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    try {
+      if (file.type === 'application/pdf') {
+        const buffer = await file.arrayBuffer();
+        const text = await pdfToText(buffer);
+        const images = await pdfToImages(buffer);
+        setInput({ pdfText: text, imageData: images[0] }); // Just first page as preview image
+        setUploadStatus('detected');
+      } else if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setInput({ imageData: event.target.result as string });
+            setUploadStatus('detected');
+          }
+        };
+        reader.readAsDataURL(file);
+      } else if (file.name.endsWith('.docx')) {
+        const buffer = await file.arrayBuffer();
+        const { value } = await mammoth.extractRawText({ arrayBuffer: buffer });
+        setInput({ docxText: value });
+        setUploadStatus('detected');
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+      setUploadStatus('error');
+    }
+  };
+
+  const handleSolve = async () => {
+    if (!apiKey) {
+      onOpenSettings();
+      return;
+    }
+
+    const finalInput = { ...input };
+    if (inputText) finalInput.text = inputText;
+    if (url) finalInput.sourceUrl = url;
+
+    setIsProcessing(true);
+    try {
+      const res = await solveHomework(finalInput, answerMode, apiKey);
+      setResult(res);
+      setEditableAnswer(res.answer);
+      saveHistory(res);
+    } catch (err) {
+      console.error("Solver failed", err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleFollowUp = async () => {
+    if (!followUp || !result || !apiKey) return;
+    setIsProcessing(true);
+    try {
+      const res = await solveHomework(input, answerMode, apiKey, followUp, result.answer);
+      setResult(res);
+      setEditableAnswer(res.answer);
+      setFollowUp('');
+    } catch (err) {
+      console.error("Follow-up failed", err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(editableAnswer);
+    alert("Copied to clipboard!");
+  };
+
+  const handleRegenerate = () => {
+    handleSolve();
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+      {/* Left Column: Upload & Input */}
+      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 border-brutal-black p-6 flex flex-col gap-6 bg-white overflow-y-auto">
+        <div className="space-y-4">
+          <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
+          
+          <div className="flex border-2 border-brutal-black font-mono text-xs mb-4">
+            <button 
+              onClick={() => setActiveTab('upload')}
+              className={cn("flex-1 py-2 transition-colors", activeTab === 'upload' ? "bg-neon-green" : "hover:bg-neutral-100")}
+            >
+              FILE
+            </button>
+            <button 
+              onClick={() => setActiveTab('text')}
+              className={cn("flex-1 py-2 border-l-2 border-r-2 border-brutal-black transition-colors", activeTab === 'text' ? "bg-neon-green" : "hover:bg-neutral-100")}
+            >
+              TEXT
+            </button>
+            <button 
+              onClick={() => setActiveTab('url')}
+              className={cn("flex-1 py-2 transition-colors", activeTab === 'url' ? "bg-neon-green" : "hover:bg-neutral-100")}
+            >
+              URL
+            </button>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {activeTab === 'upload' && (
+              <motion.div 
+                key="upload"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-4"
+              >
+                <label className="w-full h-32 brutal-border border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neon-green/5 transition-colors group">
+                  <Upload size={24} className="opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all text-neon-green" />
+                  <span className="font-mono text-[10px] font-bold uppercase">PDF, JPG, PNG, DOCX</span>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.docx" onChange={handleFileUpload} />
+                </label>
+                {uploadStatus === 'detected' && (
+                  <div className="p-3 bg-neon-green/10 border-2 border-neon-green text-[11px] font-mono flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                       <CheckCircle2 size={14} className="text-neon-green" /> 
+                       Content Detected
+                    </span>
+                    <button onClick={() => { setInput({}); setUploadStatus('idle'); }} className="text-error-red font-bold hover:underline">RESET</button>
+                  </div>
+                )}
+                {input.imageData && (
+                  <div className="brutal-border p-2 bg-neutral-50">
+                    <img src={input.imageData} alt="Preview" className="w-full max-h-40 object-contain" />
+                  </div>
+                )}
+                {(input.pdfText || input.docxText) && (
+                   <div className="brutal-border p-3 bg-neutral-50 text-[10px] font-mono whitespace-pre-wrap max-h-40 overflow-y-auto">
+                     {input.pdfText || input.docxText}
+                   </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === 'text' && (
+              <motion.div 
+                key="text"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <textarea
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Paste or type your homework questions here..."
+                  className="w-full h-40 brutal-border p-4 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors resize-none"
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'url' && (
+              <motion.div 
+                key="url"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-2"
+              >
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="Paste question URL here..."
+                  className="w-full brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors"
+                />
+                <p className="text-[10px] opacity-40 font-mono italic px-1">Note: Gemini will visit this page to read the question.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Answer Mode</h3>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { id: 'final', label: 'Final Answer Only', desc: 'Direct solution' },
+              { id: 'step-by-step', label: 'Step by Step', desc: 'Detailed working' },
+              { id: 'both', label: 'Both', desc: 'Working + Final' }
+            ].map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setAnswerMode(m.id as AnswerMode)}
+                className={cn(
+                  "p-3 brutal-border text-left transition-all",
+                  answerMode === m.id ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                )}
+              >
+                <div className="font-display uppercase text-xs font-bold">{m.label}</div>
+                <div className="text-[9px] font-mono opacity-50 uppercase">{m.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <button 
+          onClick={handleSolve}
+          disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
+          className="w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all flex items-center justify-center gap-2 group mt-auto"
+        >
+          {isProcessing ? <RefreshCw size={20} className="animate-spin" /> : <Brain size={20} className="group-hover:scale-110 transition-transform" />}
+          <span className="font-display uppercase">Solve Homework</span>
+        </button>
+
+        <div className="mt-8 border-t-2 border-brutal-black pt-6">
+          <HomeworkHistory history={history} onSelect={(item) => { setResult(item); setEditableAnswer(item.answer); }} onClear={clearHistory} />
+        </div>
+      </div>
+
+      {/* Center Column: Answer Preview */}
+      <div className="flex-grow flex flex-col bg-neutral-100 p-6 overflow-hidden">
+        <div className="flex-grow bg-white brutal-border brutal-shadow flex flex-col overflow-hidden">
+          <div className="p-4 border-b-2 border-brutal-black bg-neutral-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-brutal-black text-white flex items-center justify-center">
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <h3 className="font-display uppercase text-sm leading-tight">Gemini Answer</h3>
+                {result && (
+                  <div className="flex gap-2">
+                     <span className="text-[9px] font-mono uppercase opacity-50">Subject: {result.subject}</span>
+                     <span className="text-[9px] font-mono uppercase opacity-50">Level: {result.difficulty}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            {result && (
+               <div className="flex gap-2">
+                 <button onClick={handleRegenerate} className="p-2 brutal-border hover:bg-neon-green transition-colors" title="Regenerate">
+                   <RefreshCw size={14} />
+                 </button>
+                 <button onClick={copyToClipboard} className="p-2 brutal-border hover:bg-neon-green transition-colors" title="Copy">
+                   <Copy size={14} />
+                 </button>
+               </div>
+            )}
+          </div>
+
+          <div className="flex-grow overflow-y-auto p-8 relative">
+            <AnimatePresence mode="wait">
+              {isProcessing ? (
+                <motion.div 
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-white/80 z-50 p-6 text-center"
+                >
+                  <RefreshCw size={40} className="animate-spin text-neon-green" />
+                  <div className="font-display uppercase text-2xl tracking-tighter animate-pulse">{loadingMessage}</div>
+                  <p className="font-mono text-[10px] opacity-40 max-w-xs">Our AI is crunching the numbers and reading the context to provide the most accurate solution for you.</p>
+                </motion.div>
+              ) : result ? (
+                <motion.div 
+                  key="answer"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="prose prose-sm max-w-none"
+                >
+                  <div className="edit-container relative">
+                    <textarea
+                      value={editableAnswer}
+                      onChange={(e) => setEditableAnswer(e.target.value)}
+                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden"
+                      style={{ height: 'auto', minHeight: '500px' }}
+                      onInput={(e: any) => {
+                        e.target.style.height = 'auto';
+                        e.target.style.height = e.target.scrollHeight + 'px';
+                      }}
+                    />
+                    <div className="absolute top-2 right-2 bg-neon-green px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
+                      Editable Mode
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  key="idle"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="h-full flex flex-col items-center justify-center space-y-4 opacity-20 text-center"
+                >
+                  <Brain size={100} strokeWidth={1} />
+                  <div className="max-w-xs">
+                    <h3 className="font-display uppercase text-xl">Solve it with AI</h3>
+                    <p className="font-mono text-xs">Upload your homework question, photo, or doc to get started.</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {result && (
+            <div className="p-4 border-t-2 border-brutal-black bg-neutral-50 flex gap-2">
+              <input 
+                type="text"
+                value={followUp}
+                onChange={(e) => setFollowUp(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFollowUp()}
+                placeholder="Ask follow-up question..."
+                className="flex-grow brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors"
+                disabled={isProcessing}
+              />
+              <button 
+                onClick={handleFollowUp}
+                disabled={isProcessing || !followUp}
+                className="brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black disabled:opacity-50"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right Column: Options & Send */}
+      <div className="w-full lg:w-[280px] border-l-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+        <div className="space-y-6">
+          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Actions</h3>
+          <div className="space-y-4">
+            <button 
+              onClick={() => onSendToWriter(editableAnswer)}
+              disabled={!editableAnswer}
+              className="w-full brutal-btn bg-neon-green flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="font-display uppercase text-sm">Send to Editor</span>
+                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+              <span className="text-[9px] font-mono opacity-50 uppercase text-left">Auto-layout in your handwritingfont</span>
+            </button>
+
+            <button 
+              onClick={copyToClipboard}
+              disabled={!editableAnswer}
+              className="w-full brutal-btn flex items-center justify-center gap-2 text-xs font-mono uppercase bg-white disabled:opacity-50"
+            >
+              <Copy size={16} />
+              Copy Answer
+            </button>
+          </div>
+        </div>
+
+        {result && (
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Quick Format</h3>
+            <div className="grid grid-cols-1 gap-2">
+              <button 
+                onClick={() => { setAnswerMode('final'); handleSolve(); }}
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+              >
+                Final Answer Only
+              </button>
+              <button 
+                onClick={() => { setAnswerMode('step-by-step'); handleSolve(); }}
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+              >
+                Step by Step
+              </button>
+              <button 
+                onClick={() => { setAnswerMode('both'); handleSolve(); }}
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+              >
+                Both
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-auto p-4 bg-neutral-50 brutal-border border-dashed space-y-2">
+           <div className="flex items-center gap-2 text-neon-green">
+              <CheckCircle2 size={16} />
+              <span className="font-display uppercase text-[10px]">HW Engine v3.0</span>
+           </div>
+           <p className="text-[9px] font-mono opacity-60 leading-tight uppercase">
+             Optimized for handwriting output. No markdown symbols or cluttered formatting.
+           </p>
+        </div>
+      </div>
+    </div>
+  );
+};

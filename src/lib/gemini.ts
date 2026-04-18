@@ -35,7 +35,7 @@ Return JSON only in this format: a JSON array of objects, where each object has:
 Return JSON only, no explanation, no markdown.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -95,7 +95,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   If not found, return null. Return as JSON only.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },

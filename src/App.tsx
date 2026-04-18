@@ -19,10 +19,12 @@ import {
   Camera,
   Moon,
   Sun,
-  Trash2
+  Trash2,
+  Sparkles,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from './lib/utils';
-import { AppStep, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT } from './types';
+import { AppStep, AppPhase, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT, SavedFont } from './types';
 import { generateTemplatePDF, pdfToImages } from './lib/pdf';
 import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
 import { loadImage, processCharacterImage, normalizeManualDrawing } from './lib/imageProcessing';
@@ -30,13 +32,17 @@ import { vectorizeImage } from './lib/vectorizer';
 import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
 import { GlyphEditor } from './components/GlyphEditor';
+import { HandwritingWriter } from './components/writer/HandwritingWriter';
+import { HomeworkSolver } from './components/HomeworkSolver';
 
 export default function App() {
+  const [phase, setPhase] = useState<AppPhase>('font-creation');
   const [step, setStep] = useState<AppStep>(1);
   const [apiKey, setApiKey] = useState<string>(localStorage.getItem('gemini_api_key') || '');
   const [isSettingsOpen, setIsSettingsOpen] = useState(!apiKey);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
+  const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -52,7 +58,61 @@ export default function App() {
     fontSize: 48
   });
   const [fontUrl, setFontUrl] = useState<string | null>(null);
+  const [savedFonts, setSavedFonts] = useState<SavedFont[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Load saved fonts from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('handfont_saved_fonts');
+    if (stored) {
+      try {
+        setSavedFonts(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse saved fonts", e);
+      }
+    }
+  }, []);
+
+  // Save fonts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('handfont_saved_fonts', JSON.stringify(savedFonts));
+  }, [savedFonts]);
+
+  const handleSaveFont = async () => {
+    if (!fontUrl) return;
+    
+    // Fetch the blob and convert to data URL for persistence
+    const response = await fetch(fontUrl);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const newFont: SavedFont = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: fontConfig.name || `Custom Font ${savedFonts.length + 1}`,
+        url: dataUrl,
+        createdAt: Date.now()
+      };
+      setSavedFonts(prev => [...prev, newFont]);
+    };
+    reader.readAsDataURL(blob);
+  };
+
+  const handleDeleteFont = (id: string) => {
+    setSavedFonts(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handleRenameFont = (id: string, newName: string) => {
+    setSavedFonts(prev => prev.map(f => f.id === id ? { ...f, name: newName } : f));
+  };
+
+  const handleEditFont = (font: SavedFont) => {
+    // This is tricky because we don't store the original detectedChars/paths
+    // For now, we'll just load the font into the writer
+    setFontUrl(font.url);
+    setFontConfig(prev => ({ ...prev, name: font.name }));
+    setPhase('text-writer');
+  };
 
   const saveApiKey = (key: string) => {
     setApiKey(key);
@@ -259,33 +319,68 @@ export default function App() {
     <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
       {/* Header */}
       <header className="border-b-2 border-brutal-black p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 bg-white z-40">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow">
-            <TypeIcon size={28} />
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow">
+              <TypeIcon size={28} />
+            </div>
+            <h1 className="text-5xl font-display uppercase tracking-tighter leading-none">HandFont</h1>
           </div>
-          <h1 className="text-5xl font-display uppercase tracking-tighter leading-none">HandFont</h1>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          {[
-            { id: 1, label: "01 TEMPLATE" },
-            { id: 2, label: "02 UPLOAD" },
-            { id: 3, label: "03 DETECT" },
-            { id: 4, label: "04 PROCESS" },
-            { id: 5, label: "05 VECTOR" },
-            { id: 6, label: "06 PREVIEW" }
-          ].map((s) => (
-            <div 
-              key={s.id}
+          
+          {/* Phase Navigation */}
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setPhase('font-creation')}
               className={cn(
-                "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all",
-                step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30"
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                phase === 'font-creation' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
               )}
             >
-              {s.label}
-            </div>
-          ))}
+              ✏️ Create My Font
+            </button>
+            <button 
+              onClick={() => setPhase('text-writer')}
+              className={cn(
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                phase === 'text-writer' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+              )}
+            >
+              📝 Write with My Handwriting
+            </button>
+            <button 
+              onClick={() => setPhase('homework-solver')}
+              className={cn(
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+              )}
+            >
+              🎓 Do My Homework
+            </button>
+          </div>
         </div>
+        
+        {phase === 'font-creation' && (
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 1, label: "01 TEMPLATE" },
+              { id: 2, label: "02 UPLOAD" },
+              { id: 3, label: "03 DETECT" },
+              { id: 4, label: "04 PROCESS" },
+              { id: 5, label: "05 VECTOR" },
+              { id: 6, label: "06 PREVIEW" }
+            ].map((s) => (
+              <div 
+                key={s.id}
+                className={cn(
+                  "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all",
+                  step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30"
+                )}
+              >
+                {s.label}
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <button 
@@ -298,8 +393,10 @@ export default function App() {
       </header>
 
       <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+        {phase === 'font-creation' ? (
+          <>
+            {/* Sidebar */}
+            <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
           <div className="space-y-4">
             <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
             <div className="space-y-2 font-mono text-sm">
@@ -659,12 +756,28 @@ export default function App() {
                             />
                           </div>
                         </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={downloadFont}
+                            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2"
+                          >
+                            <Download size={20} />
+                            Download .TTF
+                          </button>
+                          <button 
+                            onClick={handleSaveFont}
+                            className="brutal-btn bg-neon-green flex items-center justify-center p-2"
+                            title="Save to Library"
+                          >
+                            <CheckCircle2 size={20} />
+                          </button>
+                        </div>
                         <button 
-                          onClick={downloadFont}
-                          className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2"
+                          onClick={() => setPhase('text-writer')}
+                          className="w-full brutal-btn bg-warning-yellow flex items-center justify-center gap-2"
                         >
-                          <Download size={20} />
-                          Download .TTF
+                          <Sparkles size={20} />
+                          Use this Handwriting
                         </button>
                       </div>
 
@@ -702,6 +815,37 @@ export default function App() {
             </AnimatePresence>
           </div>
         </section>
+          </>
+        ) : phase === 'text-writer' ? (
+          <HandwritingWriter 
+            fontUrl={fontUrl} 
+            fontName={fontConfig.name} 
+            apiKey={apiKey} 
+            savedFonts={savedFonts}
+            onSelectFont={(font) => {
+              setFontUrl(font.url);
+              setFontConfig(prev => ({ ...prev, name: font.name }));
+            }}
+            onDeleteFont={handleDeleteFont}
+            onRenameFont={handleRenameFont}
+            onUploadFont={(font) => {
+              setSavedFonts(prev => [...prev, font]);
+              setFontUrl(font.url);
+              setFontConfig(prev => ({ ...prev, name: font.name }));
+            }}
+            initialText={prefilledWriterText}
+            onTextConsumed={() => setPrefilledWriterText(null)}
+          />
+        ) : phase === 'homework-solver' ? (
+          <HomeworkSolver 
+            apiKey={apiKey}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onSendToWriter={(text) => {
+              setPrefilledWriterText(text);
+              setPhase('text-writer');
+            }}
+          />
+        ) : null}
       </div>
 
       {/* Footer */}

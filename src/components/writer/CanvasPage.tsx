@@ -1,0 +1,409 @@
+import React, { useRef, useEffect } from 'react';
+import { cn } from '../../lib/utils';
+import { PageConfig, WriterPage, WriterImage, WriterElement } from '../../types';
+
+interface CanvasPageProps {
+  page: WriterPage;
+  config: PageConfig;
+  fontName: string;
+  width?: number;
+  height?: number;
+  onUpdateImage?: (imageId: string, updates: Partial<WriterImage>) => void;
+  onUpdateElement?: (elementId: string, updates: Partial<WriterElement>) => void;
+  children?: React.ReactNode;
+  dragOffset?: { id: string, x: number, y: number } | null;
+}
+
+export const CanvasPage: React.FC<CanvasPageProps> = ({ 
+  page, 
+  config, 
+  fontName, 
+  width = 595, 
+  height = 842,
+  children,
+  dragOffset
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    renderCanvasPage(ctx, page, config, fontName, width, height, imageCache.current, dragOffset);
+  }, [page, config, fontName, width, height, dragOffset]);
+
+  return (
+    <div 
+      className={cn("relative shadow-2xl overflow-hidden", config.pageStyle)} 
+      style={{ 
+        width, 
+        height,
+        backgroundColor: config.pageStyle === 'white' ? '#FFFFFF' : 'transparent' 
+      }}
+    >
+      <canvas 
+        ref={canvasRef} 
+        width={width} 
+        height={height} 
+        className="absolute inset-0 w-full h-full pointer-events-none"
+      />
+      {children}
+    </div>
+  );
+};
+
+export const renderCanvasPage = async (
+  ctx: CanvasRenderingContext2D,
+  page: WriterPage,
+  config: PageConfig,
+  fontName: string,
+  width: number,
+  height: number,
+  imageCache: Map<string, HTMLImageElement>,
+  dragOffset?: { id: string, x: number, y: number } | null
+) => {
+  // 1. Draw Background
+  drawBackground(ctx, width, height, config);
+
+  const getCoords = (el: WriterElement | WriterImage) => {
+    if (dragOffset && dragOffset.id === el.id) {
+      return { ...el, x: el.x + dragOffset.x, y: el.y + dragOffset.y };
+    }
+    return el;
+  };
+
+  // 2. Draw Below Layer (Images & Elements)
+  for (const img of page.images.filter(i => i.layer === 'below')) {
+    await drawImage(ctx, getCoords(img) as WriterImage, imageCache);
+  }
+  for (const el of page.elements.filter(e => e.layer === 'below')) {
+    drawElement(ctx, getCoords(el) as WriterElement, config, fontName);
+  }
+
+  // 3. Draw Handwritten Text
+  drawText(ctx, page.content, config, fontName, width, height);
+
+  // 4. Draw Above Layer (Images & Elements)
+  for (const img of page.images.filter(i => i.layer === 'above')) {
+    await drawImage(ctx, getCoords(img) as WriterImage, imageCache);
+  }
+  for (const el of page.elements.filter(e => e.layer === 'above' || !e.layer)) {
+    drawElement(ctx, getCoords(el) as WriterElement, config, fontName);
+  }
+
+  // 5. Apply Effects
+  applyEffects(ctx, width, height, config.effect);
+};
+
+const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, config: PageConfig) => {
+  ctx.save();
+  
+  // 1. Clear & Base Fill
+  ctx.fillStyle = config.pageStyle === 'blackboard' ? '#2d5a27' : '#FFFFFF';
+  ctx.fillRect(0, 0, w, h);
+
+  // 2. Specific Page Styles
+  if (config.pageStyle === 'paper1') {
+    // Subtle grain
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      if (Math.random() < 0.05) {
+        const n = Math.random() * 10;
+        data[i] -= n; data[i+1] -= n; data[i+2] -= n;
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  if (config.pageStyle === 'paper2') { ctx.fillStyle = '#faf8f5'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'note') { ctx.fillStyle = '#fff9c4'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'old-paper') { ctx.fillStyle = '#f5e6c8'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'birthday') { ctx.fillStyle = '#fff0f5'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'love-letter') { ctx.fillStyle = '#fdf6e3'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'legal-pad') { ctx.fillStyle = '#fefbd8'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'newspaper') { ctx.fillStyle = '#f0eeea'; ctx.fillRect(0, 0, w, h); }
+  if (config.pageStyle === 'kraft') { ctx.fillStyle = '#c4a882'; ctx.fillRect(0, 0, w, h); }
+
+  // 3. Margin Lines
+  const isLined = ['blue-lined', 'gray-lined', 'legal-pad'].includes(config.pageStyle);
+  if (isLined) {
+    const lineColor = config.pageStyle === 'blue-lined' ? '#a8c4e0' : (config.pageStyle === 'legal-pad' ? '#a8c4e0' : '#cccccc');
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 0.5;
+    const startY = config.pageStyle === 'legal-pad' ? 100 : 32;
+    for (let y = startY; y < h; y += 32) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+    
+    // Vertical margin line
+    if (config.pageStyle === 'blue-lined' || config.pageStyle === 'legal-pad') {
+      ctx.strokeStyle = '#ffaaaa';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(config.leftMargin, 0); ctx.lineTo(config.leftMargin, h); ctx.stroke();
+    }
+  }
+
+  if (config.pageStyle === 'grid' || config.pageStyle === 'graph-paper') {
+    const gap = config.pageStyle === 'grid' ? 25 : 10;
+    ctx.strokeStyle = config.pageStyle === 'grid' ? '#e0e0e0' : '#d0e8ff';
+    ctx.lineWidth = 0.5;
+    for (let y = gap; y < h; y += gap) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    for (let x = gap; x < w; x += gap) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  }
+
+  ctx.restore();
+};
+
+const getCachedImage = (src: string, cache: Map<string, HTMLImageElement>): Promise<HTMLImageElement> => {
+  if (cache.has(src)) return Promise.resolve(cache.get(src)!);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      cache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => {
+      const fallback = new Image();
+      resolve(fallback);
+    };
+    img.src = src;
+  });
+};
+
+const drawImage = async (ctx: CanvasRenderingContext2D, imgData: WriterImage, cache: Map<string, HTMLImageElement>) => {
+  const img = await getCachedImage(imgData.src, cache);
+  if (!img.width) return;
+
+  ctx.save();
+  ctx.translate(imgData.x + imgData.width / 2, imgData.y + imgData.height / 2);
+  ctx.rotate((imgData.rotation || 0) * Math.PI / 180);
+  ctx.drawImage(img, -imgData.width / 2, -imgData.height / 2, imgData.width, imgData.height);
+  ctx.restore();
+};
+
+const drawElement = (ctx: CanvasRenderingContext2D, el: WriterElement, config: PageConfig, fontName: string) => {
+  ctx.save();
+  ctx.translate(el.x + el.width / 2, el.y + el.height / 2);
+  ctx.rotate((el.rotation || 0) * Math.PI / 180);
+  
+  const width = el.width || 100;
+  const height = el.height || 24;
+
+  if (el.type === 'heading') {
+    ctx.font = `bold ${el.fontSize || config.fontSize * 1.5}px "${fontName}"`;
+    ctx.fillStyle = config.inkColor;
+    ctx.fillText(el.content, -width / 2, -height / 2);
+  } else if (el.type === 'emoji') {
+    ctx.font = `${el.fontSize || 40}px serif`;
+    ctx.fillText(el.content, -width / 2, -height / 2);
+  } else {
+    ctx.font = `${el.fontSize || config.fontSize}px "${fontName}"`;
+    ctx.fillStyle = config.inkColor;
+    ctx.fillText(el.content, -width / 2, -height / 2);
+  }
+  
+  ctx.restore();
+};
+
+const drawText = (ctx: CanvasRenderingContext2D, text: string, config: PageConfig, font: string, w: number, h: number) => {
+  if (config.effect === 'shadow') {
+    ctx.save();
+    ctx.translate(2, 2);
+    ctx.globalAlpha = 0.3;
+    drawTextContent(ctx, text, config, font, w, h, true);
+    ctx.restore();
+  }
+  drawTextContent(ctx, text, config, font, w, h);
+};
+
+const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: PageConfig, font: string, w: number, h: number, isShadow?: boolean) => {
+  ctx.save();
+  
+  let currentFontSize = config.fontSize;
+  let currentInkColor = config.pageStyle === 'blackboard' ? '#FFFFFF' : config.inkColor;
+  let currentThickness = config.thickness;
+  let currentLineHeight = config.lineHeight;
+  ctx.textBaseline = 'top';
+
+  const paragraphs = text.split('\n\n');
+  let cursorY = config.topMargin;
+
+  const rgb = hexToRgb(currentInkColor);
+
+  paragraphs.forEach((paragraph, pIdx) => {
+    const lines = paragraph.split('\n');
+    lines.forEach((line, lIdx) => {
+      let tempLine = line;
+      let isCentered = false;
+      let isHeading = false;
+      let isBoldNext = false;
+
+      if (tempLine.includes('[CENTER]')) { isCentered = true; tempLine = tempLine.replace('[CENTER]', ''); }
+      if (tempLine.includes('[GAP]')) { cursorY += currentLineHeight; tempLine = tempLine.replace('[GAP]', ''); }
+      if (tempLine.includes('[HEADING]')) { isHeading = true; tempLine = tempLine.replace('[HEADING]', ''); }
+      if (tempLine.includes('[LINE:')) {
+        const lineMatch = tempLine.match(/\[LINE:(\d+)\]/);
+        if (lineMatch) {
+          currentLineHeight = parseInt(lineMatch[1]);
+          tempLine = tempLine.replace(lineMatch[0], '');
+        }
+      }
+
+      const lineFontSize = isHeading ? currentFontSize * 1.4 : currentFontSize;
+      const eh = isHeading ? currentLineHeight * 1.4 : currentLineHeight;
+      ctx.font = `${isHeading ? 'bold ' : ''}${lineFontSize}px "${font}"`;
+
+      // Split by inline tags
+      const parts = tempLine.split(/(\[INK:[^\]]+\]|\[SIZE:[^\]]+\]|\[BOLD\]|\[NORMAL\])/);
+      
+      // Calculate total line width for centering
+      let totalLineWidth = 0;
+      if (isCentered) {
+        let tempThickness = currentThickness;
+        parts.forEach(part => {
+          if (part === '[BOLD]') {
+             tempThickness = config.thickness + 2;
+          } else if (part === '[NORMAL]') {
+             tempThickness = config.thickness;
+          } else if (!part.startsWith('[')) {
+            const fontPref = isHeading ? 'bold ' : '';
+            ctx.font = `${fontPref}${lineFontSize}px "${font}"`;
+            for (const char of part) {
+              totalLineWidth += ctx.measureText(char).width + config.letterSpacing;
+            }
+          }
+        });
+        totalLineWidth += (tempLine.split(' ').length - 1) * (config.wordSpacing + ctx.measureText(' ').width);
+      }
+
+      let cursorX = isCentered ? (w - totalLineWidth) / 2 : config.leftMargin;
+
+      parts.forEach(part => {
+        if (part.startsWith('[INK:')) {
+          const color = part.match(/\[INK:([^\]]+)\]/)?.[1];
+          if (color) {
+            currentInkColor = (color === 'black' ? '#000000' : (color === 'blue' ? '#1a1aff' : (color === 'red' ? '#cc0000' : color)));
+            if (config.pageStyle === 'blackboard' && color === 'black') currentInkColor = '#FFFFFF';
+            if (!isShadow) ctx.fillStyle = currentInkColor;
+          }
+        } else if (part.startsWith('[SIZE:')) {
+          const size = parseInt(part.match(/\[SIZE:([^\]]+)\]/)?.[1] || '');
+          if (!isNaN(size)) {
+            currentFontSize = size;
+            ctx.font = `${currentFontSize}px "${font}"`;
+          }
+        } else if (part === '[BOLD]') {
+          isBoldNext = true;
+        } else if (part === '[NORMAL]') {
+          currentThickness = config.thickness;
+          isBoldNext = false;
+        } else {
+          const words = part.split(' ');
+          const segmentThickness = isBoldNext ? (config.thickness + 2) : currentThickness;
+          
+          words.forEach((word, wordIdx) => {
+            // Apply Ink Variation per word (not for shadow)
+            let wordColor = currentInkColor;
+            if (config.inkVariation && rgb && !isShadow) {
+              const shift = (Math.random() - 0.5) * config.inkVariationIntensity * 30;
+              wordColor = `rgb(${Math.min(255, Math.max(0, rgb.r + shift))}, ${Math.min(255, Math.max(0, rgb.g + shift))}, ${Math.min(255, Math.max(0, rgb.b + shift))})`;
+              ctx.fillStyle = wordColor;
+            } else if (!isShadow) {
+              ctx.fillStyle = currentInkColor;
+            }
+
+            // Draw Character by Character
+            for (let i = 0; i < word.length; i++) {
+              const char = word[i];
+              ctx.save();
+              
+              // Slant
+              ctx.transform(1, 0, Math.tan(config.slant * Math.PI / 180), 1, 0, 0);
+
+              // Randomness
+              let charOffsetY = 0;
+              if (config.naturalRandomness) {
+                charOffsetY = (Math.random() - 0.5) * config.randomnessIntensity * 3;
+                const rotation = (Math.random() - 0.5) * config.randomnessIntensity * 3;
+                ctx.translate(cursorX, cursorY + charOffsetY);
+                ctx.rotate(rotation * Math.PI / 180);
+                ctx.translate(-cursorX, -(cursorY + charOffsetY));
+              }
+
+              // Thickness (draw multiple times with tiny offsets)
+              const effectiveThickness = isHeading ? segmentThickness * 1.5 : segmentThickness;
+              if (effectiveThickness > 0 && !isShadow) {
+                const baseAlpha = ctx.globalAlpha;
+                ctx.globalAlpha = 0.3;
+                const iterations = Math.floor(effectiveThickness);
+                for (let t = 0; t < iterations; t++) {
+                  ctx.fillText(char, cursorX + (Math.random() * 0.7), cursorY + charOffsetY + (Math.random() * 0.7));
+                }
+                ctx.globalAlpha = baseAlpha;
+              }
+
+              ctx.fillText(char, cursorX, cursorY + charOffsetY);
+              ctx.restore();
+              cursorX += ctx.measureText(char).width + config.letterSpacing;
+            }
+            cursorX += config.wordSpacing + ctx.measureText(' ').width;
+          });
+
+          // Reset surgical bold if it was used for this segment
+          isBoldNext = false;
+        }
+      });
+
+      cursorY += eh;
+    });
+    cursorY += config.paragraphSpacing;
+  });
+  
+  ctx.restore();
+};
+
+const applyEffects = (ctx: CanvasRenderingContext2D, w: number, h: number, effect: string) => {
+  if (effect === 'shadow') {
+    // Already drawn as base for shadow effect in scanner style sometimes? 
+    // No, user wants: draw twice. Offset 2px.
+    // I should have done this in drawText. Let's fix.
+  }
+
+  if (effect === 'scanner') {
+    ctx.save();
+    ctx.fillStyle = 'rgba(136, 136, 136, 0.08)';
+    ctx.fillRect(0, 0, w, h);
+    
+    // Subtle noise
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 16) { // Every 4th pixel approx
+      const noise = (Math.random() - 0.5) * 20;
+      data[i] += noise; data[i+1] += noise; data[i+2] += noise;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    ctx.restore();
+  }
+
+  if (effect === 'saturate') {
+    ctx.save();
+    ctx.globalCompositeOperation = 'color';
+    ctx.fillStyle = 'rgba(255, 200, 100, 0.15)'; // Warm complement-ish
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+  }
+};
+
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
