@@ -34,6 +34,7 @@ import { CameraCapture } from './components/CameraCapture';
 import { GlyphEditor } from './components/GlyphEditor';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
 import { HomeworkSolver } from './components/HomeworkSolver';
+import { FindFont } from './components/FindFont';
 
 export default function App() {
   const [phase, setPhase] = useState<AppPhase>('font-creation');
@@ -59,7 +60,17 @@ export default function App() {
   });
   const [fontUrl, setFontUrl] = useState<string | null>(null);
   const [savedFonts, setSavedFonts] = useState<SavedFont[]>([]);
+  const [pendingProfile, setPendingProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // Success toast timer
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Load saved fonts from localStorage
   useEffect(() => {
@@ -91,7 +102,8 @@ export default function App() {
         id: Math.random().toString(36).substr(2, 9),
         name: fontConfig.name || `Custom Font ${savedFonts.length + 1}`,
         url: dataUrl,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        source: "Phase 1"
       };
       setSavedFonts(prev => [...prev, newFont]);
     };
@@ -355,6 +367,15 @@ export default function App() {
               )}
             >
               🎓 Do My Homework
+            </button>
+            <button 
+              onClick={() => setPhase('find-font')}
+              className={cn(
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                phase === 'find-font' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+              )}
+            >
+              🔍 Find My Font
             </button>
           </div>
         </div>
@@ -835,6 +856,9 @@ export default function App() {
             }}
             initialText={prefilledWriterText}
             onTextConsumed={() => setPrefilledWriterText(null)}
+            initialProfile={pendingProfile}
+            onProfileApplied={() => setPendingProfile(null)}
+            onNavigate={(p) => setPhase(p)}
           />
         ) : phase === 'homework-solver' ? (
           <HomeworkSolver 
@@ -844,6 +868,39 @@ export default function App() {
               setPrefilledWriterText(text);
               setPhase('text-writer');
             }}
+          />
+        ) : phase === 'find-font' ? (
+          <FindFont 
+            apiKey={apiKey}
+            onFontSelected={(name, url, profile) => {
+              setFontUrl(url);
+              setFontConfig(prev => ({ ...prev, name }));
+              setPendingProfile(profile);
+              setPhase('text-writer');
+
+              // Save to library
+              const newFont: SavedFont = {
+                id: Math.random().toString(36).substr(2, 9),
+                name: profile.fontFamily,
+                url: url || '', 
+                createdAt: Date.now(),
+                source: "Found - Phase 4",
+                fontFamily: profile.fontFamily,
+                googleFont: true,
+                styleProfile: {
+                  slant: profile.slant,
+                  letterSpacing: profile.letterSpacing,
+                  lineHeight: profile.lineHeight,
+                  inkColor: profile.inkColor,
+                  wobble: profile.wobble,
+                  strokeWeight: profile.strokeWeight,
+                  irregularity: profile.irregularity
+                }
+              };
+              setSavedFonts(prev => [...prev, newFont]);
+              setToast("Font saved to library!");
+            }}
+            onGoToPhase1={() => setPhase('font-creation')}
           />
         ) : null}
       </div>
@@ -939,6 +996,21 @@ export default function App() {
             <button onClick={() => setError(null)} className="ml-4 hover:rotate-180 transition-transform">
               <RefreshCw size={20} />
             </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-12 right-12 z-[100] bg-neon-green text-brutal-black px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 font-display uppercase text-sm"
+          >
+            <CheckCircle2 size={24} />
+            {toast}
           </motion.div>
         )}
       </AnimatePresence>

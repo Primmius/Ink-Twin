@@ -27,9 +27,21 @@ export interface SavedFont {
   name: string;
   url: string; // Blob URL or data URL
   createdAt: number;
+  source?: string;
+  fontFamily?: string;
+  googleFont?: boolean;
+  styleProfile?: {
+    slant: number;
+    letterSpacing: number;
+    lineHeight: number;
+    inkColor: string;
+    wobble: number;
+    strokeWeight: number;
+    irregularity: number;
+  };
 }
 
-export type AppPhase = 'font-creation' | 'text-writer' | 'homework-solver';
+export type AppPhase = 'font-creation' | 'text-writer' | 'homework-solver' | 'find-font';
 
 export interface PageConfig {
   fontSize: number;

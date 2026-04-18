@@ -134,3 +134,138 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
     return null;
   }
 }
+
+export async function analyzeHandwritingForFontMatch(imageData: string, apiKey: string): Promise<any> {
+  const ai = new GoogleGenAI({ apiKey });
+  const base64Data = imageData.split(',')[1];
+  
+  const prompt = `You are an expert handwriting analyst.
+Analyze this handwriting image extremely carefully.
+
+Classify the script into EXACTLY one of:
+- cursive: all letters connected, flowing
+- neat_cursive: connected, consistent, elegant
+- hybrid: mix of connected and disconnected
+- messy_cursive: connected but irregular and fast
+- print: all letters disconnected, blocky
+
+Then study these specific characteristics:
+
+1. connectionLevel: 0.0 to 1.0
+   0.0 = fully disconnected print
+   1.0 = fully connected cursive
+
+2. slantDegree: -15 to +15 degrees
+   Negative = leans left
+   Positive = leans right
+   0 = upright
+
+3. spacingTightness: 0.0 to 1.0
+   0.0 = very wide spacing
+   1.0 = very tight spacing
+
+4. baselineDrift: 0.0 to 1.0
+   0.0 = perfectly straight baseline
+   1.0 = very wavy baseline
+
+5. strokeSmoothness: 0.0 to 1.0
+   0.0 = very shaky strokes
+   1.0 = very smooth strokes
+
+6. wobble: 0.0 to 1.0
+   How much natural variation exists per character position and rotation
+
+7. strokeWeight: 0.5 to 2.0
+   0.5 = very thin strokes
+   1.0 = normal weight
+   2.0 = very thick strokes
+
+8. irregularity: 0.0 to 1.0
+   How inconsistent letter sizes and shapes are across the sample
+
+9. inkColor: hex color string
+   Best estimate of the ink color from the image
+
+10. letterSpacing: -2 to 5
+    Pixels of space between letters
+    For cursive this must be 0.3 or less
+
+11. lineHeight: 1.2 to 2.5
+    Multiplier for line spacing
+
+12. Pick the single best matching fontFamily from this list only:
+    Zeyada, Marck Script, La Belle Aurore, Nothing You Could Do, Kristi, Dancing Script, Satisfy, Allura, Caveat, Handlee, Kalam, Indie Flower, Patrick Hand, Architects Daughter, Gochi Hand, Gloria Hallelujah, Homemade Apple, Just Another Hand, Loved by the King, Waiting for the Sunrise
+
+    Match based on:
+    cursive/neat_cursive → pick from first group (Zeyada to Allura)
+    hybrid → pick from middle group (Caveat to Handlee)
+    print → pick from last group (Kalam to Waiting for the Sunrise)
+
+13. styleLabel: one short phrase describing the handwriting personality
+    Example: 'flowing student cursive' or 'neat angular print' or 'quick casual mixed'
+
+Return JSON only. No markdown. No explanation.
+Exact format:
+{
+  "scriptType": string,
+  "connectionLevel": number,
+  "slantDegree": number,
+  "spacingTightness": number,
+  "baselineDrift": number,
+  "strokeSmoothness": number,
+  "wobble": number,
+  "strokeWeight": number,
+  "irregularity": number,
+  "inkColor": string,
+  "letterSpacing": number,
+  "lineHeight": number,
+  "fontFamily": string,
+  "styleLabel": string
+}`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.0-flash",
+    contents: {
+      parts: [
+        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+        { text: prompt }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          scriptType: { type: Type.STRING },
+          connectionLevel: { type: Type.NUMBER },
+          slantDegree: { type: Type.NUMBER },
+          spacingTightness: { type: Type.NUMBER },
+          baselineDrift: { type: Type.NUMBER },
+          strokeSmoothness: { type: Type.NUMBER },
+          wobble: { type: Type.NUMBER },
+          strokeWeight: { type: Type.NUMBER },
+          irregularity: { type: Type.NUMBER },
+          inkColor: { type: Type.STRING },
+          letterSpacing: { type: Type.NUMBER },
+          lineHeight: { type: Type.NUMBER },
+          fontFamily: { type: Type.STRING },
+          styleLabel: { type: Type.STRING }
+        },
+        required: [
+          "scriptType", "connectionLevel", "slantDegree", "spacingTightness", 
+          "baselineDrift", "strokeSmoothness", "wobble", "strokeWeight", 
+          "irregularity", "inkColor", "letterSpacing", "lineHeight", 
+          "fontFamily", "styleLabel"
+        ]
+      }
+    }
+  });
+
+  try {
+    const text = response.text;
+    if (!text) return null;
+    return JSON.parse(text);
+  } catch (e) {
+    return null;
+  }
+}

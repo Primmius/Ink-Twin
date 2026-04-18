@@ -45,6 +45,9 @@ interface HandwritingWriterProps {
   onUploadFont?: (font: SavedFont) => void;
   initialText?: string | null;
   onTextConsumed?: () => void;
+  initialProfile?: any;
+  onProfileApplied?: () => void;
+  onNavigate?: (p: AppPhase) => void;
 }
 
 export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({ 
@@ -57,7 +60,10 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   onRenameFont,
   onUploadFont,
   initialText,
-  onTextConsumed
+  onTextConsumed,
+  initialProfile,
+  onProfileApplied,
+  onNavigate
 }) => {
   const [pages, setPages] = useState<WriterPage[]>([
     { id: '1', content: 'Type your text here...', images: [], elements: [] }
@@ -179,6 +185,29 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [aiError, setAiError] = useState<string | null>(null);
   const [showAIWarning, setShowAIWarning] = useState(false);
   const [aiPartialData, setAiPartialData] = useState<{validatedText: string, newSettings: PageConfig} | null>(null);
+
+  // Apply profile from Phase 4
+  useEffect(() => {
+    if (initialProfile) {
+      const p = initialProfile;
+      const newSettings = {
+        ...settings,
+        slant: p.slant,
+        letterSpacing: p.letterSpacing,
+        lineHeight: p.lineHeight * settings.fontSize,
+        inkColor: p.inkColor,
+        thickness: (p.strokeWeight - 1) * 5,
+        naturalRandomness: p.wobble > 0.2,
+        randomnessIntensity: p.wobble,
+        inkVariation: p.irregularity > 0.3,
+        inkVariationIntensity: p.irregularity
+      };
+      setSettings(newSettings);
+      renderPage(newSettings);
+      setToast("Font and style loaded from your handwriting analysis!");
+      if (onProfileApplied) onProfileApplied();
+    }
+  }, [initialProfile]);
 
   // Success toast timer
   useEffect(() => {
@@ -706,10 +735,21 @@ ${documentText}`;
   // Auto-load font if URL changes
   useEffect(() => {
     if (fontUrl) {
-      const fontFace = new FontFace(fontName, `url(${fontUrl})`);
-      fontFace.load().then((loadedFace) => {
-        document.fonts.add(loadedFace);
-      });
+      if (fontUrl.includes('fonts.googleapis.com')) {
+        // Google Font CSS
+        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+          const link = document.createElement('link');
+          link.href = fontUrl;
+          link.rel = 'stylesheet';
+          document.head.appendChild(link);
+        }
+      } else {
+        // Font binary blob
+        const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+        fontFace.load().then((loadedFace) => {
+          document.fonts.add(loadedFace);
+        }).catch(err => console.error("Font load error:", err));
+      }
     }
   }, [fontUrl, fontName]);
 
@@ -952,7 +992,15 @@ ${documentText}`;
               </h3>
               <div className="space-y-2">
                 {savedFonts.length === 0 && (
-                  <p className="text-[10px] opacity-40 italic">No saved fonts yet. Create and save one in Phase 1!</p>
+                  <div className="text-[10px] opacity-40 italic space-y-1">
+                    <p>No saved fonts yet.</p>
+                    <p>
+                      Create one in <button onClick={() => onNavigate?.('font-creation')} className="underline hover:text-black hover:opacity-100 transition-all">✏️ Phase 1</button>
+                    </p>
+                    <p>
+                      or find one in <button onClick={() => onNavigate?.('find-font')} className="underline hover:text-black hover:opacity-100 transition-all">🔍 Phase 4</button>!
+                    </p>
+                  </div>
                 )}
                 {savedFonts.map(font => (
                   <div 
@@ -963,12 +1011,17 @@ ${documentText}`;
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <input 
-                        type="text"
-                        value={font.name}
-                        onChange={(e) => onRenameFont(font.id, e.target.value)}
-                        className="bg-transparent font-mono text-[10px] font-bold outline-none flex-grow"
-                      />
+                      <div className="flex flex-col flex-grow">
+                        <input 
+                          type="text"
+                          value={font.name}
+                          onChange={(e) => onRenameFont(font.id, e.target.value)}
+                          className="bg-transparent font-mono text-[10px] font-bold outline-none w-full"
+                        />
+                        <span className="font-mono text-[8px] opacity-50 uppercase tracking-tighter">
+                          {font.source === 'Found - Phase 4' ? '🔍 Found match' : '✏️ Your handwriting'}
+                        </span>
+                      </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => onDeleteFont(font.id)}
