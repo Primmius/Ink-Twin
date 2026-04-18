@@ -113,6 +113,16 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   };
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeMobileDrawer, setActiveMobileDrawer] = useState<'font' | 'style' | 'type' | 'effects' | 'elements' | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [mode, setMode] = useState<'default' | 'classic'>('default');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
@@ -135,6 +145,304 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     effect: "normal",
     pageStyle: "white"
   });
+
+  const [mobileScale, setMobileScale] = useState(1);
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileScale(1);
+      return;
+    }
+    const updateScale = () => {
+      const availableWidth = window.innerWidth - 32; 
+      setMobileScale(Math.min(1, availableWidth / 595));
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [isMobile]);
+
+  const renderFontLibrary = () => (
+    <section className="space-y-4">
+      <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+        <Type size={14} /> Font Library
+      </h3>
+      <div className={cn("grid gap-2", isMobile ? "grid-cols-2" : "space-y-2")}>
+        {savedFonts.length === 0 && (
+          <div className="text-[10px] opacity-40 italic space-y-1 col-span-full">
+            <p>No saved fonts yet.</p>
+            <p>
+              Create one in <button onClick={() => onNavigate?.('font-creation')} className="underline hover:text-black hover:opacity-100 transition-all">✏️ Phase 1</button>
+            </p>
+            <p>
+              or find one in <button onClick={() => onNavigate?.('find-font')} className="underline hover:text-black hover:opacity-100 transition-all">🔍 Phase 4</button>!
+            </p>
+          </div>
+        )}
+        {savedFonts.map(font => (
+          <div 
+            key={font.id}
+            className={cn(
+              "group brutal-border p-2 flex flex-col gap-2 transition-colors",
+              fontName === font.name ? "bg-neon-green/10 border-neon-green" : "bg-white"
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col flex-grow">
+                <input 
+                  type="text"
+                  value={font.name}
+                  onChange={(e) => onRenameFont(font.id, e.target.value)}
+                  className="bg-transparent font-mono text-[10px] font-bold outline-none w-full"
+                />
+                <span className="font-mono text-[8px] opacity-50 uppercase tracking-tighter">
+                  {font.source === 'Found - Phase 4' ? '🔍 Found match' : '✏️ Your handwriting'}
+                </span>
+              </div>
+              {!isMobile && (
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => onDeleteFont(font.id)}
+                    className="p-1 hover:text-error-red"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={() => onSelectFont(font)}
+              className={cn(
+                "w-full py-1 font-mono text-[8px] uppercase font-bold brutal-border h-11 sm:h-auto",
+                fontName === font.name ? "bg-neon-green" : "bg-white hover:bg-neutral-50"
+              )}
+            >
+              {fontName === font.name ? "Active" : "Use Font"}
+            </button>
+          </div>
+        ))}
+      </div>
+      {!isMobile && (
+        <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs mt-4">
+          <Type size={14} />
+          Upload Custom .TTF
+          <input type="file" className="hidden" accept=".ttf" onChange={handleCustomFontUpload} />
+        </label>
+      )}
+    </section>
+  );
+
+  const renderPageStyle = () => (
+    <section className="space-y-4">
+      <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+        <Palette size={14} /> Page Style
+      </h3>
+      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-brutal-black">
+        {([
+          'white', 'paper1', 'paper2', 'blue-lined', 'gray-lined', 'grid', 'old-paper', 'note', 'wishlist',
+          'birthday', 'love-letter', 'legal-pad', 'newspaper', 'graph-paper', 'kraft', 'blackboard', 'watercolor'
+        ] as const).map(bg => (
+          <button 
+            key={bg}
+            onClick={() => updateSetting('pageStyle', bg)}
+            className={cn(
+              "flex flex-col border-2 border-brutal-black hover:scale-105 transition-transform overflow-hidden min-h-[60px]",
+              settings.pageStyle === bg ? "ring-2 ring-neon-green" : "opacity-80 hover:opacity-100"
+            )}
+          >
+            <div 
+              className={cn(
+                "w-full aspect-square border-b border-brutal-black flex items-center justify-center relative bg-white",
+                bg === 'paper2' && 'bg-[#faf8f5]',
+                bg === 'note' && 'bg-[#fff9c4]',
+                bg === 'old-paper' && 'bg-[#f5e6c8]',
+                bg === 'birthday' && 'bg-[#fff0f5]',
+                bg === 'love-letter' && 'bg-[#fdf6e3]',
+                bg === 'legal-pad' && 'bg-[#fefbd8]',
+                bg === 'newspaper' && 'bg-[#f0eeea]',
+                bg === 'blackboard' && 'bg-[#2d5a27]',
+                bg === 'kraft' && 'bg-[#c4a882]',
+                bg === 'watercolor' && 'bg-white'
+              )}
+            >
+               {bg === 'blue-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
+               {bg === 'gray-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /></div>}
+               {bg === 'grid' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '4px 4px' }} />}
+               {bg === 'graph-paper' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#0055ff 1px, transparent 1px), linear-gradient(90deg, #0055ff 1px, transparent 1px)', backgroundSize: '3px 3px' }} />}
+               {bg === 'wishlist' && <div className="w-4/5 h-4/5 border border-dashed border-[#d4a0a0]" />}
+               {bg === 'birthday' && <div className="text-[10px]">⭐</div>}
+               {bg === 'love-letter' && <div className="w-4/5 h-4/5 border-2 border-[#e8b4b8]" />}
+               {bg === 'blackboard' && <div className="text-[8px] text-white opacity-50 font-mono">ABC</div>}
+               {bg === 'watercolor' && <div className="w-full h-full opacity-30" style={{ background: 'radial-gradient(circle at top left, #e0f2f1, transparent), radial-gradient(circle at bottom right, #f3e5f5, transparent)' }} />}
+            </div>
+            <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate">
+              {bg.replace('-', ' ')}
+            </span>
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+
+  const renderTypography = () => (
+    <section className="space-y-4">
+      <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+        <Sparkles size={14} /> Typography
+      </h3>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <label className="flex justify-between font-mono text-[10px] font-bold uppercase">
+            <span>Font Size</span>
+            <span>{settings.fontSize}px</span>
+          </label>
+          <input 
+            type="range" min="12" max="72" 
+            value={settings.fontSize}
+            onChange={(e) => updateSetting('fontSize', parseInt(e.target.value))}
+            className="w-full accent-brutal-black h-8"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="flex justify-between font-mono text-[10px] font-bold uppercase">
+            <span>Line Height</span>
+            <span>{settings.lineHeight}px</span>
+          </label>
+          <input 
+            type="range" min="12" max="96" 
+            value={settings.lineHeight}
+            onChange={(e) => updateSetting('lineHeight', parseInt(e.target.value))}
+            className="w-full accent-brutal-black h-8"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Slant</label>
+            <input 
+              type="range" min="-15" max="15" 
+              value={settings.slant}
+              onChange={(e) => updateSetting('slant', parseInt(e.target.value))}
+              className="w-full accent-brutal-black h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Spacing</label>
+            <input 
+              type="range" min="-5" max="15" 
+              value={settings.letterSpacing}
+              onChange={(e) => updateSetting('letterSpacing', parseInt(e.target.value))}
+              className="w-full accent-brutal-black h-8"
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Margins</label>
+            <input 
+              type="range" min="0" max="150" 
+              value={settings.leftMargin}
+              onChange={(e) => updateSetting('leftMargin', parseInt(e.target.value))}
+              className="w-full accent-brutal-black h-8"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Ink Color</label>
+            <div className="flex items-center gap-2">
+              <input 
+                type="color" 
+                value={settings.inkColor}
+                onChange={(e) => updateSetting('inkColor', e.target.value)}
+                className="w-full h-8 p-0 border-2 border-brutal-black"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
+  const renderEffects = () => (
+    <div className="space-y-6">
+      <section className="space-y-4">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+          <Settings size={14} /> Realism
+        </h3>
+        <div className="space-y-4">
+          <label className="flex items-center justify-between cursor-pointer min-h-[44px]">
+            <span className="font-mono text-xs font-bold uppercase">Natural Randomness</span>
+            <input 
+              type="checkbox" 
+              checked={settings.naturalRandomness}
+              onChange={(e) => updateSetting('naturalRandomness', e.target.checked)}
+              className="w-6 h-6 accent-neon-green"
+            />
+          </label>
+          <label className="flex items-center justify-between cursor-pointer min-h-[44px]">
+            <span className="font-mono text-xs font-bold uppercase">Ink Variation</span>
+            <input 
+              type="checkbox" 
+              checked={settings.inkVariation}
+              onChange={(e) => updateSetting('inkVariation', e.target.checked)}
+              className="w-6 h-6 accent-neon-green"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+          <Layout size={14} /> Visual Effects
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          {(['normal', 'shadow', 'scanner', 'saturate'] as const).map(eff => (
+            <button 
+              key={eff}
+              onClick={() => updateSetting('effect', eff)}
+              className={cn(
+                "px-2 py-3 border-2 border-brutal-black text-[10px] font-bold uppercase min-h-[44px]",
+                settings.effect === eff ? "bg-neon-green" : "bg-white"
+              )}
+            >
+              {eff}
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+
+  const renderElements = () => (
+    <section className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+          <Layout size={14} /> Interactive Elements
+        </h3>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => addElement('text')} className="brutal-btn text-[10px] p-2 min-h-[44px] h-auto">Add Text</button>
+          <button onClick={() => addElement('heading')} className="brutal-btn text-[10px] p-2 min-h-[44px] h-auto">Add Heading</button>
+          <label className="brutal-btn text-[10px] p-2 flex items-center justify-center gap-1 col-span-2 cursor-pointer min-h-[44px]">
+            <ImageIcon size={14} /> Add Image
+            <input type="file" className="hidden" accept="image/*" onChange={addImage} />
+          </label>
+        </div>
+      </div>
+      <div className="space-y-4">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Quick Emojis</h3>
+        <div className="grid grid-cols-6 sm:grid-cols-4 gap-1">
+          {['❤', '⭐', '✓', '🎈', '🎁', '→', '•', '✨', '🔥', '👍', '😊', '💡'].map(emoji => (
+            <button 
+              key={emoji}
+              onClick={() => {
+                addElement('emoji', emoji);
+                if (isMobile) setActiveMobileDrawer(null);
+              }}
+              className="aspect-square brutal-border hover:bg-neon-green/10 transition-colors text-lg flex items-center justify-center min-h-[44px]"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 
   const renderPage = (newSettings?: PageConfig) => {
     const activeSettings = newSettings || settings;
@@ -877,20 +1185,24 @@ ${documentText}`;
   return (
     <div className="flex flex-col h-full bg-neutral-100">
       {/* Top Toolbar */}
-      <div className="bg-white border-b-2 border-brutal-black p-4 flex items-center justify-between z-30">
-        <div className="flex items-center gap-4">
+      {/* Header / Toolbar */}
+      <div className={cn(
+        "bg-white border-b-2 border-brutal-black p-4 z-30 transition-all",
+        isMobile ? "flex flex-col gap-4" : "flex items-center justify-between"
+      )}>
+        <div className={cn("flex flex-wrap items-center gap-4", isMobile && "justify-center w-full")}>
           <button 
             onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
-            className="brutal-btn p-2"
+            className="brutal-btn p-2 min-h-[44px] min-w-[44px]"
           >
             {mode === 'default' ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
           </button>
-          <div className="h-8 w-[2px] bg-brutal-black/10" />
+          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10" />}
           
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-neon-green flex items-center gap-2 px-4 h-10 hover:bg-neon-green/90 transition-colors"
+              className="brutal-btn bg-neon-green flex items-center justify-center gap-2 px-4 h-11 hover:bg-neon-green/90 transition-colors"
             >
               <Sparkles size={18} />
               <span className="font-display uppercase text-sm">✨ AI Edit</span>
@@ -905,7 +1217,7 @@ ${documentText}`;
                 setIsAIEditPanelOpen(true);
                 setShowReflowPrompt(false);
               }}
-              className="brutal-btn bg-warning-yellow flex items-center gap-2 px-4 border-dashed"
+              className="brutal-btn bg-warning-yellow flex items-center justify-center gap-2 px-4 border-dashed h-11"
             >
               <RefreshCw size={16} />
               <span className="font-mono text-[10px] font-bold uppercase">Smart reflow available?</span>
@@ -913,11 +1225,11 @@ ${documentText}`;
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
           <button 
             onClick={undo} 
             disabled={historyIndex <= 0}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center gap-1"
+            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
             title="Undo"
           >
             <Undo2 size={18} />
@@ -925,26 +1237,26 @@ ${documentText}`;
           <button 
             onClick={redo} 
             disabled={historyIndex >= history.length - 1}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center gap-1"
+            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
             title="Redo"
           >
             <Redo2 size={18} />
           </button>
-          <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />
+          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
           <span className="font-mono text-xs font-bold mr-4">PAGE {currentPageIndex + 1} OF {pages.length}</span>
-          <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="brutal-btn p-2"><ChevronLeft size={20} /></button>
-          <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="brutal-btn p-2"><ChevronRight size={20} /></button>
-          <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />
-          <button onClick={addPage} className="brutal-btn p-2 bg-neon-green"><Plus size={20} /></button>
-          <button onClick={() => removePage(currentPageIndex)} className="brutal-btn p-2 bg-error-red text-white"><Trash2 size={20} /></button>
+          <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronLeft size={20} /></button>
+          <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronRight size={20} /></button>
+          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
+          <button onClick={addPage} className="brutal-btn p-2 bg-neon-green min-h-[44px] min-w-[44px] flex items-center justify-center"><Plus size={20} /></button>
+          <button onClick={() => removePage(currentPageIndex)} className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center"><Trash2 size={20} /></button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white flex items-center gap-2 px-4">
+        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
+          <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
             <Download size={18} />
             <span className="font-display uppercase text-sm">PDF</span>
           </button>
-          <button onClick={downloadAllAsZip} className="brutal-btn bg-brutal-black text-white flex items-center gap-2 px-4">
+          <button onClick={downloadAllAsZip} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
             <Download size={18} />
             <span className="font-display uppercase text-sm">ZIP</span>
           </button>
@@ -952,7 +1264,10 @@ ${documentText}`;
       </div>
 
       <div 
-        className="flex flex-grow overflow-hidden" 
+        className={cn(
+          "flex flex-grow overflow-hidden",
+          isMobile ? "flex-col overflow-y-auto pb-24" : "flex-row"
+        )} 
         onPaste={(e) => {
           const items = e.clipboardData.items;
           for (const item of items) {
@@ -983,300 +1298,17 @@ ${documentText}`;
           }
         }}
       >
-        {/* Left Sidebar: Controls */}
-        {mode === 'default' && (
+        {/* Left Sidebar: Controls (Desktop Only) */}
+        {!isMobile && mode === 'default' && (
           <aside className="w-80 bg-white border-r-2 border-brutal-black overflow-y-auto p-6 space-y-8">
+            {renderFontLibrary()}
+            {renderPageStyle()}
+            {renderTypography()}
+            {renderEffects()}
+            
             <section className="space-y-4">
               <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Type size={14} /> Font Library
-              </h3>
-              <div className="space-y-2">
-                {savedFonts.length === 0 && (
-                  <div className="text-[10px] opacity-40 italic space-y-1">
-                    <p>No saved fonts yet.</p>
-                    <p>
-                      Create one in <button onClick={() => onNavigate?.('font-creation')} className="underline hover:text-black hover:opacity-100 transition-all">✏️ Phase 1</button>
-                    </p>
-                    <p>
-                      or find one in <button onClick={() => onNavigate?.('find-font')} className="underline hover:text-black hover:opacity-100 transition-all">🔍 Phase 4</button>!
-                    </p>
-                  </div>
-                )}
-                {savedFonts.map(font => (
-                  <div 
-                    key={font.id}
-                    className={cn(
-                      "group brutal-border p-2 flex flex-col gap-2 transition-colors",
-                      fontName === font.name ? "bg-neon-green/10 border-neon-green" : "bg-white"
-                    )}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col flex-grow">
-                        <input 
-                          type="text"
-                          value={font.name}
-                          onChange={(e) => onRenameFont(font.id, e.target.value)}
-                          className="bg-transparent font-mono text-[10px] font-bold outline-none w-full"
-                        />
-                        <span className="font-mono text-[8px] opacity-50 uppercase tracking-tighter">
-                          {font.source === 'Found - Phase 4' ? '🔍 Found match' : '✏️ Your handwriting'}
-                        </span>
-                      </div>
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => onDeleteFont(font.id)}
-                          className="p-1 hover:text-error-red"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={() => onSelectFont(font)}
-                      className={cn(
-                        "w-full py-1 font-mono text-[8px] uppercase font-bold brutal-border",
-                        fontName === font.name ? "bg-neon-green" : "bg-white hover:bg-neutral-50"
-                      )}
-                    >
-                      {fontName === font.name ? "Active" : "Use Font"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Palette size={14} /> Page Style
-              </h3>
-              <div className="grid grid-cols-3 gap-2 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-brutal-black">
-                {([
-                  'white', 'paper1', 'paper2', 'blue-lined', 'gray-lined', 'grid', 'old-paper', 'note', 'wishlist',
-                  'birthday', 'love-letter', 'legal-pad', 'newspaper', 'graph-paper', 'kraft', 'blackboard', 'watercolor'
-                ] as const).map(bg => (
-                  <button 
-                    key={bg}
-                    onClick={() => updateSetting('pageStyle', bg)}
-                    className={cn(
-                      "flex flex-col border-2 border-brutal-black hover:scale-105 transition-transform overflow-hidden",
-                      settings.pageStyle === bg ? "ring-2 ring-neon-green" : "opacity-80 hover:opacity-100"
-                    )}
-                  >
-                    <div 
-                      className={cn(
-                        "w-full aspect-square border-b border-brutal-black flex items-center justify-center relative bg-white",
-                        bg === 'paper2' && 'bg-[#faf8f5]',
-                        bg === 'note' && 'bg-[#fff9c4]',
-                        bg === 'old-paper' && 'bg-[#f5e6c8]',
-                        bg === 'birthday' && 'bg-[#fff0f5]',
-                        bg === 'love-letter' && 'bg-[#fdf6e3]',
-                        bg === 'legal-pad' && 'bg-[#fefbd8]',
-                        bg === 'newspaper' && 'bg-[#f0eeea]',
-                        bg === 'blackboard' && 'bg-[#2d5a27]',
-                        bg === 'kraft' && 'bg-[#c4a882]',
-                        bg === 'watercolor' && 'bg-white'
-                      )}
-                    >
-                       {/* Visual Cues inside Thumbnail */}
-                       {bg === 'blue-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
-                       {bg === 'gray-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /></div>}
-                       {bg === 'grid' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '4px 4px' }} />}
-                       {bg === 'graph-paper' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#0055ff 1px, transparent 1px), linear-gradient(90deg, #0055ff 1px, transparent 1px)', backgroundSize: '3px 3px' }} />}
-                       {bg === 'wishlist' && <div className="w-4/5 h-4/5 border border-dashed border-[#d4a0a0]" />}
-                       {bg === 'birthday' && <div className="text-[10px]">⭐</div>}
-                       {bg === 'love-letter' && <div className="w-4/5 h-4/5 border-2 border-[#e8b4b8]" />}
-                       {bg === 'blackboard' && <div className="text-[8px] text-white opacity-50 font-mono">ABC</div>}
-                       {bg === 'watercolor' && <div className="w-full h-full opacity-30" style={{ background: 'radial-gradient(circle at top left, #e0f2f1, transparent), radial-gradient(circle at bottom right, #f3e5f5, transparent)' }} />}
-                    </div>
-                    <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate">
-                      {bg.replace('-', ' ')}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Type size={14} /> Typography
-              </h3>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Size ({settings.fontSize}px)</label>
-                  <input 
-                    type="range" min="10" max="90" 
-                    value={settings.fontSize || 24}
-                    onChange={(e) => updateSetting('fontSize', parseInt(e.target.value) || 10)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Line Height ({settings.lineHeight}px)</label>
-                  <input 
-                    type="range" min="10" max="120" 
-                    value={settings.lineHeight || 32}
-                    onChange={(e) => updateSetting('lineHeight', parseInt(e.target.value) || 10)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Paragraph Spacing ({settings.paragraphSpacing}px)</label>
-                  <input 
-                    type="range" min="0" max="100" 
-                    value={settings.paragraphSpacing || 0}
-                    onChange={(e) => updateSetting('paragraphSpacing', parseInt(e.target.value) || 0)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Word Spacing ({settings.wordSpacing})</label>
-                  <input 
-                    type="range" min="-20" max="50" 
-                    value={settings.wordSpacing || 0}
-                    onChange={(e) => updateSetting('wordSpacing', parseInt(e.target.value) || 0)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Letter Spacing ({settings.letterSpacing})</label>
-                  <input 
-                    type="range" min="-10" max="20" 
-                    value={settings.letterSpacing || 0}
-                    onChange={(e) => updateSetting('letterSpacing', parseInt(e.target.value) || 0)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Slant ({settings.slant}°)</label>
-                  <input 
-                    type="range" min="-30" max="30" 
-                    value={settings.slant || 0}
-                    onChange={(e) => updateSetting('slant', parseInt(e.target.value) || 0)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Thickness / Weight ({settings.thickness})</label>
-                  <input 
-                    type="range" min="0" max="5" step="0.5"
-                    value={settings.thickness || 0}
-                    onChange={(e) => updateSetting('thickness', parseFloat(e.target.value) || 0)}
-                    className="w-full accent-brutal-black"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <label className="font-mono text-[10px] font-bold uppercase opacity-60">Left Margin</label>
-                    <input 
-                      type="number" 
-                      value={settings.leftMargin || 0}
-                      onChange={(e) => updateSetting('leftMargin', parseInt(e.target.value) || 0)}
-                      className="w-full px-2 py-1 brutal-border font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-mono text-[10px] font-bold uppercase opacity-60">Top Margin</label>
-                    <input 
-                      type="number" 
-                      value={settings.topMargin || 0}
-                      onChange={(e) => updateSetting('topMargin', parseInt(e.target.value) || 0)}
-                      className="w-full px-2 py-1 brutal-border font-mono text-xs"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Ink Color</label>
-                  <div className="flex flex-wrap gap-1">
-                    {['#000000', '#1a1aff', '#cc0000', '#006600', '#888888'].map(color => (
-                      <button 
-                        key={color}
-                        onClick={() => updateSetting('inkColor', color)}
-                        className={cn("w-6 h-6 border-2 border-brutal-black hover:scale-110 transition-transform", settings.inkColor === color && "ring-2 ring-neon-green")}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                    <input 
-                      type="color" 
-                      value={settings.inkColor}
-                      onChange={(e) => updateSetting('inkColor', e.target.value)}
-                      className="w-6 h-6 p-0 border-2 border-brutal-black"
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Settings size={14} /> Realism
-              </h3>
-              <div className="space-y-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="font-mono text-xs font-bold uppercase">Natural Randomness</span>
-                  <input 
-                    type="checkbox" 
-                    checked={settings.naturalRandomness}
-                    onChange={(e) => updateSetting('naturalRandomness', e.target.checked)}
-                    className="w-4 h-4 accent-neon-green"
-                  />
-                </label>
-                {settings.naturalRandomness && (
-                  <div className="space-y-1">
-                    <label className="font-mono text-[10px] font-bold uppercase opacity-60">Randomness Intensity</label>
-                    <input 
-                      type="range" min="0" max="1" step="0.1"
-                      value={settings.randomnessIntensity || 0.5}
-                      onChange={(e) => updateSetting('randomnessIntensity', parseFloat(e.target.value) || 0)}
-                      className="w-full accent-brutal-black"
-                    />
-                  </div>
-                )}
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="font-mono text-xs font-bold uppercase">Ink Variation</span>
-                  <input 
-                    type="checkbox" 
-                    checked={settings.inkVariation}
-                    onChange={(e) => updateSetting('inkVariation', e.target.checked)}
-                    className="w-4 h-4 accent-neon-green"
-                  />
-                </label>
-                {settings.inkVariation && (
-                  <div className="space-y-1">
-                    <label className="font-mono text-[10px] font-bold uppercase opacity-60">Intensity</label>
-                    <input 
-                      type="range" min="0" max="1" step="0.1"
-                      value={settings.inkVariationIntensity || 0.5}
-                      onChange={(e) => updateSetting('inkVariationIntensity', parseFloat(e.target.value) || 0)}
-                      className="w-full accent-brutal-black"
-                    />
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Layout size={14} /> Effects
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {(['normal', 'shadow', 'scanner', 'saturate'] as const).map(eff => (
-                  <button 
-                    key={eff}
-                    onClick={() => updateSetting('effect', eff)}
-                    className={cn(
-                      "px-2 py-1 border-2 border-brutal-black text-[8px] font-bold uppercase",
-                      settings.effect === eff ? "bg-neon-green" : "bg-white"
-                    )}
-                  >
-                    {eff}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <FileUp size={14} /> Import & Font
+                <FileUp size={14} /> Import Options
               </h3>
               <div className="space-y-2">
                 <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs">
@@ -1284,275 +1316,283 @@ ${documentText}`;
                   Import Excel/CSV
                   <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleImportExcel} />
                 </label>
-                <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs">
-                  <Type size={14} />
-                  Upload Custom .TTF
-                  <input type="file" className="hidden" accept=".ttf" onChange={handleCustomFontUpload} />
-                </label>
               </div>
             </section>
           </aside>
         )}
 
-        {/* Center: Canvas */}
-        <main className="flex-grow overflow-auto p-12 flex flex-col items-center gap-12 bg-neutral-200">
+        {/* Center: Canvas Area */}
+        <main className={cn(
+          "flex-grow flex flex-col items-center bg-neutral-200 p-4 md:p-12 overflow-x-hidden",
+          isMobile ? "gap-4 min-h-0" : "gap-12 overflow-auto"
+        )}>
+          {/* Canvas Wrapper for Scaling */}
           <div 
-            className="relative group mx-auto w-[595px] h-[842px]"
-            ref={containerRef}
-            onClick={() => setSelectedElementId(null)}
+            className="relative flex items-center justify-center"
+            style={isMobile ? { 
+              width: `${595 * mobileScale}px`, 
+              height: `${842 * mobileScale}px`,
+              transition: 'all 0.3s ease'
+            } : { width: '595px', height: '842px' }}
           >
-            <CanvasPage 
-              page={pages[currentPageIndex]} 
-              config={settings} 
-              fontName={fontName}
-              dragOffset={dragOffset}
+            <div 
+              className="relative group origin-top shadow-xl"
+              style={{ 
+                width: '595px', 
+                height: '842px',
+                transform: `scale(${mobileScale})`,
+                transformOrigin: 'top center'
+              }}
+              ref={containerRef}
+              onClick={() => setSelectedElementId(null)}
             >
-              {/* Guides */}
-              {snapGuides && (
-                <div className="absolute inset-0 pointer-events-none z-40">
-                  {snapGuides.x !== undefined && (
-                    <div className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-neon-green bg-neon-green/20" style={{ left: snapGuides.x }} />
-                  )}
-                  {snapGuides.y !== undefined && (
-                    <div className="absolute left-0 right-0 h-[1px] border-t border-dashed border-neon-green bg-neon-green/20" style={{ top: snapGuides.y }} />
-                  )}
-                </div>
-              )}
-
-                  <textarea
-                    value={pages[currentPageIndex].content}
-                    onChange={(e) => {
-                      const newPageContent = e.target.value;
-                      const allPagesContent = pages.map((p, idx) => 
-                        idx === currentPageIndex ? newPageContent : p.content
-                      );
-                      const fullText = allPagesContent.join('\n\n');
-                      setInputText(fullText);
-                      // Force a render cycle to distribute text
-                      renderPage();
-                    }}
-                    onPaste={(e) => {
-                      const pastedText = e.clipboardData.getData('text');
-                      if (pastedText.length > 200) {
-                        e.preventDefault();
-                        const fitted = wrapTextIntoPages(pastedText, {
-                          width: 595,
-                          height: 842,
-                          fontSize: settings.fontSize,
-                          lineHeight: settings.lineHeight,
-                          leftMargin: settings.leftMargin,
-                          topMargin: settings.topMargin,
-                          wordSpacing: settings.wordSpacing,
-                          letterSpacing: settings.letterSpacing,
-                          paragraphSpacing: settings.paragraphSpacing
-                        }, fontName);
-                        
-                        const newPages: WriterPage[] = fitted.map(content => ({
-                          id: Math.random().toString(36).substr(2, 9),
-                          content,
-                          images: [],
-                          elements: []
-                        }));
-                        setPages(newPages);
-                        setCurrentPageIndex(0);
-                        setInputText(pastedText);
-                      }
-                    }}
-                    className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-brutal-black resize-none outline-none border-none font-mono selection:bg-neon-green/30"
-                    style={{
-                      paddingTop: `${settings.topMargin}px`,
-                      paddingLeft: `${settings.leftMargin}px`,
-                      paddingRight: `${settings.leftMargin}px`,
-                      fontSize: `${settings.fontSize}px`,
-                      lineHeight: `${settings.lineHeight}px`,
-                      zIndex: 10,
-                      fontFamily: fontName,
-                    }}
-                    spellCheck={false}
-                    placeholder="Start writing directly on the page..."
-                  />
-
-              {/* Interactive Element Overlays */}
-              <div className="absolute inset-0 pointer-events-none z-20">
-                {[...pages[currentPageIndex].elements, ...pages[currentPageIndex].images].map((el) => {
-                  const isSelected = selectedElementId === el.id;
-                  const isImage = 'src' in el;
-                  
-                  // Estimate dimensions for selection box
-                  const width = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
-                  const height = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
-
-                  return (
-                    <motion.div
-                      key={el.id}
-                      drag
-                      dragMomentum={false}
-                      onDragStart={() => setSelectedElementId(el.id)}
-                    onDrag={(event, info) => {
-                      const scale = getScale();
-                      const xOffset = info.offset.x * scale;
-                      const yOffset = info.offset.y * scale;
-                      const predictedX = el.x + xOffset;
-                      const predictedY = el.y + yOffset;
-                      const snapResult = snap(predictedX, predictedY, width, height);
-                      setSnapGuides(snapResult.guides);
-                      setDragOffset({ id: el.id, x: xOffset, y: yOffset });
-                    }}
-                    onDragEnd={(event, info) => {
-                      const scale = getScale();
-                      const finalX = el.x + info.offset.x * scale;
-                      const finalY = el.y + info.offset.y * scale;
-                      
-                      const { x, y } = snap(finalX, finalY, width, height);
-                      updateElement(el.id, { x, y });
-                      setDragOffset(null);
-                      setSnapGuides(null);
-                    }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedElementId(el.id);
-                      }}
-                      animate={{ x: 0, y: 0 }}
-                    transition={{ duration: 0 }}
-                    className={cn(
-                      "absolute pointer-events-auto cursor-move",
-                      isSelected && "z-50"
+              <CanvasPage 
+                page={pages[currentPageIndex]} 
+                config={settings} 
+                fontName={fontName}
+                dragOffset={dragOffset}
+              >
+                {/* Guides */}
+                {snapGuides && (
+                  <div className="absolute inset-0 pointer-events-none z-40">
+                    {snapGuides.x !== undefined && (
+                      <div className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-neon-green bg-neon-green/20" style={{ left: snapGuides.x }} />
                     )}
-                    style={{
-                      left: el.x,
-                      top: el.y,
-                      width: width,
-                      height: height,
-                      rotate: el.rotation || 0,
-                    }}
-                    >
-                      <div className="w-full h-full relative group">
-                        {/* 
-                           Pro Tip: We keep the DOM element mostly transparent 
-                           since the Canvas is drawing the real content.
-                        */}
-                        <div className="absolute inset-0 opacity-0 select-none pointer-events-none">
-                          {isImage ? (
-                            <img src={(el as any).src} alt="" className="w-full h-full object-contain" />
+                    {snapGuides.y !== undefined && (
+                      <div className="absolute left-0 right-0 h-[1px] border-t border-dashed border-neon-green bg-neon-green/20" style={{ top: snapGuides.y }} />
+                    )}
+                  </div>
+                )}
+
+                    <textarea
+                      value={pages[currentPageIndex].content}
+                      onChange={(e) => {
+                        const newPageContent = e.target.value;
+                        const allPagesContent = pages.map((p, idx) => 
+                          idx === currentPageIndex ? newPageContent : p.content
+                        );
+                        const fullText = allPagesContent.join('\n\n');
+                        setInputText(fullText);
+                        // Force a render cycle to distribute text
+                        renderPage();
+                      }}
+                      onPaste={(e) => {
+                        const pastedText = e.clipboardData.getData('text');
+                        if (pastedText.length > 200) {
+                          e.preventDefault();
+                          const fitted = wrapTextIntoPages(pastedText, {
+                            width: 595,
+                            height: 842,
+                            fontSize: settings.fontSize,
+                            lineHeight: settings.lineHeight,
+                            leftMargin: settings.leftMargin,
+                            topMargin: settings.topMargin,
+                            wordSpacing: settings.wordSpacing,
+                            letterSpacing: settings.letterSpacing,
+                            paragraphSpacing: settings.paragraphSpacing
+                          }, fontName);
+                          
+                          const newPages: WriterPage[] = fitted.map(content => ({
+                            id: Math.random().toString(36).substr(2, 9),
+                            content,
+                            images: [],
+                            elements: []
+                          }));
+                          setPages(newPages);
+                          setCurrentPageIndex(0);
+                          setInputText(pastedText);
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-brutal-black resize-none outline-none border-none font-mono selection:bg-neon-green/30"
+                      style={{
+                        paddingTop: `${settings.topMargin}px`,
+                        paddingLeft: `${settings.leftMargin}px`,
+                        paddingRight: `${settings.leftMargin}px`,
+                        fontSize: `${settings.fontSize}px`,
+                        lineHeight: `${settings.lineHeight}px`,
+                        zIndex: 10,
+                        fontFamily: fontName,
+                      }}
+                      spellCheck={false}
+                      placeholder="Start writing directly on the page..."
+                    />
+
+                {/* Interactive Element Overlays */}
+                <div className="absolute inset-0 pointer-events-none z-20">
+                  {[...pages[currentPageIndex].elements, ...pages[currentPageIndex].images].map((el) => {
+                    const isSelected = selectedElementId === el.id;
+                    const isImage = 'src' in el;
+                    
+                    // Estimate dimensions for selection box
+                    const width = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
+                    const height = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
+
+                    return (
+                      <motion.div
+                        key={el.id}
+                        drag
+                        dragMomentum={false}
+                        onDragStart={() => setSelectedElementId(el.id)}
+                      onDrag={(event, info) => {
+                        const scale = getScale();
+                        const xOffset = info.offset.x * scale;
+                        const yOffset = info.offset.y * scale;
+                        const predictedX = el.x + xOffset;
+                        const predictedY = el.y + yOffset;
+                        const snapResult = snap(predictedX, predictedY, width, height);
+                        setSnapGuides(snapResult.guides);
+                        setDragOffset({ id: el.id, x: xOffset, y: yOffset });
+                      }}
+                      onDragEnd={(event, info) => {
+                        const scale = getScale();
+                        const finalX = el.x + info.offset.x * scale;
+                        const finalY = el.y + info.offset.y * scale;
+                        
+                        const { x, y } = snap(finalX, finalY, width, height);
+                        updateElement(el.id, { x, y });
+                        setDragOffset(null);
+                        setSnapGuides(null);
+                      }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedElementId(el.id);
+                        }}
+                        animate={{ x: 0, y: 0 }}
+                      transition={{ duration: 0 }}
+                      className={cn(
+                        "absolute pointer-events-auto cursor-move",
+                        isSelected && "z-50"
+                      )}
+                      style={{
+                        left: el.x,
+                        top: el.y,
+                        width: width,
+                        height: height,
+                        rotate: el.rotation || 0,
+                      }}
+                      >
+                        <div className="w-full h-full relative group">
+                          {/* 
+                             Pro Tip: We keep the DOM element mostly transparent 
+                             since the Canvas is drawing the real content.
+                          */}
+                          <div className="absolute inset-0 opacity-0 select-none pointer-events-none">
+                            {isImage ? (
+                              <img src={(el as any).src} alt="" className="w-full h-full object-contain" />
+                            ) : (
+                              <div className="w-full h-full whitespace-pre-wrap">{el.content}</div>
+                            )}
+                          </div>
+
+                          {isSelected ? (
+                            <>
+                              {/* Pro Selection Box */}
+                              <div className="absolute inset-[-4px] border border-neon-green bg-neon-green/5 ring-4 ring-neon-green/5 pointer-events-none" />
+                              
+                              {/* Resize Handles (Corners) */}
+                              <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-nw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-left')} />
+                              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-ne-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-right')} />
+                              <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-sw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-left')} />
+                              <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-se-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-right')} />
+
+                              {/* Center Rotation Handle */}
+                              <div 
+                                className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot cursor-alias z-50"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.parentElement?.getBoundingClientRect();
+                                  if (!rect) return;
+                                  const cx = rect.left + rect.width / 2;
+                                  const cy = rect.top + rect.height / 2;
+                                  
+                                  const onMove = (mE: MouseEvent) => {
+                                    let deg = Math.atan2(mE.clientY - cy, mE.clientX - cx) * (180 / Math.PI) + 90;
+                                    const snaps = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+                                    for (const a of snaps) { if (Math.abs(deg % 360 - a) < 5) { deg = a; break; } }
+                                    updateElement(el.id, { rotation: deg });
+                                  };
+                                  const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+                                  window.addEventListener('mousemove', onMove);
+                                  window.addEventListener('mouseup', onUp);
+                                }}
+                              >
+                                <div className="w-[1px] h-6 bg-neon-green" />
+                                <div className="w-6 h-6 bg-neon-green rounded-full flex items-center justify-center border-2 border-white shadow-md transition-transform hover:scale-125">
+                                  <RotateCcw size={12} className="text-white" />
+                                </div>
+                              </div>
+
+                              {/* Hover Toolbar (Bottom) */}
+                              <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-brutal-black/90 p-1.5 rounded-full shadow-2xl border border-white/20 z-50 whitespace-nowrap scale-90 sm:scale-100">
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); updateElement(el.id, { layer: el.layer === 'above' ? 'below' : 'above' }); }}
+                                  className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-neon-green text-black" : "hover:bg-white/10 text-white")}
+                                  title="Toggle Layer"
+                                >
+                                  <Layers size={14} />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'front'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Bring to Front">
+                                  <Maximize2 size={14} />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'back'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Send to Back">
+                                  <Minimize2 size={14} />
+                                </button>
+                                {!isImage && (
+                                  <button onClick={(e) => { e.stopPropagation(); const newContent = prompt('Edit Content:', el.content); if (newContent !== null) updateElement(el.id, { content: newContent }); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors">
+                                    <Edit3 size={14} />
+                                  </button>
+                                )}
+                                <div className="h-4 w-[1px] bg-white/20 mx-1" />
+                                <button onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-full transition-colors">
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </>
                           ) : (
-                            <div className="w-full h-full whitespace-pre-wrap">{el.content}</div>
+                             <div className="absolute inset-0 border border-transparent group-hover:border-neon-green/20 pointer-events-none" />
                           )}
                         </div>
-
-                        {isSelected ? (
-                          <>
-                            {/* Pro Selection Box */}
-                            <div className="absolute inset-[-4px] border border-neon-green bg-neon-green/5 ring-4 ring-neon-green/5 pointer-events-none" />
-                            
-                            {/* Resize Handles (Corners) */}
-                            <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-nw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-left')} />
-                            <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-ne-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-right')} />
-                            <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-sw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-left')} />
-                            <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-se-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-right')} />
-
-                            {/* Center Rotation Handle */}
-                            <div 
-                              className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot cursor-alias z-50"
-                              onMouseDown={(e) => {
-                                e.stopPropagation();
-                                const rect = e.currentTarget.parentElement?.getBoundingClientRect();
-                                if (!rect) return;
-                                const cx = rect.left + rect.width / 2;
-                                const cy = rect.top + rect.height / 2;
-                                
-                                const onMove = (mE: MouseEvent) => {
-                                  let deg = Math.atan2(mE.clientY - cy, mE.clientX - cx) * (180 / Math.PI) + 90;
-                                  const snaps = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-                                  for (const a of snaps) { if (Math.abs(deg % 360 - a) < 5) { deg = a; break; } }
-                                  updateElement(el.id, { rotation: deg });
-                                };
-                                const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-                                window.addEventListener('mousemove', onMove);
-                                window.addEventListener('mouseup', onUp);
-                              }}
-                            >
-                              <div className="w-[1px] h-6 bg-neon-green" />
-                              <div className="w-6 h-6 bg-neon-green rounded-full flex items-center justify-center border-2 border-white shadow-md transition-transform hover:scale-125">
-                                <RotateCcw size={12} className="text-white" />
-                              </div>
-                            </div>
-
-                            {/* Hover Toolbar (Bottom) */}
-                            <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-brutal-black/90 p-1.5 rounded-full shadow-2xl border border-white/20 z-50 whitespace-nowrap scale-90 sm:scale-100">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); updateElement(el.id, { layer: el.layer === 'above' ? 'below' : 'above' }); }}
-                                className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-neon-green text-black" : "hover:bg-white/10 text-white")}
-                                title="Toggle Layer"
-                              >
-                                <Layers size={14} />
-                              </button>
-                              <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'front'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Bring to Front">
-                                <Maximize2 size={14} />
-                              </button>
-                              <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'back'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Send to Back">
-                                <Minimize2 size={14} />
-                              </button>
-                              {!isImage && (
-                                <button onClick={(e) => { e.stopPropagation(); const newContent = prompt('Edit Content:', el.content); if (newContent !== null) updateElement(el.id, { content: newContent }); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors">
-                                  <Edit3 size={14} />
-                                </button>
-                              )}
-                              <div className="h-4 w-[1px] bg-white/20 mx-1" />
-                              <button onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-full transition-colors">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                           <div className="absolute inset-0 border border-transparent group-hover:border-neon-green/20 pointer-events-none" />
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </CanvasPage>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </CanvasPage>
+            </div>
           </div>
           
-          <div className="w-full max-w-[595px] space-y-4">
-            <h3 className="font-display uppercase text-sm opacity-40">Text Input</h3>
-                  <textarea 
-                    value={inputText}
-                    onChange={(e) => {
-                      setInputText(e.target.value);
-                      renderPage();
-                    }}
-                    onPaste={(e) => {
-                      const pastedText = e.clipboardData.getData('text');
-                      if (pastedText.length > 200) {
-                        // Local deterministic reflow for long content
-                        const fitted = wrapTextIntoPages(pastedText, {
-                          width: 595,
-                          height: 842,
-                          fontSize: settings.fontSize,
-                          lineHeight: settings.lineHeight,
-                          leftMargin: settings.leftMargin,
-                          topMargin: settings.topMargin,
-                          wordSpacing: settings.wordSpacing,
-                          letterSpacing: settings.letterSpacing,
-                          paragraphSpacing: settings.paragraphSpacing
-                        }, fontName);
-                        
-                        const newPages: WriterPage[] = fitted.map(content => ({
-                          id: Math.random().toString(36).substr(2, 9),
-                          content,
-                          images: [],
-                          elements: []
-                        }));
-                        setPages(newPages);
-                        setCurrentPageIndex(0);
-                        setInputText(pastedText);
-                      }
-                    }}
-                    className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-neon-green/20"
-                    placeholder="Start typing your handwritten masterpiece..."
-                  />
-          </div>
+          {/* Mobile Text Input Area */}
+          {isMobile && (
+            <div className="w-full px-4 mb-32">
+              <div className="brutal-card bg-white space-y-2 p-4">
+                <h3 className="font-display uppercase text-xs opacity-70">Text Input</h3>
+                <textarea 
+                  value={inputText}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    renderPage();
+                  }}
+                  className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-neon-green/20"
+                  placeholder="Start typing your handwritten masterpiece..."
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Text Input area */}
+          {!isMobile && (
+            <div className="w-full max-w-[595px] space-y-4">
+              <h3 className="font-display uppercase text-sm opacity-40">Text Input</h3>
+              <textarea 
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  renderPage();
+                }}
+                className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-neon-green/20"
+                placeholder="Start typing your handwritten masterpiece..."
+              />
+            </div>
+          )}
         </main>
 
         {/* AI Edit Slide-in Panel */}
@@ -1735,49 +1775,85 @@ ${documentText}`;
           )}
         </AnimatePresence>
 
-        {/* Right Sidebar: Elements (Optional) */}
-        {mode === 'default' && (
+        {/* Right Sidebar: Elements (Desktop Only) */}
+        {!isMobile && mode === 'default' && (
           <aside className="w-64 bg-white border-l-2 border-brutal-black overflow-y-auto p-6 space-y-8">
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <Layout size={14} /> Elements
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => addElement('text')} className="brutal-btn text-[10px] p-2">Add Text</button>
-                <button onClick={() => addElement('heading')} className="brutal-btn text-[10px] p-2">Add Heading</button>
-                <label className="brutal-btn text-[10px] p-2 flex items-center justify-center gap-1 col-span-2 cursor-pointer">
-                  <ImageIcon size={14} /> Add Image
-                  <input type="file" className="hidden" accept="image/*" onChange={addImage} />
-                </label>
-              </div>
-              <div className="grid grid-cols-4 gap-1">
-                {['❤', '⭐', '✓', '🎈', '🎁', '→', '•', '✨', '🔥', '👍', '😊', '💡'].map(emoji => (
-                  <button 
-                    key={emoji}
-                    onClick={() => addElement('emoji', emoji)}
-                    className="p-2 brutal-border hover:bg-neon-green/10 transition-colors text-lg"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Emojis</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {['❤', '⭐', '✓', '🎈', '🎁', '→', '•', '✨', '🔥', '👍', '😊', '💡'].map(emoji => (
-                  <button 
-                    key={emoji} 
-                    onClick={() => addElement('emoji', emoji)}
-                    className="aspect-square brutal-border flex items-center justify-center text-xl hover:bg-neon-green transition-colors"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-            </section>
+            {renderElements()}
           </aside>
+        )}
+
+        {/* Mobile Bottom Navigation & Drawer */}
+        {isMobile && (
+          <>
+            {/* Drawer Overlay */}
+            <AnimatePresence>
+              {activeMobileDrawer && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setActiveMobileDrawer(null)}
+                  className="fixed inset-0 bg-brutal-black/40 backdrop-blur-sm z-[80]"
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Bottom Tab Bar */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-brutal-black z-[100] px-2 py-3 flex gap-1 items-center justify-between shadow-2xl">
+              {[
+                { id: 'font' as const, icon: <Type size={18} />, label: 'Font' },
+                { id: 'style' as const, icon: <Palette size={18} />, label: 'Style' },
+                { id: 'type' as const, icon: <Sparkles size={18} />, label: 'Type' },
+                { id: 'effects' as const, icon: <Settings size={18} />, label: 'Effects' },
+                { id: 'elements' as const, icon: <Layout size={18} />, label: 'Elements' },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 flex-1 py-1 transition-all",
+                    activeMobileDrawer === tab.id ? "text-brutal-black" : "text-brutal-black/40"
+                  )}
+                >
+                  <div className={cn(
+                    "p-2 rounded-lg transition-all",
+                    activeMobileDrawer === tab.id ? "bg-neon-green border-2 border-brutal-black translate-x-1 translate-y-1 shadow-none" : ""
+                  )}>
+                    {tab.icon}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase">{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Bottom Drawer */}
+            <AnimatePresence>
+              {activeMobileDrawer && (
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="fixed bottom-[84px] left-0 right-0 bg-white border-t-4 border-brutal-black z-[90] h-[40vh] flex flex-col shadow-2xl"
+                >
+                  {/* Drag Indicator / Close Handle */}
+                  <div 
+                    className="w-full h-8 flex items-center justify-center cursor-pointer"
+                    onClick={() => setActiveMobileDrawer(null)}
+                  >
+                    <div className="w-12 h-1.5 bg-brutal-black/20 rounded-full" />
+                  </div>
+                  <div className="flex-grow overflow-y-auto p-6 pb-12">
+                    {activeMobileDrawer === 'font' && renderFontLibrary()}
+                    {activeMobileDrawer === 'style' && renderPageStyle()}
+                    {activeMobileDrawer === 'type' && renderTypography()}
+                    {activeMobileDrawer === 'effects' && renderEffects()}
+                    {activeMobileDrawer === 'elements' && renderElements()}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
         )}
       </div>
 

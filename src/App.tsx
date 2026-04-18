@@ -63,6 +63,14 @@ export default function App() {
   const [pendingProfile, setPendingProfile] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Success toast timer
   useEffect(() => {
@@ -330,21 +338,75 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
       {/* Header */}
-      <header className="border-b-2 border-brutal-black p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 bg-white z-40">
-        <div className="flex flex-col gap-4">
+      <header className="border-b-2 border-brutal-black p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 bg-white z-40 header-mobile-refine">
+        <div className="flex flex-col gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow">
-              <TypeIcon size={28} />
+            <div className="w-10 h-10 md:w-12 md:h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow shrink-0">
+              <TypeIcon size={isMobile ? 20 : 28} />
             </div>
-            <h1 className="text-5xl font-display uppercase tracking-tighter leading-none">HandFont</h1>
+            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title">HandFont</h1>
           </div>
           
           {/* Phase Navigation */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 p-1 overflow-x-auto no-scrollbar scroll-smooth -webkit-overflow-scrolling-touch relative nav-container max-w-full">
+            <style>{`
+              .no-scrollbar::-webkit-scrollbar { display: none; }
+              .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+              
+              @media (max-width: 768px) {
+                .header-mobile-refine {
+                  padding-left: 16px !important;
+                  overflow: visible !important;
+                }
+                .app-title {
+                  font-size: clamp(1.2rem, 5vw, 2rem) !important;
+                }
+                .nav-container {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  overflow-x: auto !important;
+                  overflow-y: hidden !important;
+                  -webkit-overflow-scrolling: touch !important;
+                  scrollbar-width: none !important;
+                  gap: 8px !important;
+                  padding: 0 16px !important;
+                  margin-left: -16px;
+                  margin-right: -16px;
+                  width: calc(100% + 32px) !important;
+                }
+                .nav-tab { 
+                  flex-shrink: 0 !important;
+                  min-width: 130px !important;
+                  font-size: 11px !important;
+                  padding: 8px 12px !important;
+                  height: 50px !important;
+                  text-align: center;
+                  white-space: nowrap;
+                }
+                .step-indicator-container {
+                  display: flex !important;
+                  overflow-x: auto !important;
+                  scrollbar-width: none !important;
+                  gap: 6px !important;
+                  padding: 8px 16px !important;
+                  margin-left: -16px;
+                  margin-right: -16px;
+                  width: calc(100% + 32px) !important;
+                  -webkit-overflow-scrolling: touch !important;
+                }
+                .step-indicator-container::-webkit-scrollbar {
+                  display: none;
+                }
+                .step-btn {
+                  flex-shrink: 0 !important;
+                  min-width: 44px !important;
+                }
+              }
+            `}</style>
             <button 
               onClick={() => setPhase('font-creation')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
                 phase === 'font-creation' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
               )}
             >
@@ -353,7 +415,7 @@ export default function App() {
             <button 
               onClick={() => setPhase('text-writer')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
                 phase === 'text-writer' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
               )}
             >
@@ -362,7 +424,7 @@ export default function App() {
             <button 
               onClick={() => setPhase('homework-solver')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
                 phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
               )}
             >
@@ -371,7 +433,7 @@ export default function App() {
             <button 
               onClick={() => setPhase('find-font')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all",
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
                 phase === 'find-font' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
               )}
             >
@@ -381,23 +443,24 @@ export default function App() {
         </div>
         
         {phase === 'font-creation' && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 step-indicator-container">
             {[
-              { id: 1, label: "01 TEMPLATE" },
-              { id: 2, label: "02 UPLOAD" },
-              { id: 3, label: "03 DETECT" },
-              { id: 4, label: "04 PROCESS" },
-              { id: 5, label: "05 VECTOR" },
-              { id: 6, label: "06 PREVIEW" }
+              { id: 1, label: "01 TEMPLATE", short: "01" },
+              { id: 2, label: "02 UPLOAD", short: "02" },
+              { id: 3, label: "03 DETECT", short: "03" },
+              { id: 4, label: "04 PROCESS", short: "04" },
+              { id: 5, label: "05 VECTOR", short: "05" },
+              { id: 6, label: "06 PREVIEW", short: "06" }
             ].map((s) => (
               <div 
                 key={s.id}
                 className={cn(
-                  "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all",
-                  step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30"
+                  "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all flex-shrink-0 min-h-[44px] flex items-center justify-center min-w-[44px] step-btn",
+                  step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30 bg-white"
                 )}
               >
-                {s.label}
+                <span className="hidden sm:inline">{s.label}</span>
+                <span className="sm:hidden">{s.short}</span>
               </div>
             ))}
           </div>
