@@ -36,6 +36,12 @@ HANDWRITING FRIENDLY FORMATTING RULES:
 - Clear paragraph breaks
 - Short lines where possible so they fit naturally on a lined page
 - Ensure the tone matches the detected difficulty level.
+
+LANGUAGE RULE:
+Detect what language the question is written in. You MUST respond entirely in that same language. 
+If the question is in Hindi, answer in Hindi. If the question is in French, answer in French. 
+If the question is in Arabic, answer in Arabic. Never switch to English unless the question is written in English. 
+Match the student's language exactly.
 `;
 
 export async function solveHomework(

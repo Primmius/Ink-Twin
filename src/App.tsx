@@ -44,6 +44,7 @@ export default function App() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
   const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -96,6 +97,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('handfont_saved_fonts', JSON.stringify(savedFonts));
   }, [savedFonts]);
+
+  // Dark Mode Persistence
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   const handleSaveFont = async () => {
     if (!fontUrl) return;
@@ -406,8 +421,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('font-creation')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
-                phase === 'font-creation' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
+                phase === 'font-creation' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
               )}
             >
               ✏️ Create My Font
@@ -415,8 +430,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('text-writer')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
-                phase === 'text-writer' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
+                phase === 'text-writer' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
               )}
             >
               📝 Write with My Handwriting
@@ -424,8 +439,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('homework-solver')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
-                phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
+                phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
               )}
             >
               🎓 Do My Homework
@@ -433,8 +448,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('find-font')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab",
-                phase === 'find-font' ? "bg-neon-green brutal-shadow" : "bg-white opacity-60 hover:opacity-100"
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
+                phase === 'find-font' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
               )}
             >
               🔍 Find My Font
@@ -467,6 +482,13 @@ export default function App() {
         )}
 
         <div className="flex items-center gap-3">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors bg-white text-brutal-black dark:bg-brutal-black dark:text-white"
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
           <button 
             onClick={() => setIsSettingsOpen(true)}
             className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
@@ -931,6 +953,7 @@ export default function App() {
               setPrefilledWriterText(text);
               setPhase('text-writer');
             }}
+            onOpenCamera={() => setIsCameraOpen(true)}
           />
         ) : phase === 'find-font' ? (
           <FindFont 

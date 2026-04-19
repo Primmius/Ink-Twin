@@ -238,8 +238,8 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
       </h3>
       <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-brutal-black">
         {([
-          'white', 'paper1', 'paper2', 'blue-lined', 'gray-lined', 'grid', 'old-paper', 'note', 'wishlist',
-          'birthday', 'love-letter', 'legal-pad', 'newspaper', 'graph-paper', 'kraft', 'blackboard', 'watercolor'
+          'white', 'black-lined', 'paper2', 'blue-lined', 'gray-lined', 'grid', 'old-paper', 'note', 'wishlist',
+          'birthday', 'love-letter', 'legal-pad', 'newspaper', 'graph-paper', 'kraft', 'blackboard'
         ] as const).map(bg => (
           <button 
             key={bg}
@@ -259,20 +259,24 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                 bg === 'love-letter' && 'bg-[#fdf6e3]',
                 bg === 'legal-pad' && 'bg-[#fefbd8]',
                 bg === 'newspaper' && 'bg-[#f0eeea]',
-                bg === 'blackboard' && 'bg-[#2d5a27]',
-                bg === 'kraft' && 'bg-[#c4a882]',
-                bg === 'watercolor' && 'bg-white'
+                bg === 'blackboard' && 'bg-[#1a1a1b]',
+                bg === 'kraft' && 'bg-[#c4a882]'
               )}
             >
+               {bg === 'black-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#333333]" /><div className="w-full h-[0.5px] bg-[#333333]" /><div className="w-full h-[0.5px] bg-[#333333]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
                {bg === 'blue-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
-               {bg === 'gray-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /></div>}
+               {bg === 'gray-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
                {bg === 'grid' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '4px 4px' }} />}
                {bg === 'graph-paper' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#0055ff 1px, transparent 1px), linear-gradient(90deg, #0055ff 1px, transparent 1px)', backgroundSize: '3px 3px' }} />}
                {bg === 'wishlist' && <div className="w-4/5 h-4/5 border border-dashed border-[#d4a0a0]" />}
                {bg === 'birthday' && <div className="text-[10px]">⭐</div>}
                {bg === 'love-letter' && <div className="w-4/5 h-4/5 border-2 border-[#e8b4b8]" />}
-               {bg === 'blackboard' && <div className="text-[8px] text-white opacity-50 font-mono">ABC</div>}
-               {bg === 'watercolor' && <div className="w-full h-full opacity-30" style={{ background: 'radial-gradient(circle at top left, #e0f2f1, transparent), radial-gradient(circle at bottom right, #f3e5f5, transparent)' }} />}
+               {bg === 'blackboard' && (
+                 <div className="absolute inset-0 flex items-center justify-center">
+                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #ffffff 1%, transparent 1%)', backgroundSize: '2px 2px' }} />
+                   <div className="text-[10px] text-white opacity-40 font-mono italic">CHALK</div>
+                 </div>
+               )}
             </div>
             <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate">
               {bg.replace('-', ' ')}
@@ -444,12 +448,13 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     </section>
   );
 
-  const renderPage = (newSettings?: PageConfig) => {
+  const renderPage = (newSettings?: PageConfig, textToUse?: string) => {
     const activeSettings = newSettings || settings;
-    if (!inputText) return;
+    const contentToUse = textToUse !== undefined ? textToUse : inputText;
+    if (!contentToUse) return;
     
     // 1. Reflow pagination
-    const fitted = wrapTextIntoPages(inputText, {
+    const fitted = wrapTextIntoPages(contentToUse, {
       width: 595,
       height: 842,
       fontSize: activeSettings.fontSize,
@@ -462,6 +467,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     }, fontName);
     
     setPages(prev => {
+      // Preserve images/elements for matching indices
       return fitted.map((content, idx) => {
         const existingPage = prev[idx];
         return {
@@ -474,6 +480,28 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     });
     
     // Note: CanvasPage components will redraw visually when props change
+  };
+
+  const handleTextChange = (newPageContent: string) => {
+    // 1. Update everything atomically to avoid state delays
+    setPages(prev => {
+      const nextPages = prev.map((p, idx) => 
+        idx === currentPageIndex ? { ...p, content: newPageContent } : p
+      );
+      
+      // 2. Update full document text using the new pages array
+      const fullText = nextPages.map(p => p.content).join('\n\n');
+      setInputText(fullText);
+
+      // 3. Debounce the layout reflow
+      const timeoutId = (window as any)._renderTimeout;
+      if (timeoutId) clearTimeout(timeoutId);
+      (window as any)._renderTimeout = setTimeout(() => {
+        renderPage(settings, fullText);
+      }, 1000);
+
+      return nextPages;
+    });
   };
 
   const updateSetting = <K extends keyof PageConfig>(key: K, value: PageConfig[K]) => {
@@ -1366,16 +1394,7 @@ ${documentText}`;
 
                     <textarea
                       value={pages[currentPageIndex].content}
-                      onChange={(e) => {
-                        const newPageContent = e.target.value;
-                        const allPagesContent = pages.map((p, idx) => 
-                          idx === currentPageIndex ? newPageContent : p.content
-                        );
-                        const fullText = allPagesContent.join('\n\n');
-                        setInputText(fullText);
-                        // Force a render cycle to distribute text
-                        renderPage();
-                      }}
+                      onChange={(e) => handleTextChange(e.target.value)}
                       onPaste={(e) => {
                         const pastedText = e.clipboardData.getData('text');
                         if (pastedText.length > 200) {
@@ -1568,8 +1587,9 @@ ${documentText}`;
                 <textarea 
                   value={inputText}
                   onChange={(e) => {
-                    setInputText(e.target.value);
-                    renderPage();
+                    const val = e.target.value;
+                    setInputText(val);
+                    renderPage(settings, val);
                   }}
                   className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-neon-green/20"
                   placeholder="Start typing your handwritten masterpiece..."
@@ -1585,8 +1605,9 @@ ${documentText}`;
               <textarea 
                 value={inputText}
                 onChange={(e) => {
-                  setInputText(e.target.value);
-                  renderPage();
+                  const val = e.target.value;
+                  setInputText(val);
+                  renderPage(settings, val);
                 }}
                 className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-neon-green/20"
                 placeholder="Start typing your handwritten masterpiece..."

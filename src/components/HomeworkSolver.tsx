@@ -4,6 +4,7 @@ import {
   FileText, 
   Link as LinkIcon, 
   Type, 
+  Camera,
   CheckCircle2, 
   Sparkles, 
   RefreshCw, 
@@ -26,9 +27,10 @@ interface HomeworkSolverProps {
   apiKey: string;
   onSendToWriter: (text: string) => void;
   onOpenSettings: () => void;
+  onOpenCamera: () => void;
 }
 
-export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onOpenSettings }) => {
+export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onOpenSettings, onOpenCamera }) => {
   const [input, setInput] = useState<HomeworkInput>({});
   const [inputText, setInputText] = useState('');
   const [url, setUrl] = useState('');
@@ -39,7 +41,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const [editableAnswer, setEditableAnswer] = useState('');
   const [followUp, setFollowUp] = useState('');
   const [history, setHistory] = useState<HomeworkResult[]>([]);
-  const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url' | 'camera'>('upload');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'detected' | 'error'>('idle');
 
   // Loading messages rotation
@@ -164,30 +166,40 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-screen lg:h-full overflow-hidden theme-bg">
       {/* Left Column: Upload & Input */}
-      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 border-brutal-black p-6 flex flex-col gap-6 bg-white overflow-y-auto">
+      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-6 flex flex-col gap-6 theme-bg overflow-y-auto">
         <div className="space-y-4">
           <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
           
-          <div className="flex border-2 border-brutal-black font-mono text-xs mb-4">
+          <div className="flex border-2 theme-border font-mono text-xs mb-4">
             <button 
               onClick={() => setActiveTab('upload')}
-              className={cn("flex-1 py-2 transition-colors", activeTab === 'upload' ? "bg-neon-green" : "hover:bg-neutral-100")}
+              className={cn("flex-1 py-3 transition-colors flex items-center justify-center gap-2", activeTab === 'upload' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
+              <Upload size={14} />
               FILE
             </button>
             <button 
               onClick={() => setActiveTab('text')}
-              className={cn("flex-1 py-2 border-l-2 border-r-2 border-brutal-black transition-colors", activeTab === 'text' ? "bg-neon-green" : "hover:bg-neutral-100")}
+              className={cn("flex-1 py-3 border-l-2 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'text' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
+              <Type size={14} />
               TEXT
             </button>
             <button 
               onClick={() => setActiveTab('url')}
-              className={cn("flex-1 py-2 transition-colors", activeTab === 'url' ? "bg-neon-green" : "hover:bg-neutral-100")}
+              className={cn("flex-1 py-3 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'url' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
+              <LinkIcon size={14} />
               URL
+            </button>
+            <button 
+              onClick={onOpenCamera}
+              className="px-4 py-3 hover:bg-neon-green transition-colors flex items-center justify-center"
+              title="Capture with Camera"
+            >
+              <Camera size={16} />
             </button>
           </div>
 
@@ -264,8 +276,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           </AnimatePresence>
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Answer Mode</h3>
+        <div className="space-y-4 mb-4">
+          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 text-text-primary">Answer Mode</h3>
           <div className="grid grid-cols-1 gap-2">
             {[
               { id: 'final', label: 'Final Answer Only', desc: 'Direct solution' },
@@ -277,11 +289,11 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                 onClick={() => setAnswerMode(m.id as AnswerMode)}
                 className={cn(
                   "p-3 brutal-border text-left transition-all",
-                  answerMode === m.id ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                  answerMode === m.id ? "bg-neon-green brutal-shadow" : "theme-card hover:bg-neutral-50"
                 )}
               >
-                <div className="font-display uppercase text-xs font-bold">{m.label}</div>
-                <div className="text-[9px] font-mono opacity-50 uppercase">{m.desc}</div>
+                <div className="font-display uppercase text-xs font-bold text-text-primary">{m.label}</div>
+                <div className="text-[9px] font-mono opacity-50 uppercase text-text-primary">{m.desc}</div>
               </button>
             ))}
           </div>
@@ -290,7 +302,10 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         <button 
           onClick={handleSolve}
           disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
-          className="w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all flex items-center justify-center gap-2 group mt-auto"
+          className={cn(
+            "w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all flex items-center justify-center gap-2 group",
+            "lg:mt-auto py-4"
+          )}
         >
           {isProcessing ? <RefreshCw size={20} className="animate-spin" /> : <Brain size={20} className="group-hover:scale-110 transition-transform" />}
           <span className="font-display uppercase">Solve Homework</span>
@@ -302,17 +317,17 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Center Column: Answer Preview */}
-      <div className="flex-grow flex flex-col bg-neutral-100 p-6 overflow-hidden">
-        <div className="flex-grow bg-white brutal-border brutal-shadow flex flex-col overflow-hidden">
-          <div className="p-4 border-b-2 border-brutal-black bg-neutral-50 flex items-center justify-between">
+      <div className="flex-grow flex flex-col p-4 lg:p-6 overflow-hidden bg-bg-secondary">
+        <div className="flex-grow theme-card brutal-border brutal-shadow flex flex-col overflow-hidden">
+          <div className="p-4 border-b-2 theme-border flex items-center justify-between bg-bg-secondary">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brutal-black text-white flex items-center justify-center">
+              <div className="w-10 h-10 bg-text-primary text-bg-primary flex items-center justify-center">
                 <Sparkles size={18} />
               </div>
               <div>
-                <h3 className="font-display uppercase text-sm leading-tight">Gemini Answer</h3>
+                <h3 className="font-display uppercase text-sm leading-tight text-text-primary">Gemini Answer</h3>
                 {result && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 text-text-primary">
                      <span className="text-[9px] font-mono uppercase opacity-50">Subject: {result.subject}</span>
                      <span className="text-[9px] font-mono uppercase opacity-50">Level: {result.difficulty}</span>
                   </div>
@@ -321,9 +336,6 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             </div>
             {result && (
                <div className="flex gap-2">
-                 <button onClick={handleRegenerate} className="p-2 brutal-border hover:bg-neon-green transition-colors" title="Regenerate">
-                   <RefreshCw size={14} />
-                 </button>
                  <button onClick={copyToClipboard} className="p-2 brutal-border hover:bg-neon-green transition-colors" title="Copy">
                    <Copy size={14} />
                  </button>
@@ -331,7 +343,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             )}
           </div>
 
-          <div className="flex-grow overflow-y-auto p-8 relative">
+          <div className="flex-grow overflow-y-auto p-4 lg:p-8 relative">
             <AnimatePresence mode="wait">
               {isProcessing ? (
                 <motion.div 
@@ -339,24 +351,24 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 bg-white/80 z-50 p-6 text-center"
+                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 theme-card/80 z-50 p-6 text-center"
                 >
                   <RefreshCw size={40} className="animate-spin text-neon-green" />
-                  <div className="font-display uppercase text-2xl tracking-tighter animate-pulse">{loadingMessage}</div>
-                  <p className="font-mono text-[10px] opacity-40 max-w-xs">Our AI is crunching the numbers and reading the context to provide the most accurate solution for you.</p>
+                  <div className="font-display uppercase text-2xl tracking-tighter animate-pulse text-text-primary">{loadingMessage}</div>
+                  <p className="font-mono text-[10px] opacity-40 max-w-xs text-text-primary">Our AI is crunching the numbers and reading the context to provide the most accurate solution for you.</p>
                 </motion.div>
               ) : result ? (
                 <motion.div 
                   key="answer"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none text-text-primary"
                 >
                   <div className="edit-container relative">
                     <textarea
                       value={editableAnswer}
                       onChange={(e) => setEditableAnswer(e.target.value)}
-                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden"
+                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden text-text-primary"
                       style={{ height: 'auto', minHeight: '500px' }}
                       onInput={(e: any) => {
                         e.target.style.height = 'auto';
@@ -409,26 +421,26 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Right Column: Options & Send */}
-      <div className="w-full lg:w-[280px] border-l-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+      <div className="w-full lg:w-[300px] border-t-2 lg:border-t-0 lg:border-l-2 theme-border p-6 flex flex-col gap-8 theme-bg overflow-y-auto mb-16 lg:mb-0">
         <div className="space-y-6">
-          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Actions</h3>
+          <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 text-text-primary">Actions</h3>
           <div className="space-y-4">
             <button 
               onClick={() => onSendToWriter(editableAnswer)}
               disabled={!editableAnswer}
-              className="w-full brutal-btn bg-neon-green flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale"
+              className="w-full brutal-btn bg-neon-green flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="font-display uppercase text-sm">Send to Editor</span>
                 <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </div>
-              <span className="text-[9px] font-mono opacity-50 uppercase text-left">Auto-layout in your handwritingfont</span>
+              <span className="text-[9px] font-mono opacity-50 uppercase text-left">Auto-layout in your handwriting font</span>
             </button>
 
             <button 
               onClick={copyToClipboard}
               disabled={!editableAnswer}
-              className="w-full brutal-btn flex items-center justify-center gap-2 text-xs font-mono uppercase bg-white disabled:opacity-50"
+              className="w-full brutal-btn flex items-center justify-center gap-2 text-xs font-mono uppercase bg-theme-bg text-text-primary disabled:opacity-50 border-theme-border"
             >
               <Copy size={16} />
               Copy Answer
@@ -438,23 +450,23 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
 
         {result && (
           <div className="space-y-4">
-            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Quick Format</h3>
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 text-text-primary">Quick Format</h3>
             <div className="grid grid-cols-1 gap-2">
               <button 
                 onClick={() => { setAnswerMode('final'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
               >
                 Final Answer Only
               </button>
               <button 
                 onClick={() => { setAnswerMode('step-by-step'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
               >
                 Step by Step
               </button>
               <button 
                 onClick={() => { setAnswerMode('both'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neutral-50 transition-colors"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
               >
                 Both
               </button>
@@ -462,12 +474,12 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           </div>
         )}
 
-        <div className="mt-auto p-4 bg-neutral-50 brutal-border border-dashed space-y-2">
+        <div className="mt-auto p-4 theme-card brutal-border border-dashed space-y-2">
            <div className="flex items-center gap-2 text-neon-green">
               <CheckCircle2 size={16} />
               <span className="font-display uppercase text-[10px]">HW Engine v3.0</span>
            </div>
-           <p className="text-[9px] font-mono opacity-60 leading-tight uppercase">
+           <p className="text-[9px] font-mono opacity-60 leading-tight uppercase text-text-primary">
              Optimized for handwriting output. No markdown symbols or cluttered formatting.
            </p>
         </div>

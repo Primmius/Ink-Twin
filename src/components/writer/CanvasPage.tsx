@@ -102,23 +102,59 @@ const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, con
   ctx.save();
   
   // 1. Clear & Base Fill
-  ctx.fillStyle = config.pageStyle === 'blackboard' ? '#2d5a27' : '#FFFFFF';
+  ctx.fillStyle = config.pageStyle === 'blackboard' ? '#1a1a1b' : '#FFFFFF';
   ctx.fillRect(0, 0, w, h);
 
   // 2. Specific Page Styles
-  if (config.pageStyle === 'paper1') {
-    // Subtle grain
-    const imageData = ctx.getImageData(0, 0, w, h);
-    const data = imageData.data;
-    for (let i = 0; i < data.length; i += 4) {
-      if (Math.random() < 0.05) {
-        const n = Math.random() * 10;
-        data[i] -= n; data[i+1] -= n; data[i+2] -= n;
-      }
+  if (config.pageStyle === 'blackboard') {
+    // Sharp chalk grain effect (less blurry)
+    ctx.save();
+    for (let i = 0; i < 2000; i++) {
+      ctx.globalAlpha = Math.random() * 0.1;
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      const r = Math.random() * 1.5;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x, y, r, r);
     }
-    ctx.putImageData(imageData, 0, 0);
-  }
+    // Subtle eraser streaks
+    ctx.globalAlpha = 0.02;
+    for (let i = 0; i < 20; i++) {
+      const x = Math.random() * w;
+      const y = Math.random() * h;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 100, 40, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Scratchy lines
+    ctx.strokeStyle = '#ffffff';
+    ctx.globalAlpha = 0.05;
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 100; i++) {
+       ctx.beginPath();
+       const x = Math.random() * w;
+       const y = Math.random() * h;
+       ctx.moveTo(x, y);
+       ctx.lineTo(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 40);
+       ctx.stroke();
+    }
+    ctx.restore();
 
+    // High-quality wooden frame
+    ctx.save();
+    // Bevel effect
+    ctx.fillStyle = '#3e2723';
+    ctx.fillRect(0, 0, w, 20); // Top
+    ctx.fillRect(0, h-20, w, 20); // Bottom
+    ctx.fillRect(0, 0, 20, h); // Left
+    ctx.fillRect(w-20, 0, 20, h); // Right
+    
+    ctx.strokeStyle = '#5d4037';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, w-20, h-20);
+    ctx.restore();
+  }
   if (config.pageStyle === 'paper2') { ctx.fillStyle = '#faf8f5'; ctx.fillRect(0, 0, w, h); }
   if (config.pageStyle === 'note') { ctx.fillStyle = '#fff9c4'; ctx.fillRect(0, 0, w, h); }
   if (config.pageStyle === 'old-paper') { ctx.fillStyle = '#f5e6c8'; ctx.fillRect(0, 0, w, h); }
@@ -129,9 +165,11 @@ const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, con
   if (config.pageStyle === 'kraft') { ctx.fillStyle = '#c4a882'; ctx.fillRect(0, 0, w, h); }
 
   // 3. Margin Lines
-  const isLined = ['blue-lined', 'gray-lined', 'legal-pad'].includes(config.pageStyle);
+  const isLined = ['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle);
   if (isLined) {
-    const lineColor = config.pageStyle === 'blue-lined' ? '#a8c4e0' : (config.pageStyle === 'legal-pad' ? '#a8c4e0' : '#cccccc');
+    const lineColor = config.pageStyle === 'blue-lined' ? '#a8c4e0' : 
+                      (config.pageStyle === 'black-lined' ? '#333333' : 
+                      (config.pageStyle === 'legal-pad' ? '#a8c4e0' : '#cccccc'));
     ctx.strokeStyle = lineColor;
     ctx.lineWidth = 0.5;
     const startY = config.pageStyle === 'legal-pad' ? 100 : 32;
@@ -140,7 +178,7 @@ const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, con
     }
     
     // Vertical margin line
-    if (config.pageStyle === 'blue-lined' || config.pageStyle === 'legal-pad') {
+    if (['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle)) {
       ctx.strokeStyle = '#ffaaaa';
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(config.leftMargin, 0); ctx.lineTo(config.leftMargin, h); ctx.stroke();
@@ -317,9 +355,11 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
               ctx.fillStyle = currentInkColor;
             }
 
-            // Draw Character by Character
-            for (let i = 0; i < word.length; i++) {
-              const char = word[i];
+            // Draw Character by Character (Grapheme cluster aware for Indic scripts/Hindi)
+            // This prevents "dotted circles" by keeping combining marks with their base
+            const clusters = word.match(/[\u0900-\u097F][\u093E-\u094D\u0900-\u0903\u0951-\u0954\u0962-\u0963]*|[^\uD800-\uDFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]/gu) || Array.from(word);
+
+            clusters.forEach((cluster) => {
               ctx.save();
               
               // Slant
@@ -342,15 +382,15 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
                 ctx.globalAlpha = 0.3;
                 const iterations = Math.floor(effectiveThickness);
                 for (let t = 0; t < iterations; t++) {
-                  ctx.fillText(char, cursorX + (Math.random() * 0.7), cursorY + charOffsetY + (Math.random() * 0.7));
+                  ctx.fillText(cluster, cursorX + (Math.random() * 0.7), cursorY + charOffsetY + (Math.random() * 0.7));
                 }
                 ctx.globalAlpha = baseAlpha;
               }
 
-              ctx.fillText(char, cursorX, cursorY + charOffsetY);
+              ctx.fillText(cluster, cursorX, cursorY + charOffsetY);
               ctx.restore();
-              cursorX += ctx.measureText(char).width + config.letterSpacing;
-            }
+              cursorX += ctx.measureText(cluster).width + config.letterSpacing;
+            });
             cursorX += config.wordSpacing + ctx.measureText(' ').width;
           });
 
