@@ -66,11 +66,11 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl brutal-border brutal-shadow flex flex-col overflow-hidden">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
-          <h3 className="font-display uppercase text-xl">Capture Template</h3>
-          <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-brutal-black/80 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-2xl brutal-border brutal-shadow flex flex-col overflow-hidden max-h-[95vh]">
+        <div className="p-3 md:p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
+          <h3 className="font-display uppercase text-lg md:text-xl">Capture Template</h3>
+          <button onClick={onClose} className="p-2 hover:bg-brutal-black hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
             <X size={24} />
           </button>
         </div>
@@ -93,23 +93,23 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
           )}
         </div>
 
-        <div className="p-6 border-t-2 border-brutal-black flex justify-center gap-4 bg-neutral-50">
+        <div className="p-4 md:p-6 border-t-2 border-brutal-black flex justify-center gap-3 md:gap-4 bg-neutral-50">
           {!capturedImage ? (
             <button 
               onClick={capture}
-              className="brutal-btn brutal-btn-primary flex items-center gap-2 px-12"
+              className="brutal-btn brutal-btn-primary flex items-center gap-2 px-8 md:px-12"
             >
-              <Camera size={24} />
-              Capture
+              <Camera size={22} />
+              <span className="text-sm md:text-base">Capture</span>
             </button>
           ) : (
             <>
-              <button onClick={retake} className="brutal-btn flex items-center gap-2">
-                <RefreshCw size={20} />
+              <button onClick={retake} className="brutal-btn flex items-center gap-2 text-sm md:text-base">
+                <RefreshCw size={18} />
                 Retake
               </button>
-              <button onClick={confirm} className="brutal-btn brutal-btn-primary flex items-center gap-2">
-                <Check size={20} />
+              <button onClick={confirm} className="brutal-btn brutal-btn-primary flex items-center gap-2 text-sm md:text-base">
+                <Check size={18} />
                 Use Photo
               </button>
             </>

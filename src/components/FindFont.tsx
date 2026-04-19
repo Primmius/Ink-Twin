@@ -235,8 +235,8 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
   };
 
   return (
-    <section className="flex-grow p-6 bg-neutral-100 overflow-y-auto">
-      <div className="max-w-4xl mx-auto flex flex-col items-center">
+    <section className="flex-grow p-4 md:p-6 bg-neutral-100 overflow-y-auto overflow-x-hidden">
+      <div className="max-w-4xl mx-auto flex flex-col items-center w-full">
         
         <AnimatePresence mode="wait">
           {step === 'upload' && (
@@ -247,31 +247,33 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               exit={{ opacity: 0, scale: 1.05 }}
               className="w-full space-y-8"
             >
-              <div className="text-center space-y-4">
-                <h2 className="text-5xl font-display uppercase tracking-tighter leading-none">Find Your Twin Font.</h2>
-                <p className="text-xl font-mono opacity-70 italic uppercase">
+              <div className="text-center space-y-3 md:space-y-4 px-2">
+                <h2 className="text-2xl md:text-5xl font-display uppercase tracking-tighter leading-none">Find Your Twin Font.</h2>
+                <p className="text-sm md:text-xl font-mono opacity-70 italic uppercase">
                   AI scans your unique rhythms & style
                 </p>
               </div>
 
-              <div className="brutal-card brutal-shadow bg-white p-12 text-center space-y-8">
-                <div className="flex flex-col items-center gap-6">
-                  <div className="w-24 h-24 bg-neon-green border-4 border-brutal-black rounded-full flex items-center justify-center brutal-shadow">
-                    <Search size={48} className="text-brutal-black" />
+              <div className="brutal-card brutal-shadow bg-white p-6 md:p-12 text-center space-y-6 md:space-y-8 w-full">
+                <div className="flex flex-col items-center gap-4 md:gap-6">
+                  <div className="w-16 h-16 md:w-24 md:h-24 bg-neon-green border-4 border-brutal-black rounded-full flex items-center justify-center brutal-shadow">
+                    <Search size={32} className="text-brutal-black md:hidden" />
+                    <Search size={48} className="text-brutal-black hidden md:block" />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-3xl font-display uppercase">Upload any page of your handwriting</h3>
-                    <p className="font-mono text-sm opacity-60 max-w-md mx-auto">We will extract your complete style profile and find the closest matching professional font.</p>
+                    <h3 className="text-xl md:text-3xl font-display uppercase">Upload any page of your handwriting</h3>
+                    <p className="font-mono text-xs md:text-sm opacity-60 max-w-md mx-auto px-2">We will extract your complete style profile and find the closest matching professional font.</p>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-center gap-4">
-                  <label className="brutal-btn bg-neon-green w-full max-w-sm flex items-center justify-center gap-3 cursor-pointer py-6 text-xl">
-                    <Upload size={24} />
+                <div className="flex flex-col items-center gap-4 w-full">
+                  <label className="brutal-btn bg-neon-green w-full max-w-sm flex items-center justify-center gap-2 md:gap-3 cursor-pointer py-4 md:py-6 text-base md:text-xl">
+                    <Upload size={20} className="md:hidden" />
+                    <Upload size={24} className="hidden md:block" />
                     <span>Select Local Photo</span>
                     <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
                   </label>
-                  <p className="font-mono text-[11px] opacity-40 uppercase">
+                  <p className="font-mono text-[10px] md:text-[11px] opacity-40 uppercase px-4">
                     Supported: JPG, PNG, PDF. High lighting recommended.
                   </p>
                 </div>
@@ -295,12 +297,13 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center py-32 space-y-8"
+              className="flex flex-col items-center justify-center py-16 md:py-32 space-y-6 md:space-y-8 px-4"
             >
-              <RefreshCw size={100} className="text-brutal-black animate-spin" strokeWidth={3} />
+              <RefreshCw size={60} className="text-brutal-black animate-spin md:hidden" strokeWidth={3} />
+              <RefreshCw size={100} className="text-brutal-black animate-spin hidden md:block" strokeWidth={3} />
               <div className="text-center space-y-3">
-                <h2 className="text-5xl font-display uppercase italic tracking-tight">{loadingText}</h2>
-                <p className="font-mono text-sm opacity-50 uppercase tracking-widest">Vision Neural Engine v4.0 is active</p>
+                <h2 className="text-2xl md:text-5xl font-display uppercase italic tracking-tight">{loadingText}</h2>
+                <p className="font-mono text-xs md:text-sm opacity-50 uppercase tracking-widest">Vision Neural Engine v4.0 is active</p>
               </div>
             </motion.div>
           )}
@@ -310,7 +313,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               key="results"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="w-full space-y-12 pb-20"
+              className="w-full space-y-8 md:space-y-12 pb-20"
             >
               {isLoadingFonts ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
@@ -327,29 +330,29 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                     <span className="font-mono text-[9px] uppercase font-bold">Preview rendered in: {analysis.fontFamily}</span>
                     {!loadedFonts.has(analysis.fontFamily) && <span className="font-mono text-[9px] uppercase font-bold text-error-red">Preview unavailable</span>}
                   </div>
-                  <div className="p-8 border-b-4 border-brutal-black bg-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="p-4 md:p-8 border-b-4 border-brutal-black bg-white flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                     <div>
-                      <h3 className="text-6xl font-display uppercase leading-none mb-2">{analysis.fontFamily}</h3>
-                      <p className="font-mono text-sm opacity-60 uppercase italic tracking-wide">{analysis.styleLabel}</p>
+                      <h3 className="text-3xl md:text-6xl font-display uppercase leading-none mb-2">{analysis.fontFamily}</h3>
+                      <p className="font-mono text-xs md:text-sm opacity-60 uppercase italic tracking-wide">{analysis.styleLabel}</p>
                     </div>
                     <button 
                       onClick={() => loadFont(analysis.fontFamily, analysis)}
-                      className="brutal-btn bg-brutal-black text-white px-10 py-5 text-xl whitespace-nowrap"
+                      className="brutal-btn bg-brutal-black text-white px-6 md:px-10 py-4 md:py-5 text-sm md:text-xl whitespace-nowrap w-full md:w-auto"
                     >
                       Use High-Fidelity Match
                     </button>
                   </div>
                   
                   <div className="grid md:grid-cols-2">
-                    <div className="p-12 bg-white flex flex-col justify-center gap-8 border-b-4 md:border-b-0 md:border-r-4 border-brutal-black min-h-[300px]">
+                    <div className="p-6 md:p-12 bg-white flex flex-col justify-center gap-4 md:gap-8 border-b-4 md:border-b-0 md:border-r-4 border-brutal-black min-h-[200px] md:min-h-[300px]">
                       <div 
-                        style={{ fontFamily: `'${analysis.fontFamily}', cursive`, fontSize: '28px' }} 
+                        style={{ fontFamily: `'${analysis.fontFamily}', cursive`, fontSize: 'clamp(18px, 4vw, 28px)' }} 
                         className="leading-snug text-brutal-black"
                       >
                         Hello! My name is Alex and I love writing.
                       </div>
                       <div 
-                        style={{ fontFamily: `'${analysis.fontFamily}', cursive`, fontSize: '16px' }} 
+                        style={{ fontFamily: `'${analysis.fontFamily}', cursive`, fontSize: 'clamp(12px, 2.5vw, 16px)' }} 
                         className="opacity-60 leading-tight"
                       >
                         abcdefghijklmnopqrstuvwxyz<br/>
@@ -357,9 +360,9 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                       </div>
                     </div>
 
-                    <div className="p-8 bg-neutral-50 space-y-8">
+                    <div className="p-4 md:p-8 bg-neutral-50 space-y-4 md:space-y-8">
                        <h4 className="font-mono text-[10px] uppercase font-black opacity-40 border-b border-brutal-black/10 pb-2">Traits Visualized</h4>
-                       <div className="grid grid-cols-2 gap-y-6 gap-x-8">
+                       <div className="grid grid-cols-2 gap-y-4 md:gap-y-6 gap-x-4 md:gap-x-8">
                          {[
                            { label: "Slant", value: `${analysis.slant > 0 ? '+' : ''}${analysis.slant}°` },
                            { label: "Weight", value: analysis.strokeWeight.toFixed(1) },
@@ -370,8 +373,8 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                            { label: "Irregularity", value: analysis.irregularity.toFixed(1) }
                          ].map((trait, i) => (
                            <div key={i} className="flex flex-col">
-                             <span className="font-mono text-[9px] uppercase opacity-50 font-bold">{trait.label}</span>
-                             <span className="font-display uppercase text-xl leading-none">{trait.value}</span>
+                             <span className="font-mono text-[8px] md:text-[9px] uppercase opacity-50 font-bold">{trait.label}</span>
+                             <span className="font-display uppercase text-base md:text-xl leading-none">{trait.value}</span>
                            </div>
                          ))}
                        </div>
@@ -381,24 +384,24 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               </div>
 
               {/* Alternatives */}
-              <div className="space-y-8 mt-16">
-                 <div className="flex flex-col gap-6">
-                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+              <div className="space-y-6 md:space-y-8 mt-8 md:mt-16">
+                 <div className="flex flex-col gap-4 md:gap-6">
+                   <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
                      <div className="space-y-1">
-                       <h2 className="text-3xl font-display uppercase">Deep Search Alternatives</h2>
-                       <p className="font-mono text-[10px] opacity-60 uppercase">Other fonts that match your neural profile</p>
+                       <h2 className="text-xl md:text-3xl font-display uppercase">Deep Search Alternatives</h2>
+                       <p className="font-mono text-[9px] md:text-[10px] opacity-60 uppercase">Other fonts that match your neural profile</p>
                      </div>
                      
-                     <div className="flex flex-wrap gap-4">
-                        <div className="flex flex-col gap-2">
-                          <span className="font-mono text-[9px] uppercase font-bold opacity-40">Style</span>
-                          <div className="flex gap-2 p-1 bg-white border-2 border-brutal-black brutal-shadow-small">
+                     <div className="flex flex-wrap gap-3 md:gap-4 w-full md:w-auto">
+                        <div className="flex flex-col gap-1 md:gap-2 flex-1 md:flex-none">
+                          <span className="font-mono text-[8px] md:text-[9px] uppercase font-bold opacity-40">Style</span>
+                          <div className="flex gap-1 md:gap-2 p-1 bg-white border-2 border-brutal-black brutal-shadow-small overflow-x-auto">
                             {['all', 'cursive', 'print', 'mixed'].map(s => (
                               <button 
                                 key={s}
                                 onClick={() => setStyleFilter(s as any)}
                                 className={cn(
-                                  "px-3 py-1 font-mono text-[10px] uppercase font-bold transition-all",
+                                  "px-2 md:px-3 py-1.5 font-mono text-[9px] md:text-[10px] uppercase font-bold transition-all min-h-[36px] whitespace-nowrap",
                                   styleFilter === s ? "bg-neon-green" : "hover:bg-neutral-100"
                                 )}
                               >
@@ -407,15 +410,15 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                             ))}
                           </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                          <span className="font-mono text-[9px] uppercase font-bold opacity-40">Weight</span>
-                          <div className="flex gap-2 p-1 bg-white border-2 border-brutal-black brutal-shadow-small">
+                        <div className="flex flex-col gap-1 md:gap-2 flex-1 md:flex-none">
+                          <span className="font-mono text-[8px] md:text-[9px] uppercase font-bold opacity-40">Weight</span>
+                          <div className="flex gap-1 md:gap-2 p-1 bg-white border-2 border-brutal-black brutal-shadow-small overflow-x-auto">
                             {['all', 'thin', 'medium', 'thick'].map(w => (
                               <button 
                                 key={w}
                                 onClick={() => setWeightFilter(w as any)}
                                 className={cn(
-                                  "px-3 py-1 font-mono text-[10px] uppercase font-bold transition-all",
+                                  "px-2 md:px-3 py-1.5 font-mono text-[9px] md:text-[10px] uppercase font-bold transition-all min-h-[36px] whitespace-nowrap",
                                   weightFilter === w ? "bg-neon-green" : "hover:bg-neutral-100"
                                 )}
                               >
@@ -439,7 +442,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                    </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6">
                     {getFilteredFonts().map((font, i) => (
                       <motion.div 
                         key={font.name}
@@ -489,11 +492,11 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
             )}
 
             {/* Retry */}
-              <div className="pt-20 border-t-2 border-brutal-black/5 flex flex-col items-center gap-6">
-                 <p className="font-mono text-sm opacity-40">Want to try a different handwriting sample?</p>
+              <div className="pt-12 md:pt-20 border-t-2 border-brutal-black/5 flex flex-col items-center gap-4 md:gap-6 px-4">
+                 <p className="font-mono text-xs md:text-sm opacity-40 text-center">Want to try a different handwriting sample?</p>
                  <button 
                     onClick={() => setStep('upload')}
-                    className="brutal-btn bg-white border-2 px-12"
+                    className="brutal-btn bg-white border-2 px-6 md:px-12 w-full sm:w-auto"
                  >
                    Re-scan neural patterns
                  </button>

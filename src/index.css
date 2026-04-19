@@ -144,19 +144,42 @@ body.dark .bg-neutral-200 {
   .flex-col-mobile-force {
     flex-direction: column !important;
   }
-  
-  /* Ensure main wrapper and inner sections are 100% width */
-  aside, section, header, footer {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    flex-basis: 100% !important;
-    border-right-width: 0 !important;
-    border-left-width: 0 !important;
-  }
 
   header {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Mobile-friendly headings */
+  .mobile-heading-sm {
+    font-size: clamp(1.5rem, 6vw, 2.5rem) !important;
+  }
+
+  .mobile-heading-md {
+    font-size: clamp(1.25rem, 5vw, 2rem) !important;
+  }
+
+  .mobile-text-sm {
+    font-size: 0.75rem !important;
+  }
+
+  /* Mobile padding adjustments */
+  .mobile-p-4 {
+    padding: 1rem !important;
+  }
+
+  .mobile-p-3 {
+    padding: 0.75rem !important;
+  }
+
+  /* Mobile stack columns */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  /* Mobile full width */
+  .mobile-w-full {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }

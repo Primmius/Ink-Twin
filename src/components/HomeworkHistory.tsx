@@ -37,7 +37,7 @@ export const HomeworkHistory: React.FC<HomeworkHistoryProps> = ({ history, onSel
             <button
               key={i}
               onClick={() => onSelect(item)}
-              className="w-full text-left p-3 brutal-border theme-card hover:bg-neon-green/5 transition-colors group relative"
+              className="w-full text-left p-2 md:p-3 brutal-border theme-card hover:bg-neon-green/5 transition-colors group relative min-h-[60px]"
             >
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[9px] bg-brutal-black text-white px-1 font-mono">{item.subject}</span>

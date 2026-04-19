@@ -110,22 +110,22 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-xl brutal-border brutal-shadow flex flex-col">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
-          <h3 className="font-display uppercase text-xl">Edit Glyph: {char}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-4 bg-brutal-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-white w-full max-w-xl brutal-border brutal-shadow flex flex-col my-auto">
+        <div className="p-3 md:p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
+          <h3 className="font-display uppercase text-lg md:text-xl">Edit Glyph: {char}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-brutal-black hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
             <X size={24} />
           </button>
         </div>
 
-        <div className="flex-grow p-8 flex flex-col items-center gap-6">
-          <div className="relative brutal-border bg-white cursor-crosshair touch-none">
+        <div className="flex-grow p-4 md:p-8 flex flex-col items-center gap-4 md:gap-6">
+          <div className="relative brutal-border bg-white cursor-crosshair touch-none w-full max-w-[min(80vw,400px)]">
             <canvas
               ref={canvasRef}
               width={500}
               height={500}
-              className="w-full max-w-[400px] aspect-square"
+              className="w-full aspect-square"
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
@@ -193,21 +193,21 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
           </p>
         </div>
 
-        <div className="p-6 border-t-2 border-brutal-black flex gap-4 bg-neutral-50">
-          <button onClick={onClose} className="flex-grow brutal-btn">
+        <div className="p-4 md:p-6 border-t-2 border-brutal-black flex gap-3 md:gap-4 bg-neutral-50">
+          <button onClick={onClose} className="flex-grow brutal-btn text-sm md:text-base">
             Cancel
           </button>
           <button 
             onClick={save} 
             disabled={isSaving || isReanalyzing}
-            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
           >
             {isSaving ? (
-              <RefreshCw size={20} className="animate-spin" />
+              <RefreshCw size={18} className="animate-spin" />
             ) : (
-              <Check size={20} />
+              <Check size={18} />
             )}
-            {isSaving ? 'Saving...' : 'Save Glyph'}
+            {isSaving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>

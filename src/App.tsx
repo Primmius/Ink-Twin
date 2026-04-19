@@ -351,7 +351,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
+    <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[4px] md:border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black overflow-x-hidden">
       {/* Header */}
       <header className="border-b-2 border-brutal-black p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 bg-white z-40 header-mobile-refine">
         <div className="flex flex-col gap-4 w-full md:w-auto">
@@ -502,7 +502,7 @@ export default function App() {
         {phase === 'font-creation' ? (
           <>
             {/* Sidebar */}
-            <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+            <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-4 md:p-6 flex flex-col gap-6 md:gap-8 bg-white overflow-y-auto">
           <div className="space-y-4">
             <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
             <div className="space-y-2 font-mono text-sm">
@@ -563,8 +563,8 @@ export default function App() {
         </aside>
 
         {/* Main Content Area */}
-        <section className="flex-grow p-6 bg-neutral-100 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
+        <section className="flex-grow p-4 md:p-6 bg-neutral-100 overflow-y-auto overflow-x-hidden">
+          <div className="max-w-4xl mx-auto w-full">
             <AnimatePresence mode="wait">
               {/* Step 1: Welcome & Template */}
               {step === 1 && (
@@ -575,14 +575,14 @@ export default function App() {
                   exit={{ opacity: 0, scale: 1.05 }}
                   className="space-y-8"
                 >
-                  <div className="space-y-4">
-                    <h2 className="text-6xl font-display uppercase leading-none tracking-tighter">Handwriting to Digital Font.</h2>
-                    <p className="text-xl font-mono opacity-70">
+                  <div className="space-y-3 md:space-y-4">
+                    <h2 className="text-3xl md:text-6xl font-display uppercase leading-none tracking-tighter">Handwriting to Digital Font.</h2>
+                    <p className="text-sm md:text-xl font-mono opacity-70">
                       [VERSION_1.0] AI-POWERED VECTORIZATION ENGINE
                     </p>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-8 mt-12">
+                  <div className="grid sm:grid-cols-2 gap-4 md:gap-8 mt-6 md:mt-12">
                     <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                       <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
                         <Download size={24} />
@@ -635,12 +635,12 @@ export default function App() {
                   exit={{ opacity: 0, x: -50 }}
                   className="space-y-8"
                 >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
-                    <h2 className="text-3xl font-display uppercase">Review Uploads</h2>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-2 border-brutal-black pb-4 gap-3">
+                    <h2 className="text-xl md:text-3xl font-display uppercase">Review Uploads</h2>
                     <button 
                       onClick={startAnalysis}
                       disabled={isAnalyzing}
-                      className="brutal-btn brutal-btn-primary flex items-center gap-2"
+                      className="brutal-btn brutal-btn-primary flex items-center gap-2 w-full sm:w-auto text-sm md:text-base"
                     >
                       {isAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : "Start AI Analysis →"}
                     </button>
@@ -675,27 +675,29 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   className="space-y-8"
                 >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
-                    <h2 className="text-3xl font-display uppercase">Detected Glyphs</h2>
-                    <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-2 border-brutal-black pb-4 gap-3">
+                    <h2 className="text-xl md:text-3xl font-display uppercase">Detected Glyphs</h2>
+                    <div className="flex gap-2 md:gap-4 w-full sm:w-auto">
                       <button 
                         onClick={startAnalysis}
                         disabled={isAnalyzing}
-                        className="brutal-btn flex items-center gap-2"
+                        className="brutal-btn flex items-center gap-2 text-xs md:text-sm flex-1 sm:flex-none justify-center"
                       >
-                        <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={18} />
-                        Re-analyze
+                        <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={16} />
+                        <span className="hidden sm:inline">Re-analyze</span>
+                        <span className="sm:hidden">Redo</span>
                       </button>
                       <button 
                         onClick={() => setStep(4)}
-                        className="brutal-btn brutal-btn-primary"
+                        className="brutal-btn brutal-btn-primary text-xs md:text-sm flex-1 sm:flex-none"
                       >
-                        Process & Vectorize →
+                        <span className="hidden sm:inline">Process & Vectorize →</span>
+                        <span className="sm:hidden">Next →</span>
                       </button>
                     </div>
                   </div>
 
-                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                  <div className="bg-white brutal-border p-3 md:p-6 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3 brutal-shadow">
                     {detectedChars.map((char, i) => (
                       <div 
                         key={i} 
@@ -738,20 +740,21 @@ export default function App() {
                   key="step4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center py-32 space-y-8 min-h-[400px]"
+                  className="flex flex-col items-center justify-center py-16 md:py-32 space-y-6 md:space-y-8 min-h-[300px] md:min-h-[400px] px-4"
                 >
                   <div className="relative">
-                    <RefreshCw size={80} className="text-brutal-black animate-spin" />
+                    <RefreshCw size={60} className="text-brutal-black animate-spin md:hidden" />
+                    <RefreshCw size={80} className="text-brutal-black animate-spin hidden md:block" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-xl font-display text-brutal-black">{processingProgress}%</div>
+                      <div className="text-lg md:text-xl font-display text-brutal-black">{processingProgress}%</div>
                     </div>
                   </div>
                   <div className="text-center space-y-4">
                     <div className="space-y-1">
-                      <h2 className="text-4xl font-display uppercase text-brutal-black">Vectorizing...</h2>
-                      <p className="font-mono text-sm opacity-60 text-brutal-black">CHARACTER: {processingChar || 'INITIALIZING'}</p>
+                      <h2 className="text-2xl md:text-4xl font-display uppercase text-brutal-black">Vectorizing...</h2>
+                      <p className="font-mono text-xs md:text-sm opacity-60 text-brutal-black">CHARACTER: {processingChar || 'INITIALIZING'}</p>
                     </div>
-                    <div className="w-64 h-4 brutal-border bg-white overflow-hidden">
+                    <div className="w-48 md:w-64 h-3 md:h-4 brutal-border bg-white overflow-hidden">
                       <div 
                         className="h-full bg-neon-green transition-all duration-300" 
                         style={{ width: `${processingProgress}%` }}
@@ -769,29 +772,29 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   className="space-y-8"
                 >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b-2 border-brutal-black pb-4 gap-3">
                     <div className="space-y-1">
-                      <h2 className="text-3xl font-display uppercase">Vector Paths</h2>
-                      <p className="font-mono text-[10px] opacity-60 uppercase">Review the mathematical paths generated from your ink.</p>
+                      <h2 className="text-xl md:text-3xl font-display uppercase">Vector Paths</h2>
+                      <p className="font-mono text-[9px] md:text-[10px] opacity-60 uppercase">Review the mathematical paths generated from your ink.</p>
                     </div>
                     <button 
                       onClick={generateFont}
-                      className="brutal-btn brutal-btn-primary"
+                      className="brutal-btn brutal-btn-primary w-full sm:w-auto text-sm md:text-base"
                     >
                       Assemble Font →
                     </button>
                   </div>
 
-                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                  <div className="bg-white brutal-border p-3 md:p-6 grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3 brutal-shadow">
                     {detectedChars.map((char, i) => (
                       <div 
                         key={i} 
                         className={cn(
-                          "aspect-square border-2 relative group flex items-center justify-center p-2",
+                          "aspect-square border-2 relative group flex items-center justify-center p-1 md:p-2",
                           char.svgPath ? "border-neon-green bg-white" : "border-neutral-200 border-dashed bg-neutral-50"
                         )}
                       >
-                        <span className="absolute top-1 left-1 font-mono text-[8px] font-bold opacity-30">{char.char}</span>
+                        <span className="absolute top-0.5 left-0.5 md:top-1 md:left-1 font-mono text-[6px] md:text-[8px] font-bold opacity-30">{char.char}</span>
                         
                         {char.svgPath ? (
                           <svg viewBox="0 0 500 500" className="w-full h-full fill-brutal-black">
@@ -827,12 +830,12 @@ export default function App() {
                   key="step6"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-8"
+                  className="space-y-6 md:space-y-8"
                 >
-                  <div className="grid lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1 space-y-6">
-                      <div className="brutal-card brutal-shadow space-y-6">
-                        <h3 className="font-display uppercase text-xl">Font Config</h3>
+                  <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
+                    <div className="lg:col-span-1 space-y-4 md:space-y-6">
+                      <div className="brutal-card brutal-shadow space-y-4 md:space-y-6">
+                        <h3 className="font-display uppercase text-lg md:text-xl">Font Config</h3>
                         <div className="space-y-4">
                           <div className="space-y-1">
                             <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Name</label>
@@ -900,15 +903,15 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="lg:col-span-2 space-y-4">
-                      <h3 className="font-display uppercase text-xl">Live Preview</h3>
-                      <div className="brutal-card brutal-shadow min-h-[500px] flex flex-col">
+                    <div className="lg:col-span-2 space-y-3 md:space-y-4">
+                      <h3 className="font-display uppercase text-lg md:text-xl">Live Preview</h3>
+                      <div className="brutal-card brutal-shadow min-h-[250px] md:min-h-[500px] flex flex-col">
                         <textarea 
-                          className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-4"
+                          className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-3 md:p-4 text-sm md:text-base"
                           placeholder="Type to test your font..."
                           style={{ 
                             fontFamily: fontConfig.name, 
-                            fontSize: `${fontConfig.fontSize}px`,
+                            fontSize: `${Math.min(fontConfig.fontSize, window.innerWidth < 768 ? 24 : fontConfig.fontSize)}px`,
                             letterSpacing: `${fontConfig.letterSpacing / 10}px`
                           }}
                           defaultValue="THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. 0123456789 !?@#"
@@ -992,7 +995,7 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t-2 border-brutal-black p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
+      <footer className="border-t-2 border-brutal-black p-4 md:p-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 bg-white">
         <div className="flex gap-6">
           <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
             <div className="w-3 h-3 bg-neon-green brutal-border" /> HIGH (0.8+)

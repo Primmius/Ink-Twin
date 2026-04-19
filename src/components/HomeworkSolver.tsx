@@ -166,11 +166,11 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen lg:h-full overflow-hidden theme-bg">
+    <div className="flex flex-col lg:flex-row min-h-screen lg:h-full overflow-x-hidden theme-bg">
       {/* Left Column: Upload & Input */}
-      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-6 flex flex-col gap-6 theme-bg overflow-y-auto">
+      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-4 md:p-6 flex flex-col gap-4 md:gap-6 theme-bg overflow-y-auto">
         <div className="space-y-4">
-          <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
+          <h2 className="text-xl md:text-3xl font-display uppercase">Step 1: Upload</h2>
           
           <div className="flex border-2 theme-border font-mono text-xs mb-4">
             <button 
@@ -317,7 +317,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Center Column: Answer Preview */}
-      <div className="flex-grow flex flex-col p-4 lg:p-6 overflow-hidden bg-bg-secondary">
+      <div className="flex-grow flex flex-col p-3 md:p-6 overflow-hidden bg-bg-secondary min-h-[400px] lg:min-h-0">
         <div className="flex-grow theme-card brutal-border brutal-shadow flex flex-col overflow-hidden">
           <div className="p-4 border-b-2 theme-border flex items-center justify-between bg-bg-secondary">
             <div className="flex items-center gap-3">
@@ -368,8 +368,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                     <textarea
                       value={editableAnswer}
                       onChange={(e) => setEditableAnswer(e.target.value)}
-                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden text-text-primary"
-                      style={{ height: 'auto', minHeight: '500px' }}
+                      className="w-full min-h-[250px] md:min-h-[400px] h-auto font-mono text-xs md:text-sm leading-relaxed p-3 md:p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden text-text-primary"
+                      style={{ height: 'auto', minHeight: 'auto' }}
                       onInput={(e: any) => {
                         e.target.style.height = 'auto';
                         e.target.style.height = e.target.scrollHeight + 'px';
@@ -421,7 +421,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Right Column: Options & Send */}
-      <div className="w-full lg:w-[300px] border-t-2 lg:border-t-0 lg:border-l-2 theme-border p-6 flex flex-col gap-8 theme-bg overflow-y-auto mb-16 lg:mb-0">
+      <div className="w-full lg:w-[300px] border-t-2 lg:border-t-0 lg:border-l-2 theme-border p-4 md:p-6 flex flex-col gap-6 md:gap-8 theme-bg overflow-y-auto pb-20 lg:pb-6">
         <div className="space-y-6">
           <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 text-text-primary">Actions</h3>
           <div className="space-y-4">
