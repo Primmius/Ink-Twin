@@ -166,9 +166,9 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen lg:h-full overflow-hidden theme-bg">
+    <div className="flex flex-col lg:flex-row lg:h-full overflow-y-auto lg:overflow-hidden theme-bg">
       {/* Left Column: Upload & Input */}
-      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-6 flex flex-col gap-6 theme-bg overflow-y-auto">
+      <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-6 flex flex-col gap-6 theme-bg lg:overflow-y-auto">
         <div className="space-y-4">
           <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
           
@@ -317,8 +317,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Center Column: Answer Preview */}
-      <div className="flex-grow flex flex-col p-4 lg:p-6 overflow-hidden bg-bg-secondary">
-        <div className="flex-grow theme-card brutal-border brutal-shadow flex flex-col overflow-hidden">
+      <div className="flex-grow flex flex-col p-4 lg:p-6 lg:overflow-hidden bg-bg-secondary min-h-[60vh] lg:min-h-0">
+        <div className="flex-grow theme-card brutal-border brutal-shadow flex flex-col lg:overflow-hidden">
           <div className="p-4 border-b-2 theme-border flex items-center justify-between bg-bg-secondary">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-text-primary text-bg-primary flex items-center justify-center">
@@ -343,7 +343,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             )}
           </div>
 
-          <div className="flex-grow overflow-y-auto p-4 lg:p-8 relative">
+          <div className="flex-grow lg:overflow-y-auto p-4 lg:p-8 relative min-h-[400px]">
             <AnimatePresence mode="wait">
               {isProcessing ? (
                 <motion.div 

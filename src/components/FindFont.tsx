@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Camera, RefreshCw, CheckCircle2, AlertCircle, Type as TypeIcon, ArrowRight, Search, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { analyzeHandwritingForFontMatch } from '../lib/gemini';
+import { CameraCapture } from './CameraCapture';
 
 const allowedFonts = [
   "Zeyada", "Marck Script", "La Belle Aurore", "Nothing You Could Do", "Kristi",
@@ -66,7 +67,8 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
   const [isLoadingFonts, setIsLoadingFonts] = useState(false);
   const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
   const [styleFilter, setStyleFilter] = useState<'all' | 'cursive' | 'print' | 'mixed'>('all');
   const [weightFilter, setWeightFilter] = useState<'all' | 'thin' | 'medium' | 'thick'>('all');
 
@@ -271,6 +273,13 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                     <span>Select Local Photo</span>
                     <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
                   </label>
+                  <button
+                    onClick={() => setIsCameraOpen(true)}
+                    className="brutal-btn bg-white w-full max-w-sm flex items-center justify-center gap-3 py-6 text-xl border-4 border-brutal-black hover:bg-neutral-50 transition-colors"
+                  >
+                    <Camera size={24} />
+                    <span>Capture with Camera</span>
+                  </button>
                   <p className="font-mono text-[11px] opacity-40 uppercase">
                     Supported: JPG, PNG, PDF. High lighting recommended.
                   </p>
@@ -504,6 +513,15 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
         </AnimatePresence>
 
       </div>
+
+      {isCameraOpen && (
+        <CameraCapture
+          onCapture={(imageData) => {
+            startDiscovery(imageData);
+          }}
+          onClose={() => setIsCameraOpen(false)}
+        />
+      )}
     </section>
   );
 };

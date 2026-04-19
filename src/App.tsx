@@ -576,8 +576,8 @@ export default function App() {
                   className="space-y-8"
                 >
                   <div className="space-y-4">
-                    <h2 className="text-6xl font-display uppercase leading-none tracking-tighter">Handwriting to Digital Font.</h2>
-                    <p className="text-xl font-mono opacity-70">
+                    <h2 className="text-4xl sm:text-6xl font-display uppercase leading-none tracking-tighter break-words">Handwriting to Digital Font.</h2>
+                    <p className="text-base sm:text-xl font-mono opacity-70">
                       [VERSION_1.0] AI-POWERED VECTORIZATION ENGINE
                     </p>
                   </div>

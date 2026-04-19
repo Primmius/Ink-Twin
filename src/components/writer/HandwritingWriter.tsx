@@ -1294,7 +1294,7 @@ ${documentText}`;
       <div 
         className={cn(
           "flex flex-grow overflow-hidden",
-          isMobile ? "flex-col overflow-y-auto pb-24" : "flex-row"
+          isMobile ? "flex-col" : "flex-row"
         )} 
         onPaste={(e) => {
           const items = e.clipboardData.items;
@@ -1351,25 +1351,27 @@ ${documentText}`;
 
         {/* Center: Canvas Area */}
         <main className={cn(
-          "flex-grow flex flex-col items-center bg-neutral-200 p-4 md:p-12 overflow-x-hidden",
-          isMobile ? "gap-4 min-h-0" : "gap-12 overflow-auto"
+          "flex-grow flex flex-col items-center bg-neutral-200 overflow-x-hidden",
+          isMobile ? "gap-6 p-4 overflow-y-auto" : "gap-12 p-12 overflow-auto"
         )}>
           {/* Canvas Wrapper for Scaling */}
-          <div 
-            className="relative flex items-center justify-center"
-            style={isMobile ? { 
-              width: `${595 * mobileScale}px`, 
+          <div
+            className="relative"
+            style={isMobile ? {
+              width: `${595 * mobileScale}px`,
               height: `${842 * mobileScale}px`,
-              transition: 'all 0.3s ease'
+              overflow: 'hidden',
+              transition: 'all 0.3s ease',
+              flexShrink: 0
             } : { width: '595px', height: '842px' }}
           >
-            <div 
-              className="relative group origin-top shadow-xl"
-              style={{ 
-                width: '595px', 
+            <div
+              className="relative group shadow-xl"
+              style={{
+                width: '595px',
                 height: '842px',
-                transform: `scale(${mobileScale})`,
-                transformOrigin: 'top center'
+                transform: isMobile ? `scale(${mobileScale})` : undefined,
+                transformOrigin: 'top left'
               }}
               ref={containerRef}
               onClick={() => setSelectedElementId(null)}
