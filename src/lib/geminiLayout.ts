@@ -23,7 +23,7 @@ export async function smartTextFitting(
   Return JSON with an array of page content strings. No markdown, no explanation.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash-lite",
     contents: [{ parts: [{ text: prompt }] }],
     config: {
       responseMimeType: "application/json",

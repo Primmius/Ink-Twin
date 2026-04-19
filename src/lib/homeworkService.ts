@@ -83,7 +83,7 @@ export async function solveHomework(
   }
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash", // Use Pro for complex tasks
+    model: "gemini-2.5-flash-lite", // Use Pro for complex tasks
     contents: { parts },
     config: {
       tools: [
@@ -98,7 +98,7 @@ export async function solveHomework(
 
   const metaPrompt = `Based on the answer above, what is the 'subject' and 'difficulty' (Primary/Secondary/University)? Return ONLY JSON: {"subject": "...", "difficulty": "..."}`;
   const metaResponse = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash-lite",
     contents: responseText + "\n\n" + metaPrompt,
     config: {
       responseMimeType: "application/json",
