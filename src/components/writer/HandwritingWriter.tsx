@@ -1212,89 +1212,140 @@ ${documentText}`;
 
   return (
     <div className="flex flex-col h-full bg-neutral-100">
-      {/* Top Toolbar */}
-      {/* Header / Toolbar */}
-      <div className={cn(
-        "bg-white border-b-2 border-brutal-black p-4 z-30 transition-all",
-        isMobile ? "flex flex-col gap-4" : "flex items-center justify-between"
-      )}>
-        <div className={cn("flex flex-wrap items-center gap-4", isMobile && "justify-center w-full")}>
-          <button 
-            onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px]"
-          >
-            {mode === 'default' ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
-          </button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10" />}
-          
-          <div className="flex items-center gap-1">
+      {/* Mobile Header - Simplified & Compact */}
+      {isMobile ? (
+        <div className="bg-white border-b-2 border-brutal-black p-3 z-30 flex flex-col gap-2">
+          {/* Top Row: Core Actions */}
+          <div className="flex items-center justify-between">
             <button 
               onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-neon-green flex items-center justify-center gap-2 px-4 h-11 hover:bg-neon-green/90 transition-colors"
+              className="brutal-btn bg-neon-green flex items-center justify-center gap-2 px-3 h-10 text-sm"
             >
-              <Sparkles size={18} />
-              <span className="font-display uppercase text-sm">✨ AI Edit</span>
+              <Sparkles size={16} />
+              <span className="font-display uppercase">AI</span>
             </button>
+            
+            <div className="flex items-center gap-1 bg-neutral-100 px-2 py-1 rounded-md border border-brutal-black/10">
+              <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="p-1.5 hover:bg-white rounded transition-colors"><ChevronLeft size={18} /></button>
+              <span className="font-mono text-xs font-bold min-w-[60px] text-center">{currentPageIndex + 1} / {pages.length}</span>
+              <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="p-1.5 hover:bg-white rounded transition-colors"><ChevronRight size={18} /></button>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white p-2 h-10 w-10 flex items-center justify-center">
+                <Download size={16} />
+              </button>
+            </div>
+          </div>
+          
+          {/* Bottom Row: Secondary Actions - More Compact */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <button onClick={undo} disabled={historyIndex <= 0} className="p-2 border border-brutal-black/20 rounded disabled:opacity-20"><Undo2 size={16} /></button>
+              <button onClick={redo} disabled={historyIndex >= history.length - 1} className="p-2 border border-brutal-black/20 rounded disabled:opacity-20"><Redo2 size={16} /></button>
+            </div>
+            <div className="flex items-center gap-1">
+              <button onClick={addPage} className="p-2 bg-neon-green/20 border border-neon-green rounded"><Plus size={16} /></button>
+              <button onClick={() => removePage(currentPageIndex)} className="p-2 bg-error-red/10 border border-error-red/30 text-error-red rounded"><Trash2 size={16} /></button>
+              <button onClick={() => setMode(mode === 'default' ? 'classic' : 'default')} className="p-2 border border-brutal-black/20 rounded">
+                {mode === 'default' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+            </div>
           </div>
           
           {showReflowPrompt && (
             <motion.button 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              onClick={() => {
-                setIsAIEditPanelOpen(true);
-                setShowReflowPrompt(false);
-              }}
-              className="brutal-btn bg-warning-yellow flex items-center justify-center gap-2 px-4 border-dashed h-11"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => { setIsAIEditPanelOpen(true); setShowReflowPrompt(false); }}
+              className="w-full py-2 bg-warning-yellow border-2 border-brutal-black border-dashed flex items-center justify-center gap-2 text-xs font-bold"
             >
-              <RefreshCw size={16} />
-              <span className="font-mono text-[10px] font-bold uppercase">Smart reflow available?</span>
+              <RefreshCw size={14} />
+              Smart reflow available
             </motion.button>
           )}
         </div>
+      ) : (
+        /* Desktop Header - Unchanged */
+        <div className="bg-white border-b-2 border-brutal-black p-4 z-30 flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-4">
+            <button 
+              onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
+              className="brutal-btn p-2 min-h-[44px] min-w-[44px]"
+            >
+              {mode === 'default' ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+            <div className="h-8 w-[2px] bg-brutal-black/10" />
+            
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => setIsAIEditPanelOpen(true)}
+                className="brutal-btn bg-neon-green flex items-center justify-center gap-2 px-4 h-11 hover:bg-neon-green/90 transition-colors"
+              >
+                <Sparkles size={18} />
+                <span className="font-display uppercase text-sm">AI Edit</span>
+              </button>
+            </div>
+            
+            {showReflowPrompt && (
+              <motion.button 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                onClick={() => {
+                  setIsAIEditPanelOpen(true);
+                  setShowReflowPrompt(false);
+                }}
+                className="brutal-btn bg-warning-yellow flex items-center justify-center gap-2 px-4 border-dashed h-11"
+              >
+                <RefreshCw size={16} />
+                <span className="font-mono text-[10px] font-bold uppercase">Smart reflow available?</span>
+              </motion.button>
+            )}
+          </div>
 
-        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button 
-            onClick={undo} 
-            disabled={historyIndex <= 0}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
-            title="Undo"
-          >
-            <Undo2 size={18} />
-          </button>
-          <button 
-            onClick={redo} 
-            disabled={historyIndex >= history.length - 1}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
-            title="Redo"
-          >
-            <Redo2 size={18} />
-          </button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
-          <span className="font-mono text-xs font-bold mr-4">PAGE {currentPageIndex + 1} OF {pages.length}</span>
-          <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronLeft size={20} /></button>
-          <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronRight size={20} /></button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
-          <button onClick={addPage} className="brutal-btn p-2 bg-neon-green min-h-[44px] min-w-[44px] flex items-center justify-center"><Plus size={20} /></button>
-          <button onClick={() => removePage(currentPageIndex)} className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center"><Trash2 size={20} /></button>
-        </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={undo} 
+              disabled={historyIndex <= 0}
+              className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+              title="Undo"
+            >
+              <Undo2 size={18} />
+            </button>
+            <button 
+              onClick={redo} 
+              disabled={historyIndex >= history.length - 1}
+              className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+              title="Redo"
+            >
+              <Redo2 size={18} />
+            </button>
+            <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />
+            <span className="font-mono text-xs font-bold mr-4">PAGE {currentPageIndex + 1} OF {pages.length}</span>
+            <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronLeft size={20} /></button>
+            <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronRight size={20} /></button>
+            <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />
+            <button onClick={addPage} className="brutal-btn p-2 bg-neon-green min-h-[44px] min-w-[44px] flex items-center justify-center"><Plus size={20} /></button>
+            <button onClick={() => removePage(currentPageIndex)} className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center"><Trash2 size={20} /></button>
+          </div>
 
-        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
-            <Download size={18} />
-            <span className="font-display uppercase text-sm">PDF</span>
-          </button>
-          <button onClick={downloadAllAsZip} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
-            <Download size={18} />
-            <span className="font-display uppercase text-sm">ZIP</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
+              <Download size={18} />
+              <span className="font-display uppercase text-sm">PDF</span>
+            </button>
+            <button onClick={downloadAllAsZip} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
+              <Download size={18} />
+              <span className="font-display uppercase text-sm">ZIP</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <div 
         className={cn(
           "flex flex-grow overflow-hidden",
-          isMobile ? "flex-col overflow-y-auto pb-24" : "flex-row"
+          isMobile ? "flex-col" : "flex-row"
         )} 
         onPaste={(e) => {
           const items = e.clipboardData.items;
@@ -1351,16 +1402,19 @@ ${documentText}`;
 
         {/* Center: Canvas Area */}
         <main className={cn(
-          "flex-grow flex flex-col items-center bg-neutral-200 p-4 md:p-12 overflow-x-hidden",
-          isMobile ? "gap-4 min-h-0" : "gap-12 overflow-auto"
+          "flex-grow flex flex-col items-center bg-neutral-200 overflow-x-hidden",
+          isMobile ? "p-3 pb-[180px] overflow-y-auto" : "p-12 gap-12 overflow-auto"
         )}>
           {/* Canvas Wrapper for Scaling */}
           <div 
-            className="relative flex items-center justify-center"
+            className={cn(
+              "relative flex items-center justify-center flex-shrink-0",
+              isMobile && "mt-2"
+            )}
             style={isMobile ? { 
               width: `${595 * mobileScale}px`, 
               height: `${842 * mobileScale}px`,
-              transition: 'all 0.3s ease'
+              minHeight: `${842 * mobileScale}px`
             } : { width: '595px', height: '842px' }}
           >
             <div 
@@ -1579,22 +1633,30 @@ ${documentText}`;
             </div>
           </div>
           
-          {/* Mobile Text Input Area */}
+          {/* Mobile Text Input Area - Collapsible */}
           {isMobile && (
-            <div className="w-full px-4 mb-32">
-              <div className="brutal-card bg-white space-y-2 p-4">
-                <h3 className="font-display uppercase text-xs opacity-70">Text Input</h3>
-                <textarea 
-                  value={inputText}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setInputText(val);
-                    renderPage(settings, val);
-                  }}
-                  className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-neon-green/20"
-                  placeholder="Start typing your handwritten masterpiece..."
-                />
-              </div>
+            <div className="w-full px-3 mt-4">
+              <details className="brutal-card bg-white p-0 overflow-hidden group">
+                <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-neutral-50 transition-colors list-none">
+                  <div className="flex items-center gap-2">
+                    <Type size={16} className="opacity-60" />
+                    <span className="font-display uppercase text-xs">Text Input</span>
+                  </div>
+                  <ChevronRight size={16} className="opacity-40 transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="p-3 pt-0 border-t border-brutal-black/10">
+                  <textarea 
+                    value={inputText}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setInputText(val);
+                      renderPage(settings, val);
+                    }}
+                    className="w-full min-h-[100px] p-3 brutal-border bg-neutral-50 font-mono text-sm outline-none focus:ring-2 ring-neon-green/30 focus:bg-white transition-colors"
+                    placeholder="Type or paste your text here..."
+                  />
+                </div>
+              </details>
             </div>
           )}
 
@@ -1788,7 +1850,7 @@ ${documentText}`;
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-              className="fixed bottom-24 md:bottom-10 left-1/2 -translate-x-1/2 px-4 md:px-6 py-3 bg-brutal-black text-white font-display uppercase text-xs md:text-sm brutal-border z-[200] shadow-2xl flex items-center gap-2 md:gap-3 max-w-[90vw]"
+              className="fixed bottom-[90px] md:bottom-10 left-1/2 -translate-x-1/2 px-4 md:px-6 py-3 bg-brutal-black text-white font-display uppercase text-xs md:text-sm brutal-border z-[200] shadow-2xl flex items-center gap-2 md:gap-3 max-w-[85vw]"
             >
               <Sparkles className="text-neon-green" size={18} />
               {toast}
@@ -1803,7 +1865,7 @@ ${documentText}`;
           </aside>
         )}
 
-        {/* Mobile Bottom Navigation & Drawer */}
+        {/* Mobile Bottom Navigation & Drawer - Redesigned */}
         {isMobile && (
           <>
             {/* Drawer Overlay */}
@@ -1814,57 +1876,48 @@ ${documentText}`;
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setActiveMobileDrawer(null)}
-                  className="fixed inset-0 bg-brutal-black/40 backdrop-blur-sm z-[80]"
+                  className="fixed inset-0 bg-brutal-black/50 backdrop-blur-sm z-[90]"
                 />
               )}
             </AnimatePresence>
 
-            {/* Bottom Tab Bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-brutal-black z-[100] px-2 py-3 flex gap-1 items-center justify-between shadow-2xl">
-              {[
-                { id: 'font' as const, icon: <Type size={18} />, label: 'Font' },
-                { id: 'style' as const, icon: <Palette size={18} />, label: 'Style' },
-                { id: 'type' as const, icon: <Sparkles size={18} />, label: 'Type' },
-                { id: 'effects' as const, icon: <Settings size={18} />, label: 'Effects' },
-                { id: 'elements' as const, icon: <Layout size={18} />, label: 'Elements' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
-                  className={cn(
-                    "flex flex-col items-center gap-1 flex-1 py-1 transition-all",
-                    activeMobileDrawer === tab.id ? "text-brutal-black" : "text-brutal-black/40"
-                  )}
-                >
-                  <div className={cn(
-                    "p-2 rounded-lg transition-all",
-                    activeMobileDrawer === tab.id ? "bg-neon-green border-2 border-brutal-black translate-x-1 translate-y-1 shadow-none" : ""
-                  )}>
-                    {tab.icon}
-                  </div>
-                  <span className="text-[10px] font-bold uppercase">{tab.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Bottom Drawer */}
+            {/* Bottom Sheet Drawer - Opens from bottom, sits above tab bar */}
             <AnimatePresence>
               {activeMobileDrawer && (
                 <motion.div
                   initial={{ y: '100%' }}
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed bottom-[84px] left-0 right-0 bg-white border-t-4 border-brutal-black z-[90] h-[40vh] flex flex-col shadow-2xl"
+                  transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                  className="fixed bottom-[72px] left-0 right-0 bg-white border-t-2 border-brutal-black z-[95] rounded-t-2xl shadow-2xl flex flex-col"
+                  style={{ maxHeight: 'calc(100vh - 180px)' }}
                 >
-                  {/* Drag Indicator / Close Handle */}
-                  <div 
-                    className="w-full h-8 flex items-center justify-center cursor-pointer"
-                    onClick={() => setActiveMobileDrawer(null)}
-                  >
-                    <div className="w-12 h-1.5 bg-brutal-black/20 rounded-full" />
+                  {/* Drawer Header */}
+                  <div className="flex items-center justify-between p-3 border-b border-brutal-black/10 bg-neutral-50 rounded-t-2xl">
+                    <div className="flex items-center gap-2">
+                      {activeMobileDrawer === 'font' && <Type size={16} />}
+                      {activeMobileDrawer === 'style' && <Palette size={16} />}
+                      {activeMobileDrawer === 'type' && <Sparkles size={16} />}
+                      {activeMobileDrawer === 'effects' && <Settings size={16} />}
+                      {activeMobileDrawer === 'elements' && <Layout size={16} />}
+                      <span className="font-display uppercase text-sm">
+                        {activeMobileDrawer === 'font' && 'Font Library'}
+                        {activeMobileDrawer === 'style' && 'Page Style'}
+                        {activeMobileDrawer === 'type' && 'Typography'}
+                        {activeMobileDrawer === 'effects' && 'Effects'}
+                        {activeMobileDrawer === 'elements' && 'Elements'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => setActiveMobileDrawer(null)}
+                      className="p-2 hover:bg-neutral-200 rounded-lg transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                  <div className="flex-grow overflow-y-auto p-6 pb-12">
+                  
+                  {/* Drawer Content */}
+                  <div className="flex-grow overflow-y-auto p-4 pb-6 overscroll-contain">
                     {activeMobileDrawer === 'font' && renderFontLibrary()}
                     {activeMobileDrawer === 'style' && renderPageStyle()}
                     {activeMobileDrawer === 'type' && renderTypography()}
@@ -1874,6 +1927,33 @@ ${documentText}`;
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Fixed Bottom Tab Bar - Always visible */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-brutal-black z-[100] safe-area-bottom">
+              <div className="flex items-stretch">
+                {[
+                  { id: 'font' as const, icon: <Type size={18} />, label: 'Font' },
+                  { id: 'style' as const, icon: <Palette size={18} />, label: 'Style' },
+                  { id: 'type' as const, icon: <Sparkles size={18} />, label: 'Type' },
+                  { id: 'effects' as const, icon: <Settings size={18} />, label: 'FX' },
+                  { id: 'elements' as const, icon: <Layout size={18} />, label: 'Add' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-0.5 flex-1 py-2 transition-all active:scale-95",
+                      activeMobileDrawer === tab.id 
+                        ? "bg-neon-green text-brutal-black" 
+                        : "text-brutal-black/50 hover:text-brutal-black hover:bg-neutral-50"
+                    )}
+                  >
+                    {tab.icon}
+                    <span className="text-[9px] font-bold uppercase tracking-tight">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>
