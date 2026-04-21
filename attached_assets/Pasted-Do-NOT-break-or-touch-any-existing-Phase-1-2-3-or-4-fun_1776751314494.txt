@@ -1,0 +1,244 @@
+Do NOT break or touch any existing Phase 1, 2, 3, or 4 
+functionality. Only make these specific additions and 
+changes listed below.
+
+---
+
+CHANGE 1 — REBRAND ENTIRE APP TO INKTWIN:
+
+Replace every single occurrence of "HANDFONT" or 
+"HandFont" or "Handfont" anywhere in the codebase 
+with "InkTwin".
+
+Update the browser tab title:
+<title>InkTwin — Your Handwriting, Digitally Yours</title>
+
+Update the meta description:
+<meta name="description" content="Turn your handwriting 
+into a real font. Type in your own handwriting. 
+Free forever.">
+
+---
+
+CHANGE 2 — ADD INKTWIN LOGO TO NAVBAR:
+
+Replace the current text logo in the navbar with 
+this inline SVG logo. It must show on both desktop 
+and mobile clearly:
+
+<svg width="36" height="36" viewBox="0 0 60 60" 
+     xmlns="http://www.w3.org/2000/svg">
+  <!-- Pen body left half black -->
+  <rect x="16" y="4" width="14" height="28" rx="4" 
+        fill="#111"/>
+  <!-- Pen body right half green -->
+  <rect x="30" y="4" width="14" height="28" rx="4" 
+        fill="#2ecc40"/>
+  <!-- Left nib -->
+  <path d="M16,32 L23,52 L30,44 Z" fill="#111"/>
+  <!-- Right nib green -->
+  <path d="M44,32 L37,52 L30,44 Z" fill="#2ecc40"/>
+  <!-- Ink drop green -->
+  <ellipse cx="30" cy="55" rx="4" ry="5" fill="#2ecc40"/>
+</svg>
+
+Next to the SVG icon show the text:
+Ink<span style="color:#2ecc40">Twin</span>
+
+Logo must be visible on both light and dark mode.
+On dark mode the black portions become white.
+Use this CSS for dark mode adaptation:
+@media (prefers-color-scheme: dark) {
+  .logo-dark-part { fill: #f0f0f0; }
+}
+
+---
+
+CHANGE 3 — ADD FAVICON:
+
+Add this favicon to the <head> of the HTML.
+Create it as a 32x32 inline SVG favicon:
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'>
+  <rect x='16' y='4' width='14' height='28' rx='4' fill='%23111'/>
+  <rect x='30' y='4' width='14' height='28' rx='4' fill='%232ecc40'/>
+  <path d='M16,32 L23,52 L30,44 Z' fill='%23111'/>
+  <path d='M44,32 L37,52 L30,44 Z' fill='%232ecc40'/>
+  <ellipse cx='30' cy='55' rx='4' ry='5' fill='%232ecc40'/>
+</svg>">
+
+Also add Apple touch icon for iOS:
+<link rel="apple-touch-icon" href="data:image/svg+xml,...">
+Same SVG as above.
+
+The favicon must show the split nib icon clearly 
+even at 16x16 and 32x32 sizes.
+
+---
+
+CHANGE 4 — RENAME RISKY FEATURE:
+
+Find every single place in the entire codebase where 
+"Do My Homework" or "DO MY HOMEWORK" appears in any 
+UI text, button, navigation tab, page title, or heading.
+
+Replace all occurrences with:
+"AI Study Assistant"
+
+The navigation tab icon stays as 🎓
+Just the text changes to "AI Study Assistant"
+
+---
+
+CHANGE 5 — ADD LANDING PAGE:
+
+Before the main app loads, show a landing page 
+to new visitors who have not set up their API key yet.
+
+If the user already has a Gemini API key saved in 
+localStorage, skip the landing page and go straight 
+to the app as normal.
+
+If no API key exists in localStorage, show this 
+landing page first:
+
+LANDING PAGE CONTENT:
+
+Header: InkTwin logo (same SVG as navbar)
+
+Hero headline (large, bold):
+"Your handwriting.
+Digitally yours."
+
+Hero subtext:
+"Type in your own handwriting. Solve homework with AI.
+Find your closest font match. All free, forever."
+
+Four feature cards in a row (2x2 on mobile):
+
+Card 1: ✏️
+"Create My Font"
+"Upload a photo of your handwriting. 
+Get a real .ttf font file."
+
+Card 2: 📝
+"Write with My Handwriting"  
+"Type anything. Download it looking 
+handwritten on real paper."
+
+Card 3: 🎓
+"AI Study Assistant"
+"Upload any homework question. 
+AI solves it in your handwriting."
+
+Card 4: 🔍
+"Find My Font"
+"Upload any handwriting photo. 
+We find your closest free font match."
+
+Personal story section:
+Small card with subtle border:
+"Built by a student who got an F for typed work 
+after a hand injury. Built free so no one else has to."
+— Rahul, Founder
+
+API Key setup section:
+Title: "Get Started Free"
+Subtitle: "You need a free Gemini API key to use InkTwin.
+It takes 2 minutes and costs nothing."
+
+Step 1: "Go to aistudio.google.com → Get API Key → Create"
+Step 2: "Paste your key below"
+
+Input field: placeholder "Paste your Gemini API key here..."
+Button: "Start Using InkTwin →" (green, prominent)
+
+Small text below input:
+"Your key is stored only in your browser. 
+Never sent to our servers. 🔒"
+
+Link below: "Already have a key set up? → Enter the app"
+
+When user clicks "Start Using InkTwin":
+- Save the API key to localStorage
+- Navigate to the main app
+- Never show landing page again for this user
+
+LANDING PAGE DESIGN:
+- Clean minimal white background
+- Green accent color #2ecc40 for buttons and highlights
+- Mobile friendly single column on small screens
+- Smooth fade-in animation on load
+
+---
+
+CHANGE 6 — USER BRINGS OWN API KEY:
+
+Currently the app uses a hardcoded API key.
+Change this so the app always reads the API key 
+from localStorage key "geminiApiKey".
+
+In every single Gemini API call across all phases:
+const apiKey = localStorage.getItem("geminiApiKey");
+if (!apiKey) {
+  // Redirect to landing page
+  showLandingPage();
+  return;
+}
+
+Add a settings option in the existing settings gear icon:
+"Update API Key" — opens a small modal where user 
+can paste a new Gemini API key and save it.
+
+Show API key status in the existing SYSTEM STATUS panel:
+API: CONNECTED (green) — if key exists in localStorage
+API: MISSING (red) — if no key found
+
+---
+
+CHANGE 7 — ADD SUPPORT SECTION:
+
+Do NOT add any popups or interruptions.
+Only add a quiet support card at the bottom 
+of the sidebar or below the navigation area.
+
+SUPPORT CARD UI:
+☕ Support InkTwin
+"Built free by a student, for students.
+If this helped you, consider buying me a coffee!"
+
+Two buttons side by side:
+Button 1: "☕ Razorpay (India)"
+  href="https://rzp.io/rzp/xxegcrlA"
+  target="_blank"
+
+Button 2: "❤️ Ko-fi (Global)"
+  href="https://ko-fi.com/primuez"
+  target="_blank"
+
+Below buttons in tiny gray text:
+"100% free forever. No pressure. 🙏"
+
+SUPPORT CARD DESIGN:
+- Small and subtle, no bright colors
+- Just sits quietly at the bottom
+- Users can completely ignore it
+- On mobile it sits at the bottom of the page
+
+ALSO add a small ☕ icon button at the far right 
+of the navbar. Clicking it scrolls to the support 
+card. Tooltip: "Support InkTwin"
+
+---
+
+IMPORTANT RULES:
+- Do NOT break any Phase 1, 2, 3, or 4 features
+- Do NOT add popups or interruptions anywhere
+- Landing page only shows when API key is missing
+- Users who already set their API key never see 
+  the landing page again
+- Logo must be crisp on both desktop and mobile
+- Favicon must show in browser tab on all browsers
+- All support links open in new tab
+- Dark mode must work for all new UI elements
