@@ -79,7 +79,7 @@ export async function buildFont(
   }
 
   const font = new opentype.Font({
-    familyName: config.name || 'HandFont',
+    familyName: config.name || 'InkTwin',
     styleName: 'Regular',
     unitsPerEm: unitsPerEm,
     ascender: ascender,

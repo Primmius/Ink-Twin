@@ -1,5 +1,5 @@
 {
-  "name": "HandFont",
+  "name": "InkTwin",
   "description": "Convert your handwriting into a downloadable .ttf font file using Gemini Vision and browser-based vectorization.",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": ["AI Vision", "PDF Generation", "Font Engineering"]

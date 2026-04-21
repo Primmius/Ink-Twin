@@ -21,9 +21,13 @@ import {
   Sun,
   Trash2,
   Sparkles,
-  GraduationCap
+  GraduationCap,
+  Coffee
 } from 'lucide-react';
 import { cn } from './lib/utils';
+import { Logo } from './components/Logo';
+import { LandingPage } from './components/LandingPage';
+import { SupportCard } from './components/SupportCard';
 import { AppStep, AppPhase, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT, SavedFont } from './types';
 import { generateTemplatePDF, pdfToImages } from './lib/pdf';
 import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
@@ -39,8 +43,10 @@ import { FindFont } from './components/FindFont';
 export default function App() {
   const [phase, setPhase] = useState<AppPhase>('font-creation');
   const [step, setStep] = useState<AppStep>(1);
-  const [apiKey, setApiKey] = useState<string>(localStorage.getItem('gemini_api_key') || '');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(!apiKey);
+  const [apiKey, setApiKey] = useState<string>(
+    localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || ''
+  );
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
   const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
@@ -151,7 +157,7 @@ export default function App() {
 
   const saveApiKey = (key: string) => {
     setApiKey(key);
-    localStorage.setItem('gemini_api_key', key);
+    localStorage.setItem('geminiApiKey', key);
     setIsSettingsOpen(false);
   };
 
@@ -161,7 +167,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'HandFont_Template.pdf';
+    a.download = 'InkTwin_Template.pdf';
     a.click();
   };
 
@@ -350,16 +356,20 @@ export default function App() {
     a.click();
   };
 
+  if (!apiKey) {
+    return <LandingPage onSaveKey={saveApiKey} />;
+  }
+
   return (
     <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
       {/* Header */}
       <header className="border-b-2 border-brutal-black p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 bg-white z-40 header-mobile-refine">
         <div className="flex flex-col gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-neon-green border-2 border-brutal-black flex items-center justify-center text-brutal-black brutal-shadow shrink-0">
-              <TypeIcon size={isMobile ? 20 : 28} />
-            </div>
-            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title">HandFont</h1>
+            <Logo size={isMobile ? 32 : 44} showText={false} />
+            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title">
+              Ink<span style={{ color: '#2ecc40' }}>Twin</span>
+            </h1>
           </div>
           
           {/* Phase Navigation */}
@@ -443,7 +453,7 @@ export default function App() {
                 phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
               )}
             >
-              🎓 Do My Homework
+              🎓 AI Study Assistant
             </button>
             <button 
               onClick={() => setPhase('find-font')}
@@ -494,6 +504,15 @@ export default function App() {
             className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
           >
             <Settings size={20} />
+          </button>
+          <button
+            onClick={() => {
+              document.getElementById('support-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            title="Support InkTwin"
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+          >
+            <Coffee size={20} />
           </button>
         </div>
       </header>
@@ -991,6 +1010,13 @@ export default function App() {
         ) : null}
       </div>
 
+      {/* Support Section */}
+      <div className="px-6 py-6 border-t-2 border-brutal-black bg-neutral-50">
+        <div className="max-w-2xl mx-auto">
+          <SupportCard id="support-card" />
+        </div>
+      </div>
+
       {/* Footer */}
       <footer className="border-t-2 border-brutal-black p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
         <div className="flex gap-6">
@@ -1006,7 +1032,7 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] opacity-40">HANDFONT_ENGINE_STABLE_V1.0</span>
+          <span className="font-mono text-[10px] opacity-40">INKTWIN_ENGINE_STABLE_V1.0</span>
           <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
         </div>
       </footer>

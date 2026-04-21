@@ -24,7 +24,7 @@ export async function generateTemplatePDF() {
     const cellWidth = (width - 2 * margin) / cols;
     const cellHeight = (height - 2 * margin) / rows;
     
-    page.drawText(`HandFont Template - Page ${p + 1}`, {
+    page.drawText(`InkTwin Template - Page ${p + 1}`, {
       x: margin,
       y: height - 30,
       size: 12,
