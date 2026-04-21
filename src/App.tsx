@@ -368,7 +368,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <Logo size={isMobile ? 32 : 44} showText={false} />
             <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title">
-              Ink<span style={{ color: '#2ecc40' }}>Twin</span>
+              Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
             </h1>
           </div>
           
@@ -1011,7 +1011,7 @@ export default function App() {
       </div>
 
       {/* Support Section */}
-      <div className="px-6 py-6 border-t-2 border-brutal-black bg-neutral-50">
+      <div className="px-6 py-6 border-t-2 border-brutal-black bg-[var(--bg-secondary)]">
         <div className="max-w-2xl mx-auto">
           <SupportCard id="support-card" />
         </div>

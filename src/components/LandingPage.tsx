@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
+import { ChevronRight } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
 
@@ -43,99 +44,156 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen bg-white text-brutal-black dark:bg-neutral-950 dark:text-white"
+      transition={{ duration: 0.4 }}
+      className="min-h-screen theme-bg font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black"
     >
-      <div className="max-w-5xl mx-auto px-6 py-10 md:py-16 space-y-12">
-        <header className="flex items-center justify-between">
-          <Logo size={42} />
-        </header>
-
-        <section className="space-y-5 text-center md:text-left">
-          <h1 className="font-display uppercase tracking-tighter leading-[0.95] text-5xl md:text-7xl">
-            Your handwriting.
-            <br />
-            <span style={{ color: '#2ecc40' }}>Digitally yours.</span>
+      {/* Header */}
+      <header className="border-b-2 border-brutal-black p-4 md:p-6 flex items-center justify-between bg-[var(--bg-primary)]">
+        <div className="flex items-center gap-3">
+          <Logo size={40} showText={false} />
+          <h1 className="text-2xl md:text-4xl font-display uppercase tracking-tighter leading-none">
+            Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
           </h1>
-          <p className="text-base md:text-xl opacity-80 max-w-2xl">
-            Type in your own handwriting. Solve homework with AI. Find your closest font match. All free,
-            forever.
-          </p>
-        </section>
+        </div>
+        <span className="font-mono text-[10px] opacity-50 hidden sm:block uppercase">
+          [V1.0] HANDWRITING ENGINE
+        </span>
+      </header>
 
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="border-2 border-brutal-black p-4 bg-white dark:bg-neutral-900 brutal-shadow"
-            >
-              <div className="text-3xl mb-2">{f.emoji}</div>
-              <div className="font-display uppercase text-sm mb-2">{f.title}</div>
-              <p className="text-xs opacity-80 leading-snug">{f.desc}</p>
+      <main className="flex-grow overflow-y-auto">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12 space-y-12">
+          {/* Hero */}
+          <section className="space-y-4">
+            <p className="font-mono text-[11px] uppercase opacity-60 tracking-widest">
+              [PHASE_00] WELCOME_PROTOCOL
+            </p>
+            <h2 className="font-display uppercase tracking-tighter leading-[0.92] text-5xl md:text-7xl break-words">
+              Your handwriting.
+              <br />
+              <span style={{ color: 'var(--neon-green)' }}>Digitally yours.</span>
+            </h2>
+            <p className="font-mono text-sm md:text-base opacity-80 max-w-2xl">
+              Type in your own handwriting. Solve homework with AI. Find your closest font match. All free,
+              forever.
+            </p>
+          </section>
+
+          {/* Features */}
+          <section className="space-y-3">
+            <h3 className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
+              [MODULES] WHAT_YOU_GET
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {features.map((f) => (
+                <div
+                  key={f.title}
+                  className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                >
+                  <div className="text-3xl mb-3">{f.emoji}</div>
+                  <h4 className="font-display uppercase text-base mb-2 tracking-tight">{f.title}</h4>
+                  <p className="font-mono text-xs opacity-70 leading-snug">{f.desc}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </section>
+          </section>
 
-        <section className="border-l-4 pl-4 py-2 text-sm opacity-80" style={{ borderColor: '#2ecc40' }}>
-          "Built by a student who got an F for typed work after a hand injury. Built free so no one else
-          has to."
-          <div className="text-xs mt-1 opacity-70">— Rahul, Founder</div>
-        </section>
-
-        <section className="border-2 border-brutal-black p-6 md:p-8 bg-neutral-50 dark:bg-neutral-900 space-y-5">
-          <div>
-            <h2 className="font-display uppercase text-2xl md:text-3xl">Get Started Free</h2>
-            <p className="text-sm opacity-80 mt-1">
-              You need a free Gemini API key to use InkTwin. It takes 2 minutes and costs nothing.
+          {/* Founder note */}
+          <section className="brutal-card brutal-shadow">
+            <p className="font-mono text-[10px] uppercase opacity-60 tracking-widest mb-2">
+              [FOUNDER_NOTE]
             </p>
-          </div>
+            <p className="text-sm leading-relaxed">
+              "Built by a student who got an F for typed work after a hand injury. Built free so no one
+              else has to."
+            </p>
+            <p className="font-mono text-xs opacity-70 mt-2">— Rahul, Founder</p>
+          </section>
 
-          <ol className="space-y-2 text-sm">
-            <li>
-              <span className="font-bold">Step 1:</span> Go to{' '}
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-                style={{ color: '#2ecc40' }}
+          {/* API Key Setup */}
+          <section className="brutal-card brutal-shadow space-y-5">
+            <div>
+              <p className="font-mono text-[10px] uppercase opacity-60 tracking-widest mb-2">
+                [SETUP_REQUIRED] API_KEY
+              </p>
+              <h3 className="font-display uppercase text-3xl md:text-4xl tracking-tighter leading-none">
+                Get Started Free
+              </h3>
+              <p className="font-mono text-xs opacity-70 mt-2">
+                You need a free Gemini API key to use InkTwin. It takes 2 minutes and costs nothing.
+              </p>
+            </div>
+
+            <ol className="space-y-3">
+              <li className="flex gap-3 items-start">
+                <span className="bg-neon-green text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
+                  01
+                </span>
+                <span className="text-sm">
+                  Go to{' '}
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold underline decoration-2 underline-offset-2 hover:text-[var(--neon-green)] inline-flex items-center gap-1"
+                  >
+                    aistudio.google.com <ChevronRight size={14} />
+                  </a>{' '}
+                  and click "Get API Key" → "Create".
+                </span>
+              </li>
+              <li className="flex gap-3 items-start">
+                <span className="bg-neon-green text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
+                  02
+                </span>
+                <span className="text-sm">Paste your key below.</span>
+              </li>
+            </ol>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <label className="font-mono text-[10px] font-bold uppercase opacity-60 tracking-widest block">
+                Your Gemini API Key
+              </label>
+              <input
+                type="password"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value)}
+                placeholder="Paste your Gemini API key here..."
+                autoComplete="new-password"
+                className="w-full px-4 py-3 brutal-border font-mono outline-none bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:bg-[color-mix(in_srgb,var(--neon-green)_15%,transparent)]"
+              />
+              <button
+                type="submit"
+                disabled={!keyInput.trim()}
+                className="w-full brutal-btn brutal-btn-primary brutal-shadow text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                aistudio.google.com
-              </a>{' '}
-              → Get API Key → Create
-            </li>
-            <li>
-              <span className="font-bold">Step 2:</span> Paste your key below
-            </li>
-          </ol>
+                Start Using InkTwin <ChevronRight size={18} />
+              </button>
+              <p className="font-mono text-[10px] opacity-60 text-center uppercase">
+                Your key is stored only in your browser. Never sent to our servers. 🔒
+              </p>
+            </form>
+          </section>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <input
-              type="password"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="Paste your Gemini API key here..."
-              className="w-full px-4 py-3 border-2 border-brutal-black font-mono outline-none bg-white dark:bg-neutral-950"
-            />
-            <button
-              type="submit"
-              className="w-full px-4 py-3 border-2 border-brutal-black font-display uppercase text-sm text-brutal-black brutal-shadow hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all"
-              style={{ backgroundColor: '#2ecc40' }}
-            >
-              Start Using InkTwin →
-            </button>
-            <p className="text-xs opacity-70 text-center">
-              Your key is stored only in your browser. Never sent to our servers. 🔒
-            </p>
-          </form>
-        </section>
+          {/* Support */}
+          <section className="space-y-3">
+            <h3 className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
+              [OPTIONAL] SUPPORT_THE_PROJECT
+            </h3>
+            <SupportCard />
+          </section>
+        </div>
+      </main>
 
-        <SupportCard />
-
-        <footer className="text-xs opacity-60 text-center pt-4">
-          InkTwin — Free forever.
-        </footer>
-      </div>
+      {/* Footer */}
+      <footer className="border-t-2 border-brutal-black p-4 md:p-6 flex items-center justify-between bg-[var(--bg-primary)]">
+        <span className="font-mono text-[10px] opacity-40 uppercase">
+          INKTWIN_ENGINE_STABLE_V1.0
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] opacity-40 uppercase">Free forever</span>
+          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
+        </div>
+      </footer>
     </motion.div>
   );
 };

@@ -9,33 +9,34 @@ export const SupportCard: React.FC<SupportCardProps> = ({ id, className = '' }) 
   return (
     <div
       id={id}
-      className={`border-2 border-brutal-black bg-neutral-50 dark:bg-neutral-900 p-4 text-sm ${className}`}
+      className={`brutal-card brutal-shadow ${className}`}
     >
-      <div className="font-display uppercase text-xs mb-2 flex items-center gap-2">
-        <span>☕</span> Support InkTwin
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-lg">☕</span>
+        <h3 className="font-display uppercase text-sm tracking-tight">Support InkTwin</h3>
       </div>
-      <p className="text-xs leading-snug opacity-80 mb-3">
-        Built free by a student, for students. If this helped you, consider buying me a coffee!
+      <p className="font-mono text-[11px] opacity-70 leading-snug mb-4">
+        Built free by a student, for students. If this helped you, consider buying me a coffee.
       </p>
       <div className="flex flex-col sm:flex-row gap-2">
         <a
           href="https://rzp.io/rzp/xxegcrlA"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 text-center px-3 py-2 border-2 border-brutal-black bg-white hover:bg-neon-green transition-colors text-xs font-bold uppercase"
+          className="brutal-btn flex-1 text-center text-[11px] py-2"
         >
-          ☕ Razorpay (India)
+          ☕ Razorpay (IN)
         </a>
         <a
           href="https://ko-fi.com/primuez"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 text-center px-3 py-2 border-2 border-brutal-black bg-white hover:bg-neon-green transition-colors text-xs font-bold uppercase"
+          className="brutal-btn flex-1 text-center text-[11px] py-2"
         >
           ❤️ Ko-fi (Global)
         </a>
       </div>
-      <p className="text-[10px] text-neutral-500 mt-2 text-center">
+      <p className="font-mono text-[10px] opacity-50 mt-3 text-center uppercase">
         100% free forever. No pressure. 🙏
       </p>
     </div>
