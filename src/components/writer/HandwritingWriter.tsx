@@ -131,9 +131,17 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const loadedSavedFontIds = useRef<Set<string>>(new Set());
 
   // The font family the canvas/textarea actually uses.
-  // If a saved font is active, use its unique id-based family so two fonts
-  // with the same display name never collide.
-  const effectiveFontName = activeFontId ? `inktwin-font-${activeFontId}` : fontName;
+  // - For Google Fonts (Phase 4): use the real CSS family name.
+  // - For binary fonts (Phase 1): use a unique id-based family so two
+  //   fonts with the same display name never collide.
+  const activeFont = activeFontId
+    ? savedFonts.find(f => f.id === activeFontId) || null
+    : null;
+  const effectiveFontName = activeFont
+    ? (activeFont.googleFont
+        ? (activeFont.fontFamily || activeFont.name)
+        : `inktwin-font-${activeFont.id}`)
+    : fontName;
   
   const [settings, setSettings] = useState<PageConfig>({
     fontSize: 24,
@@ -1084,26 +1092,42 @@ ${documentText}`;
     a.click();
   };
 
-  // Eagerly load every saved font into document.fonts under a unique
-  // id-based family. This way picking one is just a state flip.
+  // Eagerly load every saved font into document.fonts.
+  // - Google Fonts (Phase 4): inject CSS link, use the real family name.
+  // - Binary fonts (Phase 1): load bytes under a unique id-based family.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       for (const font of savedFonts) {
         if (loadedSavedFontIds.current.has(font.id)) continue;
-        const family = `inktwin-font-${font.id}`;
+
         try {
-          const res = await fetch(font.url);
-          const buffer = await res.arrayBuffer();
-          if (cancelled) return;
-          const face = new FontFace(family, buffer);
-          const loaded = await face.load();
-          if (cancelled) return;
-          document.fonts.add(loaded);
-          const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
-          await Promise.all(
-            sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
-          );
+          if (font.googleFont) {
+            const family = font.fontFamily || font.name;
+            if (font.url && !document.querySelector(`link[href="${font.url}"]`)) {
+              const link = document.createElement('link');
+              link.href = font.url;
+              link.rel = 'stylesheet';
+              document.head.appendChild(link);
+            }
+            const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
+            await Promise.all(
+              sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
+            );
+          } else {
+            const family = `inktwin-font-${font.id}`;
+            const res = await fetch(font.url);
+            const buffer = await res.arrayBuffer();
+            if (cancelled) return;
+            const face = new FontFace(family, buffer);
+            const loaded = await face.load();
+            if (cancelled) return;
+            document.fonts.add(loaded);
+            const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
+            await Promise.all(
+              sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
+            );
+          }
           if (cancelled) return;
           loadedSavedFontIds.current.add(font.id);
           setFontVersion(v => v + 1);
