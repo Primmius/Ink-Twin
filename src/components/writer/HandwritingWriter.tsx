@@ -127,6 +127,13 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [mode, setMode] = useState<'default' | 'classic'>('default');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [fontVersion, setFontVersion] = useState(0);
+  const [activeFontId, setActiveFontId] = useState<string | null>(null);
+  const loadedSavedFontIds = useRef<Set<string>>(new Set());
+
+  // The font family the canvas/textarea actually uses.
+  // If a saved font is active, use its unique id-based family so two fonts
+  // with the same display name never collide.
+  const effectiveFontName = activeFontId ? `inktwin-font-${activeFontId}` : fontName;
   
   const [settings, setSettings] = useState<PageConfig>({
     fontSize: 24,
@@ -179,12 +186,16 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
             </p>
           </div>
         )}
-        {savedFonts.map(font => (
+        {savedFonts.map(font => {
+          const isActive = activeFontId
+            ? activeFontId === font.id
+            : fontName === font.name;
+          return (
           <div 
             key={font.id}
             className={cn(
               "group brutal-border p-2 flex flex-col gap-2 transition-colors",
-              fontName === font.name ? "bg-neon-green/10 border-neon-green" : "bg-white"
+              isActive ? "bg-neon-green/10 border-neon-green" : "bg-white"
             )}
           >
             <div className="flex items-center justify-between">
@@ -211,16 +222,20 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               )}
             </div>
             <button 
-              onClick={() => onSelectFont(font)}
+              onClick={() => {
+                setActiveFontId(font.id);
+                onSelectFont(font);
+              }}
               className={cn(
                 "w-full py-1 font-mono text-[8px] uppercase font-bold brutal-border h-11 sm:h-auto",
-                fontName === font.name ? "bg-neon-green" : "bg-white hover:bg-neutral-50"
+                isActive ? "bg-neon-green" : "bg-white hover:bg-neutral-50"
               )}
             >
-              {fontName === font.name ? "Active" : "Use Font"}
+              {isActive ? "Active" : "Use Font"}
             </button>
           </div>
-        ))}
+          );
+        })}
       </div>
       {!isMobile && (
         <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs mt-4">
@@ -465,7 +480,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
       wordSpacing: activeSettings.wordSpacing,
       letterSpacing: activeSettings.letterSpacing,
       paragraphSpacing: activeSettings.paragraphSpacing
-    }, fontName);
+    }, effectiveFontName);
     
     setPages(prev => {
       // Preserve images/elements for matching indices
@@ -586,7 +601,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
       wordSpacing: newSettings.wordSpacing,
       letterSpacing: newSettings.letterSpacing,
       paragraphSpacing: newSettings.paragraphSpacing
-    }, fontName);
+    }, effectiveFontName);
 
     const newPages: WriterPage[] = fittedPages.map((content) => ({
       id: Math.random().toString(36).substr(2, 9),
@@ -856,7 +871,7 @@ ${documentText}`;
         wordSpacing: settings.wordSpacing,
         letterSpacing: settings.letterSpacing,
         paragraphSpacing: settings.paragraphSpacing
-      }, fontName);
+      }, effectiveFontName);
       
       const newPages: WriterPage[] = fitted.map(content => ({
         id: Math.random().toString(36).substr(2, 9),
@@ -1069,6 +1084,45 @@ ${documentText}`;
     a.click();
   };
 
+  // Eagerly load every saved font into document.fonts under a unique
+  // id-based family. This way picking one is just a state flip.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      for (const font of savedFonts) {
+        if (loadedSavedFontIds.current.has(font.id)) continue;
+        const family = `inktwin-font-${font.id}`;
+        try {
+          const res = await fetch(font.url);
+          const buffer = await res.arrayBuffer();
+          if (cancelled) return;
+          const face = new FontFace(family, buffer);
+          const loaded = await face.load();
+          if (cancelled) return;
+          document.fonts.add(loaded);
+          const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
+          await Promise.all(
+            sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
+          );
+          if (cancelled) return;
+          loadedSavedFontIds.current.add(font.id);
+          setFontVersion(v => v + 1);
+        } catch (err) {
+          console.error(`Failed to load saved font ${font.name}:`, err);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [savedFonts]);
+
+  // If the parent supplies a freshly-built font (blob: URL), drop any
+  // active saved-font selection so the new build actually shows.
+  useEffect(() => {
+    if (fontUrl && fontUrl.startsWith('blob:')) {
+      setActiveFontId(null);
+    }
+  }, [fontUrl]);
+
   // Auto-load font if URL changes
   useEffect(() => {
     if (!fontUrl) return;
@@ -1220,7 +1274,7 @@ ${documentText}`;
     const cache = new Map<string, HTMLImageElement>();
     
     for (const page of pages) {
-      await renderCanvasPage(ctx, page, settings, fontName, 595, 842, cache);
+      await renderCanvasPage(ctx, page, settings, effectiveFontName, 595, 842, cache);
       const imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
       const imageBytes = await fetch(imageData).then(r => r.arrayBuffer());
       const pdfImage = await pdfDoc.embedJpg(imageBytes);
@@ -1410,10 +1464,10 @@ ${documentText}`;
               onClick={() => setSelectedElementId(null)}
             >
               <CanvasPage 
-                key={`${fontName}-${fontVersion}`}
+                key={`${effectiveFontName}-${fontVersion}`}
                 page={pages[currentPageIndex]} 
                 config={settings} 
-                fontName={fontName}
+                fontName={effectiveFontName}
                 dragOffset={dragOffset}
               >
                 {/* Guides */}
@@ -1445,7 +1499,7 @@ ${documentText}`;
                             wordSpacing: settings.wordSpacing,
                             letterSpacing: settings.letterSpacing,
                             paragraphSpacing: settings.paragraphSpacing
-                          }, fontName);
+                          }, effectiveFontName);
                           
                           const newPages: WriterPage[] = fitted.map(content => ({
                             id: Math.random().toString(36).substr(2, 9),
@@ -1466,7 +1520,7 @@ ${documentText}`;
                         fontSize: `${settings.fontSize}px`,
                         lineHeight: `${settings.lineHeight}px`,
                         zIndex: 10,
-                        fontFamily: fontName,
+                        fontFamily: effectiveFontName,
                       }}
                       spellCheck={false}
                       placeholder="Start writing directly on the page..."
