@@ -1074,34 +1074,50 @@ ${documentText}`;
     if (!fontUrl) return;
 
     if (fontUrl.includes('fonts.googleapis.com')) {
-      // Google Font CSS
       if (!document.querySelector(`link[href="${fontUrl}"]`)) {
         const link = document.createElement('link');
         link.href = fontUrl;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
       }
-      // Wait for it to be ready, then bump version so canvas redraws
       document.fonts.ready.then(() => setFontVersion(v => v + 1));
       return;
     }
 
-    // Font binary blob — clear any existing FontFace under this family first,
-    // otherwise the browser keeps using the old face when switching fonts.
     let cancelled = false;
-    const facesToDelete: FontFace[] = [];
-    document.fonts.forEach(face => {
-      if (face.family === fontName) facesToDelete.push(face);
-    });
-    facesToDelete.forEach(face => document.fonts.delete(face));
+    (async () => {
+      try {
+        // Fetch as ArrayBuffer — works for blob:, data:, and http(s): URLs
+        // and is more reliable than passing data URLs through `url(...)`.
+        const res = await fetch(fontUrl);
+        const buffer = await res.arrayBuffer();
+        if (cancelled) return;
 
-    const fontFace = new FontFace(fontName, `url(${fontUrl})`);
-    fontFace.load().then(loadedFace => {
-      if (cancelled) return;
-      document.fonts.add(loadedFace);
-      // Force a redraw of the canvas now that the new font is active.
-      setFontVersion(v => v + 1);
-    }).catch(err => console.error("Font load error:", err));
+        // Remove any existing faces under this family so the new one wins.
+        const toDelete: FontFace[] = [];
+        document.fonts.forEach(face => {
+          if (face.family === fontName) toDelete.push(face);
+        });
+        toDelete.forEach(face => document.fonts.delete(face));
+
+        const fontFace = new FontFace(fontName, buffer);
+        const loadedFace = await fontFace.load();
+        if (cancelled) return;
+        document.fonts.add(loadedFace);
+
+        // Pre-warm the font for canvas2d at the sizes the writer uses.
+        // ctx.fillText falls back silently if the size isn't loaded yet.
+        const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
+        await Promise.all(
+          sizes.map(s => document.fonts.load(`${s}px "${fontName}"`).catch(() => {}))
+        );
+        if (cancelled) return;
+
+        setFontVersion(v => v + 1);
+      } catch (err) {
+        console.error('Font load error:', err);
+      }
+    })();
 
     return () => { cancelled = true; };
   }, [fontUrl, fontName]);
