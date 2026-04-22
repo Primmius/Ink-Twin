@@ -218,16 +218,21 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                   {font.source === 'Found - Phase 4' ? '🔍 Found match' : '✏️ Your handwriting'}
                 </span>
               </div>
-              {!isMobile && (
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => onDeleteFont(font.id)}
-                    className="p-1 hover:text-error-red"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => {
+                    if (window.confirm(`Delete "${font.name}"? This cannot be undone.`)) {
+                      if (activeFontId === font.id) setActiveFontId(null);
+                      onDeleteFont(font.id);
+                      loadedSavedFontIds.current.delete(font.id);
+                    }
+                  }}
+                  className="p-2 hover:text-error-red touch-manipulation"
+                  aria-label={`Delete ${font.name}`}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
             <button 
               onClick={() => {
