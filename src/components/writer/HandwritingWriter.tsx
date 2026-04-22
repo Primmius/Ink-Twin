@@ -126,6 +126,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
   const [mode, setMode] = useState<'default' | 'classic'>('default');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [fontVersion, setFontVersion] = useState(0);
   
   const [settings, setSettings] = useState<PageConfig>({
     fontSize: 24,
@@ -1070,23 +1071,39 @@ ${documentText}`;
 
   // Auto-load font if URL changes
   useEffect(() => {
-    if (fontUrl) {
-      if (fontUrl.includes('fonts.googleapis.com')) {
-        // Google Font CSS
-        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
-          const link = document.createElement('link');
-          link.href = fontUrl;
-          link.rel = 'stylesheet';
-          document.head.appendChild(link);
-        }
-      } else {
-        // Font binary blob
-        const fontFace = new FontFace(fontName, `url(${fontUrl})`);
-        fontFace.load().then((loadedFace) => {
-          document.fonts.add(loadedFace);
-        }).catch(err => console.error("Font load error:", err));
+    if (!fontUrl) return;
+
+    if (fontUrl.includes('fonts.googleapis.com')) {
+      // Google Font CSS
+      if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+        const link = document.createElement('link');
+        link.href = fontUrl;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
       }
+      // Wait for it to be ready, then bump version so canvas redraws
+      document.fonts.ready.then(() => setFontVersion(v => v + 1));
+      return;
     }
+
+    // Font binary blob — clear any existing FontFace under this family first,
+    // otherwise the browser keeps using the old face when switching fonts.
+    let cancelled = false;
+    const facesToDelete: FontFace[] = [];
+    document.fonts.forEach(face => {
+      if (face.family === fontName) facesToDelete.push(face);
+    });
+    facesToDelete.forEach(face => document.fonts.delete(face));
+
+    const fontFace = new FontFace(fontName, `url(${fontUrl})`);
+    fontFace.load().then(loadedFace => {
+      if (cancelled) return;
+      document.fonts.add(loadedFace);
+      // Force a redraw of the canvas now that the new font is active.
+      setFontVersion(v => v + 1);
+    }).catch(err => console.error("Font load error:", err));
+
+    return () => { cancelled = true; };
   }, [fontUrl, fontName]);
 
   const addPage = () => {
@@ -1377,6 +1394,7 @@ ${documentText}`;
               onClick={() => setSelectedElementId(null)}
             >
               <CanvasPage 
+                key={`${fontName}-${fontVersion}`}
                 page={pages[currentPageIndex]} 
                 config={settings} 
                 fontName={fontName}
