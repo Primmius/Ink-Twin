@@ -19,14 +19,38 @@ export async function processCharacterImage(
   wctx.fillRect(0, 0, work.width, work.height);
   wctx.drawImage(sourceImage, pxX, pxY, pxW, pxH, 0, 0, work.width, work.height);
 
-  const tight = findHandwrittenCharacter(wctx, work.width, work.height);
+  // Find the handwritten character inside the AI's box AND get a pixel
+  // mask of what to keep so we can whitewash neighbouring labels and grid
+  // lines from the actual output (not just from the analysis).
+  const result = findHandwrittenCharacter(wctx, work.width, work.height);
 
-  let srcX = pxX, srcY = pxY, srcW = pxW, srcH = pxH;
-  if (tight) {
-    srcX = pxX + tight.x;
-    srcY = pxY + tight.y;
-    srcW = tight.w;
-    srcH = tight.h;
+  // Whitewash everything in the work canvas that isn't part of the chosen
+  // character. This removes neighbouring printed labels and any cell-border
+  // residue from the FINAL output, not just from the blob analysis.
+  if (result?.keepMask) {
+    const wImg = wctx.getImageData(0, 0, work.width, work.height);
+    const data = wImg.data;
+    for (let p = 0, i = 0; p < result.keepMask.length; p++, i += 4) {
+      if (!result.keepMask[p]) {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+      }
+    }
+    wctx.putImageData(wImg, 0, 0);
+  }
+
+  let srcX = 0, srcY = 0, srcW = work.width, srcH = work.height;
+  let srcCanvas: HTMLCanvasElement | HTMLImageElement = work;
+  if (result?.bbox) {
+    srcX = result.bbox.x;
+    srcY = result.bbox.y;
+    srcW = result.bbox.w;
+    srcH = result.bbox.h;
+  } else {
+    // No usable mask — fall back to the AI's box on the original image.
+    srcCanvas = sourceImage;
+    srcX = pxX; srcY = pxY; srcW = pxW; srcH = pxH;
   }
 
   const out = document.createElement('canvas');
@@ -41,7 +65,7 @@ export async function processCharacterImage(
   const drawH = srcH * scale;
   const dx = (500 - drawW) / 2;
   const dy = (500 - drawH) / 2;
-  ctx.drawImage(sourceImage, srcX, srcY, srcW, srcH, dx, dy, drawW, drawH);
+  ctx.drawImage(srcCanvas, srcX, srcY, srcW, srcH, dx, dy, drawW, drawH);
 
   const imageData = ctx.getImageData(0, 0, 500, 500);
   const data = imageData.data;
@@ -70,7 +94,7 @@ function findHandwrittenCharacter(
   ctx: CanvasRenderingContext2D,
   w: number,
   h: number
-): { x: number; y: number; w: number; h: number } | null {
+): { bbox: { x: number; y: number; w: number; h: number }; keepMask: Uint8Array } | null {
   if (w < 8 || h < 8) return null;
   const img = ctx.getImageData(0, 0, w, h).data;
 
@@ -220,7 +244,25 @@ function findHandwrittenCharacter(
   const y1 = clamp(maxY + padY + 1, 0, h);
 
   if (x1 - x0 < 4 || y1 - y0 < 4) return null;
-  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+
+  // Build a keep-mask: true for pixels in the chosen blob plus any nearby
+  // surviving sub-blobs we merged in. Everything else (grid lines, printed
+  // labels, neighbours) gets whitewashed by the caller.
+  const keptIds = new Set<number>([main.id]);
+  for (const c of chosen) {
+    if (c === main) continue;
+    const ccx = (c.minX + c.maxX) / 2;
+    const ccy = (c.minY + c.maxY) / 2;
+    if (Math.hypot(ccx - cx, ccy - cy) <= radius && c.area >= main.area * 0.05) {
+      keptIds.add(c.id);
+    }
+  }
+  const keepMask = new Uint8Array(w * h);
+  for (let p = 0; p < labels.length; p++) {
+    if (keptIds.has(labels[p])) keepMask[p] = 1;
+  }
+
+  return { bbox: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }, keepMask };
 }
 
 function clamp(v: number, lo: number, hi: number) {

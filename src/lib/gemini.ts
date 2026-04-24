@@ -10,9 +10,9 @@ export async function analyzeHandwriting(imageData: string, apiKey: string): Pro
   const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper.
 
 If it is a grid template:
-- Extract each character from its own single labeled box.
-- Use the printed label to identify the character.
-- The bounding box must enclose ONLY the one handwritten stroke inside that single cell. Do NOT include grid lines, cell borders, the printed label, or any neighbouring cell.
+- Each cell has a small PRINTED label (e.g. "A", "b", "5") in the top-left corner — this label is the SOURCE OF TRUTH for which character belongs in that cell. The handwritten stroke inside the SAME cell is the user's version of that character.
+- For every cell with a printed label, return ONE detection where "char" is the printed label and the bounding box is centred on the HANDWRITTEN stroke inside the SAME cell — never the stroke from an adjacent cell.
+- The bounding box should hug the handwritten stroke and must NOT cross into the next cell. It is OK to include a small amount of empty cell space around the stroke; we will tighten it later. Do NOT include the printed label or any neighbouring cell's content.
 
 If it is freehand handwritten text:
 - Scan the entire image and find each unique character that appears.
