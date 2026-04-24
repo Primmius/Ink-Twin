@@ -7,32 +7,31 @@ export async function analyzeHandwriting(imageData: string, apiKey: string): Pro
   // Remove data:image/...;base64, prefix
   const base64Data = imageData.split(',')[1];
   
-  const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper. 
+  const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper.
 
 If it is a grid template:
-- Extract each character from its labeled box.
-- Use the label to identify what character it is.
-- IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include the grid lines, box borders, or the printed labels/characters in the bounding box.
+- Extract each character from its own single labeled box.
+- Use the printed label to identify the character.
+- The bounding box must enclose ONLY the one handwritten stroke inside that single cell. Do NOT include grid lines, cell borders, the printed label, or any neighbouring cell.
 
 If it is freehand handwritten text:
-- Scan the entire image to find every unique character visible.
-- For each unique character, pick the SINGLE clearest and cleanest instance.
-- If a character appears multiple times, select the one with the best stroke definition and least noise.
-- Strictly ignore bleed-through from other pages, ghosting, or background artifacts.
-- Ignore margin notes, non-character marks, doodles, or smudges.
-- Ignore ruled lines, grid lines, or any background patterns on the paper.
+- Scan the entire image and find each unique character that appears.
+- For each character, pick the SINGLE clearest instance and box only that one glyph.
+- Ignore bleed-through, ghosting, doodles, smudges, ruled lines, and margin notes.
 
-For all characters:
-- Analyze the stroke thickness variations. Identify if the stroke width or boldness varies significantly within the character.
-- Ensure the bounding box tightly encloses ONLY the handwritten character stroke.
+CRITICAL SIZE & SHAPE RULES (apply to every box):
+- The box must contain EXACTLY ONE character — never two letters, never a row, never a column, never a quadrant of the page.
+- Each box should tightly hug the stroke. For a typical grid template with multiple cells per page, each character box should be roughly 3% to 12% of the image width and 3% to 12% of the image height. For a freehand page, similar size.
+- If you find yourself returning a box larger than ~15% of the image in any dimension, stop and re-examine — it almost certainly contains more than one character.
+- Express coordinates as percentages 0–100 of the full image: x and y are the TOP-LEFT corner of the box; width and height are its size.
 
-Return JSON only in this format: a JSON array of objects, where each object has:
-- "char": the character string
-- "boundingBox": {x, y, width, height} as percentages (0-100)
-- "confidence": 0-1 score
-- "thickness_variation": 0-1 score (0 = perfectly uniform thickness, 1 = extreme variation in stroke width)
+Return a JSON array of objects, each with:
+- "char": the single character string
+- "boundingBox": {x, y, width, height} as percentages 0–100
+- "confidence": 0.0–1.0
+- "thickness_variation": 0.0–1.0 (0 = uniform, 1 = highly variable)
 
-Return JSON only, no explanation, no markdown.`;
+Return JSON only — no markdown, no explanation.`;
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-lite",

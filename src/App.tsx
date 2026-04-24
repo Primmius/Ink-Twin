@@ -623,7 +623,7 @@ export default function App() {
                       <div className="flex gap-3">
                         <span className="font-bold text-brutal-black whitespace-nowrap">OPTION B</span>
                         <span>
-                          <span className="font-bold">No printer?</span> Draw your own grid of boxes on plain paper (or copy the template by hand) and write each letter inside.
+                          <span className="font-bold">No printer?</span> Draw a grid that matches the template — <span className="font-bold">4 columns × 5 rows of equal-sized boxes</span> per page, leaving comfortable space between cells. Write the printed label (A, B, C…) in the top-left corner of each box, then the handwritten character clearly inside, filling roughly half the box. Use a black or dark-blue pen.
                         </span>
                       </div>
                       <div className="flex gap-3">
