@@ -29,6 +29,13 @@ EXTRACTION RULES (apply to all three layouts):
 - Distinguish carefully between visually similar pairs: O vs 0, I vs l vs 1, S vs 5, Z vs 2, B vs 8, C vs c, K vs k, P vs p, S vs s, U vs u, V vs v, W vs w, X vs x, Y vs y, Z vs z. Use box position, label, or relative size as tiebreakers.
 - Set confidence honestly: low (<0.4) if the character or its boundary is uncertain.
 
+COORDINATE SYSTEM (CRITICAL):
+- Express every bounding box as PERCENTAGES of the full image, in the range 0 to 100.
+- "x" and "y" are the TOP-LEFT corner of the box.
+- "width" and "height" are the SIZE of the box.
+- DO NOT use 0-1 normalized values. DO NOT use 0-1000 values. DO NOT use raw pixel values.
+- Example for a character in the middle of the image roughly 1/10 the width: {"x": 45, "y": 45, "width": 10, "height": 10}.
+
 Return a JSON ARRAY of objects, each with:
 - "char": the single character string (case-sensitive)
 - "boundingBox": {x, y, width, height} as percentages (0-100) of the full image
@@ -75,11 +82,67 @@ Return JSON only. No markdown. No explanation.`;
   try {
     const text = response.text;
     if (!text) return [];
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((d: any) => ({ ...d, boundingBox: normalizeBoundingBox(d.boundingBox) }));
   } catch (e) {
     console.error("Failed to parse Gemini response", e);
     return [];
   }
+}
+
+// Gemini sometimes returns bounding boxes in different coordinate systems
+// (percent 0-100, normalized 0-1, normalized 0-1000, or {y_min,x_min,y_max,x_max}).
+// Normalize them all to {x,y,width,height} as percentages 0-100.
+function normalizeBoundingBox(box: any): { x: number; y: number; width: number; height: number } {
+  if (!box || typeof box !== 'object') return { x: 0, y: 0, width: 0, height: 0 };
+
+  // Handle [ymin, xmin, ymax, xmax] array form (Gemini vision default).
+  if (Array.isArray(box) && box.length === 4) {
+    const [ymin, xmin, ymax, xmax] = box.map(Number);
+    return rescaleCorners(xmin, ymin, xmax, ymax);
+  }
+
+  // Handle {y_min, x_min, y_max, x_max} or {ymin, xmin, ymax, xmax} forms.
+  const yMin = num(box.y_min ?? box.ymin ?? box.top);
+  const xMin = num(box.x_min ?? box.xmin ?? box.left);
+  const yMax = num(box.y_max ?? box.ymax ?? box.bottom);
+  const xMax = num(box.x_max ?? box.xmax ?? box.right);
+  if (yMax !== null && xMax !== null && yMin !== null && xMin !== null) {
+    return rescaleCorners(xMin, yMin, xMax, yMax);
+  }
+
+  // Handle {x, y, width, height} form (what we asked for).
+  let x = num(box.x) ?? 0;
+  let y = num(box.y) ?? 0;
+  let w = num(box.width) ?? 0;
+  let h = num(box.height) ?? 0;
+
+  const scale = inferScale(Math.max(x, y, x + w, y + h));
+  return { x: x * scale, y: y * scale, width: w * scale, height: h * scale };
+}
+
+function rescaleCorners(x1: number, y1: number, x2: number, y2: number) {
+  const scale = inferScale(Math.max(x1, y1, x2, y2));
+  const x = x1 * scale;
+  const y = y1 * scale;
+  const w = (x2 - x1) * scale;
+  const h = (y2 - y1) * scale;
+  return { x, y, width: w, height: h };
+}
+
+function inferScale(maxVal: number): number {
+  if (!isFinite(maxVal) || maxVal <= 0) return 1;
+  if (maxVal <= 1.0001) return 100;     // values are 0-1
+  if (maxVal <= 100.0001) return 1;     // already percent
+  if (maxVal <= 1000.0001) return 0.1;  // 0-1000 (Gemini default)
+  return 100 / maxVal;                  // pixels — best effort
+}
+
+function num(v: any): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
@@ -132,7 +195,9 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   try {
     const text = response.text;
     if (!text) return null;
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!parsed) return null;
+    return { ...parsed, boundingBox: normalizeBoundingBox(parsed.boundingBox) };
   } catch (e) {
     return null;
   }
