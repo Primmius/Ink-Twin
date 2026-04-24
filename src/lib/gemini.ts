@@ -72,11 +72,70 @@ Return JSON only, no explanation, no markdown.`;
   try {
     const text = response.text;
     if (!text) return [];
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((d: any) => ({ ...d, boundingBox: normalizeBoundingBox(d.boundingBox) }))
+      .filter((d: any) => d.boundingBox.width > 0 && d.boundingBox.height > 0);
   } catch (e) {
     console.error("Failed to parse Gemini response", e);
     return [];
   }
+}
+
+// Gemini's vision models often return bounding boxes in their native
+// 0-1000 normalized format (or sometimes 0-1, or pixel coords) regardless
+// of the schema we ask for. Detect and rescale every box to a consistent
+// {x, y, width, height} 0-100 percentage representation.
+function normalizeBoundingBox(box: any): { x: number; y: number; width: number; height: number } {
+  if (!box) return { x: 0, y: 0, width: 0, height: 0 };
+
+  // Array form: [ymin, xmin, ymax, xmax] (Gemini default)
+  if (Array.isArray(box) && box.length === 4) {
+    const [a, b, c, d] = box.map(Number);
+    return rescaleCorners(b, a, d, c);
+  }
+
+  // Corner form: {y_min, x_min, y_max, x_max} or {ymin, xmin, ymax, xmax}
+  const yMin = num(box.y_min ?? box.ymin ?? box.top);
+  const xMin = num(box.x_min ?? box.xmin ?? box.left);
+  const yMax = num(box.y_max ?? box.ymax ?? box.bottom);
+  const xMax = num(box.x_max ?? box.xmax ?? box.right);
+  if (yMin !== null && xMin !== null && yMax !== null && xMax !== null) {
+    return rescaleCorners(xMin, yMin, xMax, yMax);
+  }
+
+  // Size form: {x, y, width, height}
+  const x = num(box.x) ?? 0;
+  const y = num(box.y) ?? 0;
+  const w = num(box.width) ?? 0;
+  const h = num(box.height) ?? 0;
+  const scale = inferScale(Math.max(x, y, x + w, y + h));
+  return { x: x * scale, y: y * scale, width: w * scale, height: h * scale };
+}
+
+function rescaleCorners(x1: number, y1: number, x2: number, y2: number) {
+  const scale = inferScale(Math.max(x1, y1, x2, y2));
+  return {
+    x: x1 * scale,
+    y: y1 * scale,
+    width: (x2 - x1) * scale,
+    height: (y2 - y1) * scale,
+  };
+}
+
+function inferScale(maxVal: number): number {
+  if (!isFinite(maxVal) || maxVal <= 0) return 1;
+  if (maxVal <= 1.0001) return 100;     // 0-1 normalized
+  if (maxVal <= 100.0001) return 1;     // already percent
+  if (maxVal <= 1000.0001) return 0.1;  // 0-1000 (Gemini vision default)
+  return 100 / maxVal;                  // raw pixels — best effort
+}
+
+function num(v: any): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
@@ -129,7 +188,9 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   try {
     const text = response.text;
     if (!text) return null;
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!parsed) return null;
+    return { ...parsed, boundingBox: normalizeBoundingBox(parsed.boundingBox) };
   } catch (e) {
     return null;
   }
