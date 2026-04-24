@@ -87,6 +87,25 @@ function findHandwrittenCharacter(
   const ink = new Uint8Array(w * h);
   for (let p = 0; p < lum.length; p++) ink[p] = lum[p] < t ? 1 : 0;
 
+  // Erase grid-cell border lines BEFORE blob analysis so they can never
+  // be confused with handwriting or accidentally merge with it.
+  // A row that is mostly dark across its width is a horizontal cell border;
+  // same for columns. Wipe them from the mask.
+  for (let y = 0; y < h; y++) {
+    let dark = 0;
+    for (let x = 0; x < w; x++) if (ink[y * w + x]) dark++;
+    if (dark > w * 0.55) {
+      for (let x = 0; x < w; x++) ink[y * w + x] = 0;
+    }
+  }
+  for (let x = 0; x < w; x++) {
+    let dark = 0;
+    for (let y = 0; y < h; y++) if (ink[y * w + x]) dark++;
+    if (dark > h * 0.55) {
+      for (let y = 0; y < h; y++) ink[y * w + x] = 0;
+    }
+  }
+
   // Connected components via flood fill (4-connected).
   const labels = new Int32Array(w * h);
   const components: { id: number; minX: number; minY: number; maxX: number; maxY: number; area: number }[] = [];
@@ -191,9 +210,10 @@ function findHandwrittenCharacter(
     }
   }
 
-  // Add a small padding margin so the stroke doesn't touch the crop edge.
-  const padX = Math.round((maxX - minX + 1) * 0.12);
-  const padY = Math.round((maxY - minY + 1) * 0.12);
+  // Tight crop with a tiny padding — the 500x500 output canvas adds the
+  // visual breathing room via fit-and-center, so we don't need much here.
+  const padX = Math.round((maxX - minX + 1) * 0.04);
+  const padY = Math.round((maxY - minY + 1) * 0.04);
   const x0 = clamp(minX - padX, 0, w);
   const y0 = clamp(minY - padY, 0, h);
   const x1 = clamp(maxX + padX + 1, 0, w);
