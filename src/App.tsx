@@ -601,14 +601,61 @@ export default function App() {
                     </p>
                   </div>
 
-                  <div className="grid sm:grid-cols-2 gap-8 mt-12">
+                  {/* Beginner-friendly explainer */}
+                  <div className="brutal-card brutal-shadow bg-neon-green/10 border-neon-green">
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className="text-2xl">👋</span>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-display uppercase">New here? Read this first.</h3>
+                        <p className="font-mono text-xs opacity-70 mt-1">
+                          Pick whichever option works for you — all 3 give you a real digital font.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 font-mono text-xs sm:text-sm">
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION A</span>
+                        <span>
+                          <span className="font-bold">Easy:</span> Tap <span className="font-bold">Download PDF</span> below, print it, fill every box with a black pen, then snap a photo and upload.
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION B</span>
+                        <span>
+                          <span className="font-bold">No printer?</span> Draw your own grid of boxes on plain paper (or copy the template by hand) and write each letter inside.
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION C</span>
+                        <span>
+                          <span className="font-bold">Just want letters:</span> Write <span className="font-bold">A–Z</span> (uppercase), <span className="font-bold">a–z</span> (lowercase) and <span className="font-bold">0–9</span> clearly on any paper, then upload.
+                        </span>
+                      </div>
+                      <div className="flex gap-3 pt-3 border-t-2 border-brutal-black">
+                        <span className="font-bold whitespace-nowrap">⏰ NO TIME?</span>
+                        <span>
+                          Skip this entirely — head to{' '}
+                          <button
+                            onClick={() => setPhase('find-font')}
+                            className="underline font-bold hover:text-brutal-black"
+                          >
+                            🔍 Find My Font
+                          </button>
+                          {' '}and upload any handwritten sentence or page. We'll match it to the closest font for you.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-8 mt-8">
                     <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
                       <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
                         <Download size={24} />
                       </div>
                       <h3 className="text-2xl font-display uppercase mb-4">01. Download</h3>
                       <p className="font-mono text-sm mb-8 opacity-70">
-                        Get the A4 PDF template. Fill it with a black pen.
+                        Optional — grab the A4 template if you'd like printed boxes to write in. Skip if you're using your own paper.
                       </p>
                       <button 
                         onClick={handleDownloadTemplate}
@@ -624,7 +671,7 @@ export default function App() {
                       </div>
                       <h3 className="text-2xl font-display uppercase mb-4">02. Upload</h3>
                       <p className="font-mono text-sm mb-8 opacity-70">
-                        Scan or photograph your template and upload it here.
+                        Photograph or scan your filled template, your own grid, or your A–Z & 0–9 page. Multiple photos OK.
                       </p>
                       <div className="flex flex-col gap-3">
                         <label className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 cursor-pointer">
