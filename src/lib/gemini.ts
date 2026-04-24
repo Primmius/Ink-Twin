@@ -19,10 +19,10 @@ If it is freehand handwritten text:
 - For each character, pick the SINGLE clearest instance and box only that one glyph.
 - Ignore bleed-through, ghosting, doodles, smudges, ruled lines, and margin notes.
 
-CRITICAL SIZE & SHAPE RULES (apply to every box):
-- The box must contain EXACTLY ONE character — never two letters, never a row, never a column, never a quadrant of the page.
-- Each box should tightly hug the stroke. For a typical grid template with multiple cells per page, each character box should be roughly 3% to 12% of the image width and 3% to 12% of the image height. For a freehand page, similar size.
-- If you find yourself returning a box larger than ~15% of the image in any dimension, stop and re-examine — it almost certainly contains more than one character.
+RULES for every bounding box:
+- Each box must contain EXACTLY ONE handwritten character — not two, not a row, not a column.
+- For a grid template, the box can include the cell around the character (a little extra space is fine — we will tighten it later). Aim for the box to roughly match the size of one cell, not a quadrant of cells.
+- For freehand text, hug the character with a small margin.
 - Express coordinates as percentages 0–100 of the full image: x and y are the TOP-LEFT corner of the box; width and height are its size.
 
 Return a JSON array of objects, each with:
