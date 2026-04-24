@@ -113,19 +113,38 @@ function findHandwrittenCharacter(
 
   // Erase grid-cell border lines BEFORE blob analysis so they can never
   // be confused with handwriting or accidentally merge with it.
-  // A row that is mostly dark across its width is a horizontal cell border;
-  // same for columns. Wipe them from the mask.
+  // We detect lines two ways:
+  //   (a) a row/column that is overall mostly dark, or
+  //   (b) a row/column that contains a single long contiguous dark run.
   for (let y = 0; y < h; y++) {
     let dark = 0;
-    for (let x = 0; x < w; x++) if (ink[y * w + x]) dark++;
-    if (dark > w * 0.55) {
+    let bestRun = 0, run = 0;
+    for (let x = 0; x < w; x++) {
+      if (ink[y * w + x]) {
+        dark++;
+        run++;
+        if (run > bestRun) bestRun = run;
+      } else {
+        run = 0;
+      }
+    }
+    if (dark > w * 0.4 || bestRun > w * 0.5) {
       for (let x = 0; x < w; x++) ink[y * w + x] = 0;
     }
   }
   for (let x = 0; x < w; x++) {
     let dark = 0;
-    for (let y = 0; y < h; y++) if (ink[y * w + x]) dark++;
-    if (dark > h * 0.55) {
+    let bestRun = 0, run = 0;
+    for (let y = 0; y < h; y++) {
+      if (ink[y * w + x]) {
+        dark++;
+        run++;
+        if (run > bestRun) bestRun = run;
+      } else {
+        run = 0;
+      }
+    }
+    if (dark > h * 0.4 || bestRun > h * 0.5) {
       for (let y = 0; y < h; y++) ink[y * w + x] = 0;
     }
   }

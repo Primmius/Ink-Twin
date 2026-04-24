@@ -15,6 +15,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
+  const [reanalyzeError, setReanalyzeError] = useState<string | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -120,6 +121,12 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
         </div>
 
         <div className="flex-grow p-8 flex flex-col items-center gap-6">
+          {reanalyzeError && (
+            <div className="w-full max-w-[400px] bg-error-red text-white border-2 border-brutal-black p-3 text-xs font-mono flex items-start gap-2">
+              <span className="flex-grow">{reanalyzeError}</span>
+              <button onClick={() => setReanalyzeError(null)} className="font-bold">×</button>
+            </div>
+          )}
           <div className="relative brutal-border bg-white cursor-crosshair touch-none">
             <canvas
               ref={canvasRef}
@@ -146,8 +153,11 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
                 onClick={async () => {
                   if (onReanalyze) {
                     setIsReanalyzing(true);
+                    setReanalyzeError(null);
                     try {
                       await onReanalyze();
+                    } catch (e: any) {
+                      setReanalyzeError(e?.message || "Re-analysis failed.");
                     } finally {
                       setIsReanalyzing(false);
                     }

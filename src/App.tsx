@@ -295,38 +295,45 @@ export default function App() {
   const handleReanalyzeChar = async (index: number) => {
     if (!apiKey) {
       setIsSettingsOpen(true);
-      return;
+      throw new Error("Please add your Gemini API key first.");
     }
 
     const charToReanalyze = detectedChars[index].char;
-    
-    try {
-      // Try to find the character in any of the uploaded images
-      for (const image of uploadedImages) {
+    if (!uploadedImages.length) {
+      throw new Error("No source images available — re-upload your template.");
+    }
+
+    let bestResult: { result: DetectedCharacter; image: string } | null = null;
+    const errors: string[] = [];
+
+    for (const image of uploadedImages) {
+      try {
         const result = await reanalyzeSpecificCharacter(charToReanalyze, image, apiKey);
-        if (result && result.confidence > 0.5) {
-          // Found it! Crop and update
-          try {
-            const cropped = await processCharacterImage(image, result.boundingBox);
-            setDetectedChars(prev => {
-              const next = [...prev];
-              next[index] = {
-                ...result,
-                imageData: cropped
-              };
-              return next;
-            });
-            return;
-          } catch (e) {
-            console.error("Failed to process re-analyzed image", e);
-            throw new Error("Found the character, but failed to process the image.");
+        if (result && result.boundingBox.width > 0 && result.boundingBox.height > 0) {
+          if (!bestResult || (result.confidence ?? 0) > (bestResult.result.confidence ?? 0)) {
+            bestResult = { result, image };
           }
         }
+      } catch (e: any) {
+        errors.push(e?.message || String(e));
       }
-      setError(`Could not find character "${charToReanalyze}" in any uploaded images.`);
-    } catch (err) {
-      console.error("Re-analysis failed", err);
-      setError("Re-analysis failed. Please try again or draw manually.");
+    }
+
+    if (!bestResult) {
+      const detail = errors.length ? ` (${errors[0]})` : "";
+      throw new Error(`Could not find "${charToReanalyze}" in your scans${detail}. Try drawing it manually.`);
+    }
+
+    try {
+      const cropped = await processCharacterImage(bestResult.image, bestResult.result.boundingBox);
+      setDetectedChars(prev => {
+        const next = [...prev];
+        next[index] = { ...bestResult!.result, imageData: cropped };
+        return next;
+      });
+    } catch (e: any) {
+      console.error("Failed to process re-analyzed image", e);
+      throw new Error("Found the character, but failed to crop the image.");
     }
   };
 

@@ -141,16 +141,23 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.split(',')[1];
   
-  const prompt = `Find the handwritten character "${char}" in this image. 
-  The image may be a grid template or freehand text. 
-  If it's a grid, look for the box labeled "${char}". 
-  If it's freehand, find the single cleanest and clearest instance of "${char}" in the text.
-  Ignore distractions like bleed-through, ruled lines, or non-character marks.
-  IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include grid lines, box borders, or printed labels.
-  Analyze stroke thickness variations for this character.
-  Return its bounding box as percentages (x, y, width, height) between 0 and 100, a confidence score, and thickness_variation (0-1).
-  The box should tightly enclose ONLY the handwritten stroke.
-  If not found, return null. Return as JSON only.`;
+  const prompt = `Find the handwritten character "${char}" in this image.
+The image may be a grid template or freehand handwriting.
+
+If it is a grid template:
+- Locate the cell whose PRINTED label (small letter in the top-left of the cell) is exactly "${char}".
+- The handwritten stroke INSIDE THAT SAME CELL is the one to box. NEVER take the stroke from a neighbouring cell.
+- The bounding box should be centred on the handwritten stroke. It is fine to include a little empty cell space around it; we will tighten it later. Do not cross into adjacent cells.
+
+If it is freehand text:
+- Find the single clearest instance of "${char}" and box only that one glyph.
+- Ignore bleed-through, ruled lines, doodles, smudges, and unrelated marks.
+
+Return ONE JSON object with:
+- "char": the string "${char}"
+- "boundingBox": {x, y, width, height} as percentages 0–100
+- "confidence": 0.0–1.0 (use a low confidence if you are unsure)
+- "thickness_variation": 0.0–1.0`;
 
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-lite",
@@ -184,15 +191,13 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
     }
   });
 
-  try {
-    const text = response.text;
-    if (!text) return null;
-    const parsed = JSON.parse(text);
-    if (!parsed) return null;
-    return { ...parsed, boundingBox: normalizeBoundingBox(parsed.boundingBox) };
-  } catch (e) {
-    return null;
-  }
+  const text = response.text;
+  if (!text) return null;
+  const parsed = JSON.parse(text);
+  if (!parsed || !parsed.boundingBox) return null;
+  const boundingBox = normalizeBoundingBox(parsed.boundingBox);
+  if (boundingBox.width <= 0 || boundingBox.height <= 0) return null;
+  return { ...parsed, boundingBox };
 }
 
 export async function analyzeHandwritingForFontMatch(imageData: string, apiKey: string): Promise<any> {
