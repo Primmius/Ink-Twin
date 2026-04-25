@@ -31,7 +31,7 @@ import { SupportCard } from './components/SupportCard';
 import { AppStep, AppPhase, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT, SavedFont } from './types';
 import { generateTemplatePDF, pdfToImages } from './lib/pdf';
 import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
-import { loadImage, processCharacterImage, normalizeManualDrawing, downscaleForAnalysis } from './lib/imageProcessing';
+import { loadImage, processCharacterImage, normalizeManualDrawing, downscaleForAnalysis, normalizeStrokeWidth } from './lib/imageProcessing';
 import { vectorizeImage } from './lib/vectorizer';
 import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
@@ -39,6 +39,62 @@ import { GlyphEditor } from './components/GlyphEditor';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
 import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
+
+// Sort raw AI detections into row-major grid order. Cluster by Y first
+// (using the row count), then sort each row left-to-right by X.
+function sortDetectionsIntoGrid(
+  results: DetectedCharacter[],
+  cols: number,
+  rows: number
+): DetectedCharacter[] {
+  const valid = results.filter(r => r.boundingBox && r.boundingBox.width > 0 && r.boundingBox.height > 0);
+  if (valid.length === 0) return [];
+  const withCenters = valid.map(r => ({
+    r,
+    cx: r.boundingBox.x + r.boundingBox.width / 2,
+    cy: r.boundingBox.y + r.boundingBox.height / 2,
+  }));
+  // Sort by Y, partition into `rows` bands
+  withCenters.sort((a, b) => a.cy - b.cy);
+  const minY = withCenters[0].cy;
+  const maxY = withCenters[withCenters.length - 1].cy;
+  const bandH = Math.max(1e-3, (maxY - minY) / rows);
+  const banded: typeof withCenters[] = Array.from({ length: rows }, () => []);
+  for (const item of withCenters) {
+    const band = Math.min(rows - 1, Math.max(0, Math.floor((item.cy - minY) / bandH)));
+    banded[band].push(item);
+  }
+  // If everything piled into one band (very small Y range), just sort by Y/X directly
+  const ordered: typeof withCenters = [];
+  for (const band of banded) {
+    band.sort((a, b) => a.cx - b.cx);
+    for (const item of band) ordered.push(item);
+  }
+  return ordered.slice(0, cols * rows).map(o => o.r);
+}
+
+// Pick which template page these detections most likely came from by
+// counting how many AI-labeled chars match that page's expected chars.
+function pickBestMatchingPage(
+  sorted: DetectedCharacter[],
+  pageSets: string[][]
+): number {
+  let bestPage = 0;
+  let bestScore = -1;
+  for (let p = 0; p < pageSets.length; p++) {
+    const expected = pageSets[p];
+    let score = 0;
+    for (let i = 0; i < sorted.length && i < expected.length; i++) {
+      if (sorted[i].char === expected[i]) score += 2;          // exact position match
+      else if (expected.includes(sorted[i].char)) score += 1;   // present somewhere on this page
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestPage = p;
+    }
+  }
+  return bestPage;
+}
 
 export default function App() {
   const [phase, setPhase] = useState<AppPhase>('font-creation');
@@ -209,6 +265,15 @@ export default function App() {
     setIsAnalyzing(true);
     setError(null);
     try {
+      // Pre-compute the deterministic char-set for each template page (4 cols × 5 rows)
+      const CELLS_PER_PAGE = 20;
+      const COLS = 4;
+      const ROWS = 5;
+      const pageSets: string[][] = [];
+      for (let i = 0; i < CHARACTERS_TO_DETECT.length; i += CELLS_PER_PAGE) {
+        pageSets.push(CHARACTERS_TO_DETECT.slice(i, i + CELLS_PER_PAGE));
+      }
+
       let allDetected: DetectedCharacter[] = [];
       for (let pageIdx = 0; pageIdx < uploadedImages.length; pageIdx++) {
         const rawImg = uploadedImages[pageIdx];
@@ -220,20 +285,36 @@ export default function App() {
         const results = await analyzeHandwriting(imgData, apiKey);
         console.log(`[InkTwin] Gemini returned ${Array.isArray(results) ? results.length : 0} chars in ${Math.round(performance.now() - t1)}ms.`);
         
-        if (!Array.isArray(results)) {
-          console.warn("Gemini returned non-array results", results);
+        if (!Array.isArray(results) || results.length === 0) {
+          console.warn("Gemini returned no results for page", pageIdx + 1);
           continue;
         }
 
-        // Process each detected character: crop and clean
+        // --- Deterministic letter-to-cell mapping ---
+        // The template is a fixed grid. Sort the AI's detections into row-major
+        // order, then figure out which template page these cells belong to by
+        // majority-voting against the AI's labels. Finally re-assign each
+        // detection's char from the known page set, by cell index. This makes
+        // mis-classification by the AI literally impossible.
+        const sorted = sortDetectionsIntoGrid(results, COLS, ROWS);
+        const pageMatch = pickBestMatchingPage(sorted, pageSets);
+        const expectedChars = pageSets[pageMatch];
+        const corrected = sorted.map((d, i) => ({
+          ...d,
+          char: expectedChars[i] ?? d.char,
+          confidence: Math.max(d.confidence ?? 0, 0.5),
+        }));
+        console.log(`[InkTwin] Page ${pageIdx + 1} mapped to template page ${pageMatch + 1} (${expectedChars.slice(0, 4).join('')}…)`);
+
+        // Crop each cell from the source photo using the AI's bbox
         const img = await loadImage(imgData);
-        const processed = await Promise.all(results.map(async (res) => {
+        const processed = await Promise.all(corrected.map(async (res) => {
           try {
             const cropped = await processCharacterImage(img, res.boundingBox);
             return { ...res, imageData: cropped };
           } catch (e) {
             console.error(`Failed to process character ${res.char}`, e);
-            return { ...res, confidence: 0 }; // Mark as failed
+            return { ...res, confidence: 0 };
           }
         }));
         
@@ -280,8 +361,9 @@ export default function App() {
 
         try {
           setProcessingChar(char.char);
-          const svgPath = await vectorizeImage(char.imageData);
-          updatedChars[i] = { ...char, svgPath };
+          const normalized = await normalizeStrokeWidth(char.imageData, 7);
+          const svgPath = await vectorizeImage(normalized);
+          updatedChars[i] = { ...char, imageData: normalized, svgPath };
         } catch (e) {
           console.warn(`Failed to vectorize ${char.char}`, e);
         }
