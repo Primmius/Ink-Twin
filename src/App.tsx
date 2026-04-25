@@ -31,7 +31,7 @@ import { SupportCard } from './components/SupportCard';
 import { AppStep, AppPhase, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT, SavedFont } from './types';
 import { generateTemplatePDF, pdfToImages } from './lib/pdf';
 import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
-import { loadImage, processCharacterImage, normalizeManualDrawing, downscaleForAnalysis, normalizeStrokeWidth } from './lib/imageProcessing';
+import { loadImage, processCharacterImage, normalizeManualDrawing, downscaleForAnalysis } from './lib/imageProcessing';
 import { vectorizeImage } from './lib/vectorizer';
 import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
@@ -280,9 +280,8 @@ export default function App() {
 
         try {
           setProcessingChar(char.char);
-          const normalized = await normalizeStrokeWidth(char.imageData, 7);
-          const svgPath = await vectorizeImage(normalized);
-          updatedChars[i] = { ...char, imageData: normalized, svgPath };
+          const svgPath = await vectorizeImage(char.imageData);
+          updatedChars[i] = { ...char, svgPath };
         } catch (e) {
           console.warn(`Failed to vectorize ${char.char}`, e);
         }
