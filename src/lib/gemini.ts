@@ -33,7 +33,7 @@ Return a JSON array of objects, each with:
 Return JSON only — no markdown, no explanation.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -159,7 +159,7 @@ Return ONE JSON object with:
 - "thickness_variation": 0.0–1.0`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -288,7 +288,7 @@ Exact format:
 }`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
