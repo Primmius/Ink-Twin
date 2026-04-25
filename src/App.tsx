@@ -31,7 +31,7 @@ import { SupportCard } from './components/SupportCard';
 import { AppStep, AppPhase, DetectedCharacter, FontConfig, CHARACTERS_TO_DETECT, SavedFont } from './types';
 import { generateTemplatePDF, pdfToImages } from './lib/pdf';
 import { analyzeHandwriting, reanalyzeSpecificCharacter } from './lib/gemini';
-import { loadImage, processCharacterImage, normalizeManualDrawing } from './lib/imageProcessing';
+import { loadImage, processCharacterImage, normalizeManualDrawing, downscaleForAnalysis } from './lib/imageProcessing';
 import { vectorizeImage } from './lib/vectorizer';
 import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
@@ -179,12 +179,14 @@ export default function App() {
     if (file.type === 'application/pdf') {
       const buffer = await file.arrayBuffer();
       const images = await pdfToImages(buffer);
-      setUploadedImages(prev => [...prev, ...images]);
+      const scaled = await Promise.all(images.map(i => downscaleForAnalysis(i, 1600, 0.9)));
+      setUploadedImages(prev => [...prev, ...scaled]);
     } else {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         if (event.target?.result) {
-          setUploadedImages(prev => [...prev, event.target.result as string]);
+          const scaled = await downscaleForAnalysis(event.target.result as string, 1600, 0.9);
+          setUploadedImages(prev => [...prev, scaled]);
         }
       };
       reader.readAsDataURL(file);
@@ -208,8 +210,15 @@ export default function App() {
     setError(null);
     try {
       let allDetected: DetectedCharacter[] = [];
-      for (const imgData of uploadedImages) {
+      for (let pageIdx = 0; pageIdx < uploadedImages.length; pageIdx++) {
+        const rawImg = uploadedImages[pageIdx];
+        console.log(`[InkTwin] Page ${pageIdx + 1}/${uploadedImages.length}: downscaling…`);
+        const t0 = performance.now();
+        const imgData = await downscaleForAnalysis(rawImg, 1600, 0.9);
+        console.log(`[InkTwin] Downscaled in ${Math.round(performance.now() - t0)}ms, payload ${(imgData.length / 1024).toFixed(0)} KB. Calling Gemini…`);
+        const t1 = performance.now();
         const results = await analyzeHandwriting(imgData, apiKey);
+        console.log(`[InkTwin] Gemini returned ${Array.isArray(results) ? results.length : 0} chars in ${Math.round(performance.now() - t1)}ms.`);
         
         if (!Array.isArray(results)) {
           console.warn("Gemini returned non-array results", results);
@@ -1184,8 +1193,9 @@ export default function App() {
       {/* Camera Capture Modal */}
       {isCameraOpen && (
         <CameraCapture 
-          onCapture={(img) => {
-            setUploadedImages(prev => [...prev, img]);
+          onCapture={async (img) => {
+            const scaled = await downscaleForAnalysis(img, 1600, 0.9);
+            setUploadedImages(prev => [...prev, scaled]);
             setStep(2);
           }}
           onClose={() => setIsCameraOpen(false)}
