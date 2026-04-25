@@ -42,6 +42,7 @@ Return JSON only — no markdown, no explanation.`;
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.ARRAY,
         items: {
@@ -168,6 +169,7 @@ Return ONE JSON object with:
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -297,6 +299,7 @@ Exact format:
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
