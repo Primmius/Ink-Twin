@@ -234,23 +234,41 @@ function findHandwrittenCharacter(
   chosen.sort((a, b) => b.area - a.area);
   const main = chosen[0];
 
-  // Also include any other surviving components that are nearby — strokes
-  // of the same character (e.g. dot of an "i", crossbar of a "t") may form
-  // separate components.
+  // Also include other surviving components that are nearby — strokes of the
+  // same character (e.g. dot of an "i", crossbar of a "t") may form separate
+  // components. We are conservative here:
+  //   - skip thin-line shapes (high aspect ratio) — those are stray underlines.
+  //   - skip components much wider than the main blob (likely a strip, not part of the letter).
+  //   - require closeness in BOTH axes, not just euclidean distance.
   const cx = (main.minX + main.maxX) / 2;
   const cy = (main.minY + main.maxY) / 2;
-  const radius = Math.max(main.maxX - main.minX, main.maxY - main.minY) * 1.3;
+  const mainW = main.maxX - main.minX + 1;
+  const mainH = main.maxY - main.minY + 1;
   let minX = main.minX, minY = main.minY, maxX = main.maxX, maxY = main.maxY;
   for (const c of chosen) {
     if (c === main) continue;
+    const cw = c.maxX - c.minX + 1;
+    const ch = c.maxY - c.minY + 1;
+    const aspect = Math.max(cw, ch) / Math.max(1, Math.min(cw, ch));
+    if (aspect > 3) continue;             // thin line — skip
+    if (cw > mainW * 1.2) continue;       // wider than the letter — skip
+    if (ch > mainH * 1.2) continue;       // taller than the letter — skip
+    if (c.area < main.area * 0.02) continue; // too tiny to matter
     const ccx = (c.minX + c.maxX) / 2;
     const ccy = (c.minY + c.maxY) / 2;
-    if (Math.hypot(ccx - cx, ccy - cy) <= radius && c.area >= main.area * 0.05) {
-      if (c.minX < minX) minX = c.minX;
-      if (c.minY < minY) minY = c.minY;
-      if (c.maxX > maxX) maxX = c.maxX;
-      if (c.maxY > maxY) maxY = c.maxY;
-    }
+    const dx = Math.abs(ccx - cx);
+    const dy = Math.abs(ccy - cy);
+    // Must overlap horizontally with the main blob and be close vertically
+    // (typical for dots/accents), or vice versa.
+    const horizOverlap = c.maxX >= main.minX && c.minX <= main.maxX;
+    const vertOverlap = c.maxY >= main.minY && c.minY <= main.maxY;
+    const closeV = dy <= mainH * 0.9;
+    const closeH = dx <= mainW * 0.9;
+    if (!((horizOverlap && closeV) || (vertOverlap && closeH))) continue;
+    if (c.minX < minX) minX = c.minX;
+    if (c.minY < minY) minY = c.minY;
+    if (c.maxX > maxX) maxX = c.maxX;
+    if (c.maxY > maxY) maxY = c.maxY;
   }
 
   // Tight crop with a tiny padding — the 500x500 output canvas adds the
@@ -265,16 +283,28 @@ function findHandwrittenCharacter(
   if (x1 - x0 < 4 || y1 - y0 < 4) return null;
 
   // Build a keep-mask: true for pixels in the chosen blob plus any nearby
-  // surviving sub-blobs we merged in. Everything else (grid lines, printed
-  // labels, neighbours) gets whitewashed by the caller.
+  // surviving sub-blobs that passed the same filter above. Everything else
+  // (grid lines, printed labels, neighbours, underline strips) is whitewashed.
   const keptIds = new Set<number>([main.id]);
   for (const c of chosen) {
     if (c === main) continue;
+    const cw = c.maxX - c.minX + 1;
+    const ch = c.maxY - c.minY + 1;
+    const aspect = Math.max(cw, ch) / Math.max(1, Math.min(cw, ch));
+    if (aspect > 3) continue;
+    if (cw > mainW * 1.2) continue;
+    if (ch > mainH * 1.2) continue;
+    if (c.area < main.area * 0.02) continue;
     const ccx = (c.minX + c.maxX) / 2;
     const ccy = (c.minY + c.maxY) / 2;
-    if (Math.hypot(ccx - cx, ccy - cy) <= radius && c.area >= main.area * 0.05) {
-      keptIds.add(c.id);
-    }
+    const dx = Math.abs(ccx - cx);
+    const dy = Math.abs(ccy - cy);
+    const horizOverlap = c.maxX >= main.minX && c.minX <= main.maxX;
+    const vertOverlap = c.maxY >= main.minY && c.minY <= main.maxY;
+    const closeV = dy <= mainH * 0.9;
+    const closeH = dx <= mainW * 0.9;
+    if (!((horizOverlap && closeV) || (vertOverlap && closeH))) continue;
+    keptIds.add(c.id);
   }
   const keepMask = new Uint8Array(w * h);
   for (let p = 0; p < labels.length; p++) {

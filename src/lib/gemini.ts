@@ -10,9 +10,9 @@ export async function analyzeHandwriting(imageData: string, apiKey: string): Pro
   const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper.
 
 If it is a grid template:
-- Each cell has a small PRINTED label (e.g. "A", "b", "5") in the top-left corner — this label is the SOURCE OF TRUTH for which character belongs in that cell. The handwritten stroke inside the SAME cell is the user's version of that character.
-- For every cell with a printed label, return ONE detection where "char" is the printed label and the bounding box is centred on the HANDWRITTEN stroke inside the SAME cell — never the stroke from an adjacent cell.
-- The bounding box should hug the handwritten stroke and must NOT cross into the next cell. It is OK to include a small amount of empty cell space around the stroke; we will tighten it later. Do NOT include the printed label or any neighbouring cell's content.
+- Extract each handwritten character from its own labeled box.
+- Use the small printed label inside each box to identify which character it is.
+- The bounding box must enclose ONLY the handwritten stroke. Do not include grid lines, the printed label, or any neighbouring cell.
 
 If it is freehand handwritten text:
 - Scan the entire image and find each unique character that appears.
@@ -21,8 +21,7 @@ If it is freehand handwritten text:
 
 RULES for every bounding box:
 - Each box must contain EXACTLY ONE handwritten character — not two, not a row, not a column.
-- For a grid template, the box can include the cell around the character (a little extra space is fine — we will tighten it later). Aim for the box to roughly match the size of one cell, not a quadrant of cells.
-- For freehand text, hug the character with a small margin.
+- Each box should be a SINGLE CELL in size, not a quadrant of cells.
 - Express coordinates as percentages 0–100 of the full image: x and y are the TOP-LEFT corner of the box; width and height are its size.
 
 Return a JSON array of objects, each with:
