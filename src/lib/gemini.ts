@@ -72,11 +72,40 @@ Return JSON only, no explanation, no markdown.`;
   try {
     const text = response.text;
     if (!text) return [];
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((d: any) => ({
+      ...d,
+      boundingBox: normalizeBoundingBox(d.boundingBox)
+    })).filter((d: any) => d.boundingBox.width > 0 && d.boundingBox.height > 0);
   } catch (e) {
     console.error("Failed to parse Gemini response", e);
     return [];
   }
+}
+
+function normalizeBoundingBox(box: any): { x: number; y: number; width: number; height: number } {
+  if (!box) return { x: 0, y: 0, width: 0, height: 0 };
+
+  const x = Number(box.x ?? 0);
+  const y = Number(box.y ?? 0);
+  const w = Number(box.width ?? box.w ?? 0);
+  const h = Number(box.height ?? box.h ?? 0);
+
+  // Detect coordinate scale: 0-1, 0-100, or 0-1000
+  const maxVal = Math.max(x, y, x + w, y + h);
+  let scale = 1;
+  if (maxVal <= 1.0001) scale = 100;       // 0-1 → convert to 0-100
+  else if (maxVal <= 100.0001) scale = 1;  // already 0-100
+  else if (maxVal <= 1000.0001) scale = 0.1; // 0-1000 → convert to 0-100
+  else scale = 100 / maxVal;               // raw pixels — best effort
+
+  return {
+    x: x * scale,
+    y: y * scale,
+    width: w * scale,
+    height: h * scale,
+  };
 }
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
@@ -130,7 +159,9 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   try {
     const text = response.text;
     if (!text) return null;
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!parsed || !parsed.boundingBox) return null;
+    return { ...parsed, boundingBox: normalizeBoundingBox(parsed.boundingBox) };
   } catch (e) {
     return null;
   }
