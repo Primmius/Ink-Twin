@@ -1,0 +1,125 @@
+This project, HandFont, is a full-stack AI application designed to convert physical handwriting into a functional, downloadable TrueType Font (.ttf) file.
+
+The entire workflow leverages multimodal AI for vision analysis and browser-based vectorization engines.
+
+1. The Process: From Ink to Font
+The process is divided into five distinct engineering phases:
+
+AI Vision Analysis:
+
+Model: gemini-3-flash-preview (multimodal).
+
+Task: The AI identifies characters in a grid template or freehand text. It returns structured JSON containing bounding boxes (coordinates) and confidence scores for each glyph.
+
+Local Image Processing:
+
+The application uses the coordinates from Gemini to crop individual characters from the high-resolution source image using HTML5 Canvas.
+
+Vectorization (Raster to Path):
+
+Library: imagetracerjs.
+
+Task: The raster (pixel) crops are traced into mathematical SVG path data. This allows the font to be infinitely scalable without pixelation.
+
+Font Construction:
+
+Library: opentype.js.
+
+Task: SVG paths are parsed into cubic/quadratic Bézier curves. The coordinate system is transformed (Y-axis flip) and scaled to standard TrueType metrics (1000 units per em).
+
+Assembly & Packaging:
+
+The individual glyphs are mapped to their Unicode values. The app compiles the binary .ttf file in-memory and generates a local URL for download.
+
+2. Core Code: AI Analysis (src/lib/gemini.ts)
+This is the code that communicates with the model to "understand" the handwriting.
+
+code
+TypeScript
+import { GoogleGenAI, Type } from "@google/genai";
+
+export async function analyzeHandwriting(imageData: string, apiKey: string) {
+  const ai = new GoogleGenAI({ apiKey });
+  const base64Data = imageData.split(',')[1];
+  
+  const prompt = `Analyze this image (grid template or freehand). 
+  Extract each character. The bounding box must ONLY enclose the handwritten stroke. 
+  DO NOT include grid lines, box borders, or printed labels.
+  Return JSON: [{ "char": string, "boundingBox": {x, y, w, h}, "confidence": 0-1 }]`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3-flash-preview",
+    contents: {
+      parts: [
+        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+        { text: prompt }
+      ]
+    },
+    config: { responseMimeType: "application/json" }
+  });
+
+  return JSON.parse(response.text);
+}
+3. Core Code: Vectorization (src/lib/vectorizer.ts)
+This turns the "seen" characters into mathematical paths.
+
+code
+TypeScript
+import ImageTracer from 'imagetracerjs';
+
+export async function vectorizeImage(imageSrc: string): Promise<string> {
+  return new Promise((resolve) => {
+    ImageTracer.imageToSVG(
+      imageSrc,
+      (svgString: string) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgString, 'image/svg+xml');
+        const paths = Array.from(doc.querySelectorAll('path'));
+        // Extract the path 'd' attribute for the ink
+        resolve(paths[0]?.getAttribute('d') || "");
+      },
+      { numberofcolors: 2, viewbox: true }
+    );
+  });
+}
+4. Core Code: Font Building (src/lib/fontBuilder.ts)
+This constructs the final TrueType file.
+
+code
+TypeScript
+import * as opentype from 'opentype.js';
+
+export async function buildFont(characters: any[], config: any) {
+  const glyphs = []; // Includes .notdef and all detected characters
+  
+  for (const char of characters) {
+    const glyphPath = new opentype.Path();
+    // Logic here parses the SVG 'd' string into commands (moveTo, lineTo, etc.)
+    // Transforms coordinates from Y-down (screen) to Y-up (font units)
+    
+    glyphs.push(new opentype.Glyph({
+      name: char.char,
+      unicode: char.char.charCodeAt(0),
+      advanceWidth: 600,
+      path: glyphPath
+    }));
+  }
+
+  const font = new opentype.Font({
+    familyName: config.name,
+    styleName: 'Regular',
+    unitsPerEm: 1000,
+    ascender: 800,
+    descender: -200,
+    glyphs: glyphs
+  });
+
+  return font.toArrayBuffer();
+}
+5. Summary Table
+Component	Technology	Role
+Model	gemini-3-flash-preview	Multimodal Vision (Character Detection)
+Backend	Client-side logic	Minimal server needed; heavy lifting happens in browser
+Vector Engine	imagetracerjs	SVO Path extraction
+Font Engine	opentype.js	TTF generation and glyph mapping
+UI	React + Tailwind	User interface and real-time preview
