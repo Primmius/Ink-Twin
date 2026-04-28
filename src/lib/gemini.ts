@@ -43,6 +43,7 @@ Return JSON only, no explanation, no markdown.`;
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.ARRAY,
         items: {
@@ -103,6 +104,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
     },
     config: {
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
