@@ -44,7 +44,7 @@ export default function App() {
   const [phase, setPhase] = useState<AppPhase>('font-creation');
   const [step, setStep] = useState<AppStep>(1);
   const [apiKey, setApiKey] = useState<string>(
-    localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || ''
+    localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || process.env.GEMINI_API_KEY || ''
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
