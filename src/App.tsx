@@ -210,22 +210,14 @@ export default function App() {
     setError(null);
     try {
       let allDetected: DetectedCharacter[] = [];
-      for (let pageIdx = 0; pageIdx < uploadedImages.length; pageIdx++) {
-        const rawImg = uploadedImages[pageIdx];
-        console.log(`[InkTwin] Page ${pageIdx + 1}/${uploadedImages.length}: downscaling…`);
-        const t0 = performance.now();
-        const imgData = await downscaleForAnalysis(rawImg, 1600, 0.9);
-        console.log(`[InkTwin] Downscaled in ${Math.round(performance.now() - t0)}ms, payload ${(imgData.length / 1024).toFixed(0)} KB. Calling Gemini…`);
-        const t1 = performance.now();
+      for (const imgData of uploadedImages) {
         const results = await analyzeHandwriting(imgData, apiKey);
-        console.log(`[InkTwin] Gemini returned ${Array.isArray(results) ? results.length : 0} chars in ${Math.round(performance.now() - t1)}ms.`);
         
-        if (!Array.isArray(results) || results.length === 0) {
-          console.warn("Gemini returned no results for page", pageIdx + 1);
+        if (!Array.isArray(results)) {
+          console.warn("Gemini returned non-array results", results);
           continue;
         }
 
-        // Process each detected character: crop and clean
         const img = await loadImage(imgData);
         const processed = await Promise.all(results.map(async (res) => {
           try {
