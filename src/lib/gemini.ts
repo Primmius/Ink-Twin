@@ -4,6 +4,7 @@ import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
 export async function analyzeHandwriting(imageData: string, apiKey: string): Promise<DetectedCharacter[]> {
   const ai = new GoogleGenAI({ apiKey });
   
+  // Remove data:image/...;base64, prefix
   const base64Data = imageData.split(',')[1];
   
   const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper. 
@@ -34,7 +35,7 @@ Return JSON only in this format: a JSON array of objects, where each object has:
 Return JSON only, no explanation, no markdown.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -43,7 +44,6 @@ Return JSON only, no explanation, no markdown.`;
     },
     config: {
       responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.ARRAY,
         items: {
@@ -72,40 +72,11 @@ Return JSON only, no explanation, no markdown.`;
   try {
     const text = response.text;
     if (!text) return [];
-    const parsed = JSON.parse(text);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((d: any) => ({
-      ...d,
-      boundingBox: normalizeBoundingBox(d.boundingBox)
-    })).filter((d: any) => d.boundingBox.width > 0 && d.boundingBox.height > 0);
+    return JSON.parse(text);
   } catch (e) {
     console.error("Failed to parse Gemini response", e);
     return [];
   }
-}
-
-function normalizeBoundingBox(box: any): { x: number; y: number; width: number; height: number } {
-  if (!box) return { x: 0, y: 0, width: 0, height: 0 };
-
-  const x = Number(box.x ?? 0);
-  const y = Number(box.y ?? 0);
-  const w = Number(box.width ?? box.w ?? 0);
-  const h = Number(box.height ?? box.h ?? 0);
-
-  // Detect coordinate scale: 0-1, 0-100, or 0-1000
-  const maxVal = Math.max(x, y, x + w, y + h);
-  let scale = 1;
-  if (maxVal <= 1.0001) scale = 100;       // 0-1 → convert to 0-100
-  else if (maxVal <= 100.0001) scale = 1;  // already 0-100
-  else if (maxVal <= 1000.0001) scale = 0.1; // 0-1000 → convert to 0-100
-  else scale = 100 / maxVal;               // raw pixels — best effort
-
-  return {
-    x: x * scale,
-    y: y * scale,
-    width: w * scale,
-    height: h * scale,
-  };
 }
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
@@ -124,7 +95,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   If not found, return null. Return as JSON only.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
@@ -133,7 +104,6 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
     },
     config: {
       responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -159,9 +129,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   try {
     const text = response.text;
     if (!text) return null;
-    const parsed = JSON.parse(text);
-    if (!parsed || !parsed.boundingBox) return null;
-    return { ...parsed, boundingBox: normalizeBoundingBox(parsed.boundingBox) };
+    return JSON.parse(text);
   } catch (e) {
     return null;
   }
@@ -200,7 +168,7 @@ Then study these specific characteristics:
 Return JSON only. No markdown. No explanation.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-2.0-flash",
     contents: {
       parts: [
         { inlineData: { mimeType: "image/jpeg", data: base64Data } },
