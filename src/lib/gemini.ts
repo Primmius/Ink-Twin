@@ -4,7 +4,9 @@ import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
 export async function analyzeHandwriting(imageData: string, apiKey: string): Promise<DetectedCharacter[]> {
   const ai = new GoogleGenAI({ apiKey });
   
-  // Remove data:image/...;base64, prefix
+  // Remove data:image/...;base64, prefix and detect real MIME type
+  const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
+  const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
   const base64Data = imageData.split(',')[1];
   
   const prompt = `Analyze this image which may be either a grid template with characters in labeled boxes OR freehand handwritten text on paper. 
@@ -38,7 +40,7 @@ Return JSON only, no explanation, no markdown.`;
     model: "gemini-2.0-flash",
     contents: {
       parts: [
-        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+        { inlineData: { mimeType, data: base64Data } },
         { text: prompt }
       ]
     },
@@ -81,6 +83,8 @@ Return JSON only, no explanation, no markdown.`;
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
   const ai = new GoogleGenAI({ apiKey });
+  const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
+  const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
   const base64Data = imageData.split(',')[1];
   
   const prompt = `Find the handwritten character "${char}" in this image. 
@@ -98,7 +102,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
     model: "gemini-2.0-flash",
     contents: {
       parts: [
-        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+        { inlineData: { mimeType, data: base64Data } },
         { text: prompt }
       ]
     },
@@ -167,11 +171,14 @@ Then study these specific characteristics:
 
 Return JSON only. No markdown. No explanation.`;
 
+  const mimeMatch2 = imageData.match(/^data:([^;]+);base64,/);
+  const mimeType2 = (mimeMatch2 ? mimeMatch2[1] : 'image/jpeg') as string;
+
   const response = await ai.models.generateContent({
     model: "gemini-2.0-flash",
     contents: {
       parts: [
-        { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+        { inlineData: { mimeType: mimeType2, data: base64Data } },
         { text: prompt }
       ]
     },

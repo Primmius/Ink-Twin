@@ -23,23 +23,41 @@ export async function processCharacterImage(
   
   const imageData = ctx.getImageData(0, 0, 500, 500);
   const data = imageData.data;
-  
-  const threshold = 128;
-  
+
+  // Convert to grayscale first pass to compute Otsu threshold
+  const grayVals: number[] = new Array(data.length / 4);
   for (let i = 0; i < data.length; i += 4) {
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    
-    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    const value = gray > threshold ? 255 : 0;
-    
+    grayVals[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  }
+
+  // Otsu's method: find threshold that minimises intra-class variance
+  const histogram = new Array(256).fill(0);
+  for (const g of grayVals) histogram[Math.round(g)]++;
+  const total = grayVals.length;
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * histogram[i];
+  let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
+  for (let i = 0; i < 256; i++) {
+    wB += histogram[i];
+    if (wB === 0) continue;
+    const wF = total - wB;
+    if (wF === 0) break;
+    sumB += i * histogram[i];
+    const mB = sumB / wB;
+    const mF = (sum - sumB) / wF;
+    const variance = wB * wF * (mB - mF) * (mB - mF);
+    if (variance > maxVar) { maxVar = variance; threshold = i; }
+  }
+
+  // Apply threshold
+  for (let i = 0; i < data.length; i += 4) {
+    const value = grayVals[i / 4] > threshold ? 255 : 0;
     data[i] = value;
     data[i + 1] = value;
     data[i + 2] = value;
     data[i + 3] = 255;
   }
-  
+
   ctx.putImageData(imageData, 0, 0);
   
   return canvas.toDataURL('image/png');

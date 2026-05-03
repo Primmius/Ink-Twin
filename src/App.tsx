@@ -179,14 +179,12 @@ export default function App() {
     if (file.type === 'application/pdf') {
       const buffer = await file.arrayBuffer();
       const images = await pdfToImages(buffer);
-      const scaled = await Promise.all(images.map(i => downscaleForAnalysis(i, 1600, 0.9)));
-      setUploadedImages(prev => [...prev, ...scaled]);
+      setUploadedImages(prev => [...prev, ...images]);
     } else {
       const reader = new FileReader();
-      reader.onload = async (event) => {
+      reader.onload = (event) => {
         if (event.target?.result) {
-          const scaled = await downscaleForAnalysis(event.target.result as string, 1600, 0.9);
-          setUploadedImages(prev => [...prev, scaled]);
+          setUploadedImages(prev => [...prev, event.target.result as string]);
         }
       };
       reader.readAsDataURL(file);
