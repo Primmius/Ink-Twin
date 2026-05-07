@@ -69,6 +69,47 @@ export async function processCharacterImage(
     }
   }
 
+  // Remove horizontal ruled/grid lines:
+  // Any row where ≥80% of pixels are black AND is thin (≤4px tall) is a printed line
+  const W = 500;
+  const H = 500;
+  // Collect consecutive dark rows as "line groups"
+  let rowIdx = 0;
+  while (rowIdx < H) {
+    let darkInRow = 0;
+    for (let x = 0; x < W; x++) {
+      const p = (rowIdx * W + x) * 4;
+      if (data[p] === 0) darkInRow++;
+    }
+    const fraction = darkInRow / W;
+    if (fraction >= 0.8) {
+      // Find extent of this line group (consecutive dark rows)
+      let groupEnd = rowIdx;
+      while (groupEnd + 1 < H) {
+        let next = 0;
+        for (let x = 0; x < W; x++) {
+          const p = ((groupEnd + 1) * W + x) * 4;
+          if (data[p] === 0) next++;
+        }
+        if (next / W >= 0.8) groupEnd++;
+        else break;
+      }
+      const groupHeight = groupEnd - rowIdx + 1;
+      // Only erase if the group is thin (≤5 rows) — real characters are taller
+      if (groupHeight <= 5) {
+        for (let r = rowIdx; r <= groupEnd; r++) {
+          for (let x = 0; x < W; x++) {
+            const p = (r * W + x) * 4;
+            data[p] = 255; data[p + 1] = 255; data[p + 2] = 255;
+          }
+        }
+      }
+      rowIdx = groupEnd + 1;
+    } else {
+      rowIdx++;
+    }
+  }
+
   ctx.putImageData(imageData, 0, 0);
   
   return canvas.toDataURL('image/png');
