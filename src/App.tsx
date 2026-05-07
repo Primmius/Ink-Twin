@@ -121,22 +121,23 @@ export default function App() {
   const handleSaveFont = async () => {
     if (!fontUrl) return;
     
-    // Fetch the blob and convert to data URL for persistence
     const response = await fetch(fontUrl);
     const blob = await response.blob();
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const dataUrl = reader.result as string;
-      const newFont: SavedFont = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: fontConfig.name || `Custom Font ${savedFonts.length + 1}`,
-        url: dataUrl,
-        createdAt: Date.now(),
-        source: "Phase 1"
-      };
-      setSavedFonts(prev => [...prev, newFont]);
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const newFont: SavedFont = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: fontConfig.name || `Custom Font ${savedFonts.length + 1}`,
+      url: dataUrl,
+      createdAt: Date.now(),
+      source: "Phase 1"
     };
-    reader.readAsDataURL(blob);
+    setSavedFonts(prev => [...prev, newFont]);
+    setToast("Font saved to library!");
   };
 
   const handleDeleteFont = (id: string) => {
@@ -951,7 +952,10 @@ export default function App() {
                           </button>
                         </div>
                         <button 
-                          onClick={() => setPhase('text-writer')}
+                          onClick={async () => {
+                            await handleSaveFont();
+                            setPhase('text-writer');
+                          }}
                           className="w-full brutal-btn bg-warning-yellow flex items-center justify-center gap-2"
                         >
                           <Sparkles size={20} />
