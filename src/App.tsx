@@ -343,8 +343,8 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       setFontUrl(url);
       
-      // Also register font in document for preview
-      const fontFace = new FontFace(fontConfig.name, buffer);
+      // Register font under a stable name so renaming doesn't break the preview
+      const fontFace = new FontFace('inktwin-preview', buffer);
       await fontFace.load();
       document.fonts.add(fontFace);
       
@@ -979,7 +979,7 @@ export default function App() {
                           className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-4"
                           placeholder="Type to test your font..."
                           style={{ 
-                            fontFamily: fontConfig.name, 
+                            fontFamily: 'inktwin-preview',
                             fontSize: `${fontConfig.fontSize}px`,
                             letterSpacing: `${fontConfig.letterSpacing / 10}px`
                           }}
