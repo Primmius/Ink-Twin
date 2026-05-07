@@ -8,10 +8,8 @@ interface CanvasPageProps {
   fontName: string;
   width?: number;
   height?: number;
-  onUpdateImage?: (imageId: string, updates: Partial<WriterImage>) => void;
-  onUpdateElement?: (elementId: string, updates: Partial<WriterElement>) => void;
   children?: React.ReactNode;
-  dragOffset?: { id: string, x: number, y: number } | null;
+  skipImages?: boolean;
 }
 
 export const CanvasPage: React.FC<CanvasPageProps> = ({ 
@@ -21,7 +19,7 @@ export const CanvasPage: React.FC<CanvasPageProps> = ({
   width = 595, 
   height = 842,
   children,
-  dragOffset
+  skipImages = false,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -32,8 +30,8 @@ export const CanvasPage: React.FC<CanvasPageProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    renderCanvasPage(ctx, page, config, fontName, width, height, imageCache.current, dragOffset);
-  }, [page, config, fontName, width, height, dragOffset]);
+    renderCanvasPage(ctx, page, config, fontName, width, height, imageCache.current, skipImages);
+  }, [page, config, fontName, width, height, skipImages]);
 
   return (
     <div 
@@ -63,35 +61,32 @@ export const renderCanvasPage = async (
   width: number,
   height: number,
   imageCache: Map<string, HTMLImageElement>,
-  dragOffset?: { id: string, x: number, y: number } | null
+  skipImages?: boolean
 ) => {
   // 1. Draw Background
   drawBackground(ctx, width, height, config);
 
-  const getCoords = (el: WriterElement | WriterImage) => {
-    if (dragOffset && dragOffset.id === el.id) {
-      return { ...el, x: el.x + dragOffset.x, y: el.y + dragOffset.y };
+  // 2. Draw Below Layer
+  if (!skipImages) {
+    for (const img of page.images.filter(i => i.layer === 'below')) {
+      await drawImage(ctx, img, imageCache);
     }
-    return el;
-  };
-
-  // 2. Draw Below Layer (Images & Elements)
-  for (const img of page.images.filter(i => i.layer === 'below')) {
-    await drawImage(ctx, getCoords(img) as WriterImage, imageCache);
   }
   for (const el of page.elements.filter(e => e.layer === 'below')) {
-    drawElement(ctx, getCoords(el) as WriterElement, config, fontName);
+    drawElement(ctx, el, config, fontName);
   }
 
   // 3. Draw Handwritten Text
   drawText(ctx, page.content, config, fontName, width, height);
 
-  // 4. Draw Above Layer (Images & Elements)
-  for (const img of page.images.filter(i => i.layer === 'above')) {
-    await drawImage(ctx, getCoords(img) as WriterImage, imageCache);
+  // 4. Draw Above Layer
+  if (!skipImages) {
+    for (const img of page.images.filter(i => i.layer === 'above')) {
+      await drawImage(ctx, img, imageCache);
+    }
   }
   for (const el of page.elements.filter(e => e.layer === 'above' || !e.layer)) {
-    drawElement(ctx, getCoords(el) as WriterElement, config, fontName);
+    drawElement(ctx, el, config, fontName);
   }
 
   // 5. Apply Effects

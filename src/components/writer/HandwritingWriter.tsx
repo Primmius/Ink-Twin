@@ -925,8 +925,6 @@ ${documentText}`;
   const [snapGuides, setSnapGuides] = useState<{ x?: number, y?: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [dragOffset, setDragOffset] = useState<{ id: string, x: number, y: number } | null>(null);
-
   const getScale = () => {
     if (!containerRef.current) return 1;
     // The internal coordinate system is fixed at 595 width
@@ -1242,8 +1240,9 @@ ${documentText}`;
     reader.readAsBinaryString(file);
   };
 
-  const onResizeStart = (e: React.MouseEvent, corner: string) => {
+  const onResizeStart = (e: React.PointerEvent, corner: string) => {
     e.stopPropagation();
+    e.preventDefault();
     const el = pages[currentPageIndex].elements.find(element => element.id === selectedElementId) || 
                pages[currentPageIndex].images.find(img => img.id === selectedElementId);
     if (!el) return;
@@ -1254,11 +1253,11 @@ ${documentText}`;
     const startY = e.clientY;
     const startW = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
     const startH = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
-    
-    const onMouseMove = (moveE: MouseEvent) => {
+
+    const onPointerMove = (moveE: PointerEvent) => {
       const deltaX = (moveE.clientX - startX) * scale;
       const deltaY = (moveE.clientY - startY) * scale;
-      
+
       let newW = startW;
       let newH = startH;
 
@@ -1266,30 +1265,31 @@ ${documentText}`;
       if (corner.includes('left')) newW = startW - deltaX;
       if (corner.includes('bottom')) newH = startH + deltaY;
       if (corner.includes('top')) newH = startH - deltaY;
-      
+
       if (el.type === 'emoji' || isImage) {
         const ratio = startW / startH;
-        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (Math.abs(deltaX) >= Math.abs(deltaY)) {
           newH = newW / ratio;
         } else {
           newW = newH * ratio;
         }
       }
 
-      updateElement(el.id, { 
-        width: Math.max(20, newW), 
+      updateElement(el.id, {
+        width: Math.max(20, newW),
         height: Math.max(20, newH),
-        ...(el.type === 'emoji' && { fontSize: Math.max(10, newH) })
-      });
+        ...(el.type === 'emoji' && { fontSize: Math.max(10, Math.max(20, newH)) }),
+      }, true);
     };
-    
-    const onMouseUp = () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      updateElement(el.id, {});
     };
-    
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   };
 
   const downloadPDF = async () => {
@@ -1497,7 +1497,7 @@ ${documentText}`;
                 page={pages[currentPageIndex]} 
                 config={settings} 
                 fontName={effectiveFontName}
-                dragOffset={dragOffset}
+                skipImages={true}
               >
                 {/* Guides */}
                 {snapGuides && (
@@ -1555,142 +1555,148 @@ ${documentText}`;
                       placeholder="Start writing directly on the page..."
                     />
 
-                {/* Interactive Element Overlays */}
+                {/* Interactive Element Overlays — Canva-style DOM rendering */}
                 <div className="absolute inset-0 pointer-events-none z-20">
                   {[...pages[currentPageIndex].elements, ...pages[currentPageIndex].images].map((el) => {
                     const isSelected = selectedElementId === el.id;
                     const isImage = 'src' in el;
-                    
-                    // Estimate dimensions for selection box
-                    const width = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
-                    const height = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
+
+                    const elWidth = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
+                    const elHeight = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
+
+                    const startDrag = (e: React.PointerEvent) => {
+                      if ((e.target as HTMLElement).dataset.handle) return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setSelectedElementId(el.id);
+                      const scale = getScale();
+                      const startX = e.clientX;
+                      const startY = e.clientY;
+                      const origX = el.x;
+                      const origY = el.y;
+                      let moved = false;
+
+                      const onMove = (me: PointerEvent) => {
+                        moved = true;
+                        const dx = (me.clientX - startX) * scale;
+                        const dy = (me.clientY - startY) * scale;
+                        const snapResult = snap(origX + dx, origY + dy, elWidth, elHeight);
+                        setSnapGuides(snapResult.guides);
+                        updateElement(el.id, { x: snapResult.x, y: snapResult.y }, true);
+                      };
+                      const onUp = () => {
+                        window.removeEventListener('pointermove', onMove);
+                        window.removeEventListener('pointerup', onUp);
+                        setSnapGuides(null);
+                        if (moved) updateElement(el.id, {});
+                      };
+                      window.addEventListener('pointermove', onMove);
+                      window.addEventListener('pointerup', onUp);
+                    };
 
                     return (
-                      <motion.div
+                      <div
                         key={el.id}
-                        drag
-                        dragMomentum={false}
-                        onDragStart={() => setSelectedElementId(el.id)}
-                      onDrag={(event, info) => {
-                        const scale = getScale();
-                        const xOffset = info.offset.x * scale;
-                        const yOffset = info.offset.y * scale;
-                        const predictedX = el.x + xOffset;
-                        const predictedY = el.y + yOffset;
-                        const snapResult = snap(predictedX, predictedY, width, height);
-                        setSnapGuides(snapResult.guides);
-                        setDragOffset({ id: el.id, x: xOffset, y: yOffset });
-                      }}
-                      onDragEnd={(event, info) => {
-                        const scale = getScale();
-                        const finalX = el.x + info.offset.x * scale;
-                        const finalY = el.y + info.offset.y * scale;
-                        
-                        const { x, y } = snap(finalX, finalY, width, height);
-                        updateElement(el.id, { x, y });
-                        setDragOffset(null);
-                        setSnapGuides(null);
-                      }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedElementId(el.id);
+                        className={cn("absolute pointer-events-auto cursor-move select-none", isSelected ? "z-50" : "z-20")}
+                        style={{
+                          left: el.x,
+                          top: el.y,
+                          width: elWidth,
+                          height: elHeight,
+                          transform: `rotate(${el.rotation || 0}deg)`,
+                          transformOrigin: 'center center',
                         }}
-                        animate={{ x: 0, y: 0 }}
-                      transition={{ duration: 0 }}
-                      className={cn(
-                        "absolute pointer-events-auto cursor-move",
-                        isSelected && "z-50"
-                      )}
-                      style={{
-                        left: el.x,
-                        top: el.y,
-                        width: width,
-                        height: height,
-                        rotate: el.rotation || 0,
-                      }}
+                        onPointerDown={startDrag}
+                        onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
                       >
-                        <div className="w-full h-full relative group">
-                          {/* 
-                             Pro Tip: We keep the DOM element mostly transparent 
-                             since the Canvas is drawing the real content.
-                          */}
-                          <div className="absolute inset-0 opacity-0 select-none pointer-events-none">
-                            {isImage ? (
-                              <img src={(el as any).src} alt="" className="w-full h-full object-contain" />
-                            ) : (
-                              <div className="w-full h-full whitespace-pre-wrap">{el.content}</div>
-                            )}
-                          </div>
+                        {/* Images render as real visible DOM elements (not on canvas in live mode) */}
+                        {isImage && (
+                          <img
+                            src={(el as WriterImage).src}
+                            draggable={false}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
+                            alt=""
+                          />
+                        )}
 
-                          {isSelected ? (
-                            <>
-                              {/* Pro Selection Box */}
-                              <div className="absolute inset-[-4px] border border-neon-green bg-neon-green/5 ring-4 ring-neon-green/5 pointer-events-none" />
-                              
-                              {/* Resize Handles (Corners) */}
-                              <div className="absolute -top-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-nw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-left')} />
-                              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-ne-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'top-right')} />
-                              <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-sw-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-left')} />
-                              <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-white border border-neon-green rounded-sm cursor-se-resize z-50 shadow-sm" onMouseDown={(e) => onResizeStart(e, 'bottom-right')} />
+                        {isSelected ? (
+                          <>
+                            {/* Selection border */}
+                            <div className="absolute inset-[-3px] border-2 border-neon-green bg-neon-green/5 pointer-events-none" />
 
-                              {/* Center Rotation Handle */}
-                              <div 
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 flex flex-col items-center group/rot cursor-alias z-50"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  const rect = e.currentTarget.parentElement?.getBoundingClientRect();
-                                  if (!rect) return;
-                                  const cx = rect.left + rect.width / 2;
-                                  const cy = rect.top + rect.height / 2;
-                                  
-                                  const onMove = (mE: MouseEvent) => {
-                                    let deg = Math.atan2(mE.clientY - cy, mE.clientX - cx) * (180 / Math.PI) + 90;
-                                    const snaps = [0, 45, 90, 135, 180, 225, 270, 315, 360];
-                                    for (const a of snaps) { if (Math.abs(deg % 360 - a) < 5) { deg = a; break; } }
-                                    updateElement(el.id, { rotation: deg });
-                                  };
-                                  const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-                                  window.addEventListener('mousemove', onMove);
-                                  window.addEventListener('mouseup', onUp);
-                                }}
+                            {/* Corner resize handles */}
+                            {[
+                              { pos: '-top-2 -left-2', cursor: 'cursor-nw-resize', corner: 'top-left' },
+                              { pos: '-top-2 -right-2', cursor: 'cursor-ne-resize', corner: 'top-right' },
+                              { pos: '-bottom-2 -left-2', cursor: 'cursor-sw-resize', corner: 'bottom-left' },
+                              { pos: '-bottom-2 -right-2', cursor: 'cursor-se-resize', corner: 'bottom-right' },
+                            ].map(({ pos, cursor, corner }) => (
+                              <div
+                                key={corner}
+                                data-handle="resize"
+                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-neon-green rounded-sm ${cursor} z-50 shadow`}
+                                onPointerDown={(e) => { e.stopPropagation(); onResizeStart(e, corner); }}
+                              />
+                            ))}
+
+                            {/* Rotation handle */}
+                            <div
+                              data-handle="rotate"
+                              className="absolute -top-11 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-alias z-50"
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
+                                const cx = rect.left + rect.width / 2;
+                                const cy = rect.top + rect.height / 2;
+                                const onMove = (me: PointerEvent) => {
+                                  let deg = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90;
+                                  const snaps = [0, 45, 90, 135, 180, 225, 270, 315, 360];
+                                  for (const a of snaps) { if (Math.abs((deg % 360 + 360) % 360 - a) < 5) { deg = a; break; } }
+                                  updateElement(el.id, { rotation: deg }, true);
+                                };
+                                const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); updateElement(el.id, {}); };
+                                window.addEventListener('pointermove', onMove);
+                                window.addEventListener('pointerup', onUp);
+                              }}
+                            >
+                              <div className="w-[1px] h-6 bg-neon-green" />
+                              <div className="w-6 h-6 bg-neon-green rounded-full flex items-center justify-center border-2 border-white shadow-md hover:scale-125 transition-transform">
+                                <RotateCcw size={12} className="text-white pointer-events-none" />
+                              </div>
+                            </div>
+
+                            {/* Bottom action toolbar */}
+                            <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-brutal-black/90 p-1.5 rounded-full shadow-2xl border border-white/20 z-50 whitespace-nowrap">
+                              <button
+                                data-handle="toolbar"
+                                onClick={(e) => { e.stopPropagation(); updateElement(el.id, { layer: el.layer === 'above' ? 'below' : 'above' }); }}
+                                className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-neon-green text-black" : "hover:bg-white/10 text-white")}
+                                title="Toggle Layer"
                               >
-                                <div className="w-[1px] h-6 bg-neon-green" />
-                                <div className="w-6 h-6 bg-neon-green rounded-full flex items-center justify-center border-2 border-white shadow-md transition-transform hover:scale-125">
-                                  <RotateCcw size={12} className="text-white" />
-                                </div>
-                              </div>
-
-                              {/* Hover Toolbar (Bottom) */}
-                              <div className="absolute -bottom-14 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-brutal-black/90 p-1.5 rounded-full shadow-2xl border border-white/20 z-50 whitespace-nowrap scale-90 sm:scale-100">
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); updateElement(el.id, { layer: el.layer === 'above' ? 'below' : 'above' }); }}
-                                  className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-neon-green text-black" : "hover:bg-white/10 text-white")}
-                                  title="Toggle Layer"
-                                >
-                                  <Layers size={14} />
+                                <Layers size={14} />
+                              </button>
+                              <button data-handle="toolbar" onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'front'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Bring to Front">
+                                <Maximize2 size={14} />
+                              </button>
+                              <button data-handle="toolbar" onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'back'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Send to Back">
+                                <Minimize2 size={14} />
+                              </button>
+                              {!isImage && (
+                                <button data-handle="toolbar" onClick={(e) => { e.stopPropagation(); const newContent = prompt('Edit Content:', el.content); if (newContent !== null) updateElement(el.id, { content: newContent }); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors">
+                                  <Edit3 size={14} />
                                 </button>
-                                <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'front'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Bring to Front">
-                                  <Maximize2 size={14} />
-                                </button>
-                                <button onClick={(e) => { e.stopPropagation(); moveElementLayer(el.id, 'back'); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors" title="Send to Back">
-                                  <Minimize2 size={14} />
-                                </button>
-                                {!isImage && (
-                                  <button onClick={(e) => { e.stopPropagation(); const newContent = prompt('Edit Content:', el.content); if (newContent !== null) updateElement(el.id, { content: newContent }); }} className="p-1.5 hover:bg-white/10 text-white rounded-full transition-colors">
-                                    <Edit3 size={14} />
-                                  </button>
-                                )}
-                                <div className="h-4 w-[1px] bg-white/20 mx-1" />
-                                <button onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-full transition-colors">
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                             <div className="absolute inset-0 border border-transparent group-hover:border-neon-green/20 pointer-events-none" />
-                          )}
-                        </div>
-                      </motion.div>
+                              )}
+                              <div className="h-4 w-[1px] bg-white/20 mx-1" />
+                              <button data-handle="toolbar" onClick={(e) => { e.stopPropagation(); deleteElement(el.id); }} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-full transition-colors">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 border border-transparent hover:border-neon-green/30 pointer-events-none" />
+                        )}
+                      </div>
                     );
                   })}
                 </div>
