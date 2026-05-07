@@ -50,12 +50,23 @@ export async function processCharacterImage(
   }
 
   // Apply threshold
+  let darkPixels = 0;
   for (let i = 0; i < data.length; i += 4) {
     const value = grayVals[i / 4] > threshold ? 255 : 0;
     data[i] = value;
     data[i + 1] = value;
     data[i + 2] = value;
     data[i + 3] = 255;
+    if (value === 0) darkPixels++;
+  }
+
+  // If more than 50% of pixels are dark the image is inverted — flip it
+  if (darkPixels > grayVals.length * 0.5) {
+    for (let i = 0; i < data.length; i += 4) {
+      data[i] = 255 - data[i];
+      data[i + 1] = 255 - data[i + 1];
+      data[i + 2] = 255 - data[i + 2];
+    }
   }
 
   ctx.putImageData(imageData, 0, 0);
