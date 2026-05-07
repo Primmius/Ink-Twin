@@ -51,6 +51,7 @@ export default function App() {
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
   const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
+  const [pendingFontToName, setPendingFontToName] = useState<{ name: string; url: string; profile: any; fontFamily: string } | null>(null);
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -120,7 +121,12 @@ export default function App() {
 
   const handleSaveFont = async () => {
     if (!fontUrl) return;
-    
+    const fontName = fontConfig.name || `Custom Font ${savedFonts.length + 1}`;
+    const alreadySaved = savedFonts.some(f => f.name === fontName && f.source === 'Phase 1');
+    if (alreadySaved) {
+      setToast("Already saved!");
+      return;
+    }
     const response = await fetch(fontUrl);
     const blob = await response.blob();
     const dataUrl = await new Promise<string>((resolve, reject) => {
@@ -129,15 +135,51 @@ export default function App() {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-    const newFont: SavedFont = {
+    setSavedFonts(prev => [...prev, {
       id: Math.random().toString(36).substr(2, 9),
-      name: fontConfig.name || `Custom Font ${savedFonts.length + 1}`,
+      name: fontName,
       url: dataUrl,
       createdAt: Date.now(),
-      source: "Phase 1"
-    };
-    setSavedFonts(prev => [...prev, newFont]);
+      source: 'Phase 1',
+    }]);
     setToast("Font saved to library!");
+  };
+
+  const savePendingFont = () => {
+    if (!pendingFontToName) return;
+    const { name, url, profile, fontFamily } = pendingFontToName;
+    const trimmedName = name.trim() || fontFamily;
+    setSavedFonts(prev => {
+      const alreadySaved = prev.some(f => f.name === trimmedName && f.googleFont);
+      if (alreadySaved) {
+        setToast("Font already in library!");
+        return prev;
+      }
+      return [...prev, {
+        id: Math.random().toString(36).substr(2, 9),
+        name: trimmedName,
+        url,
+        createdAt: Date.now(),
+        source: 'Find My Font',
+        fontFamily,
+        googleFont: true,
+        styleProfile: {
+          slant: profile.slant,
+          letterSpacing: profile.letterSpacing,
+          lineHeight: profile.lineHeight,
+          inkColor: profile.inkColor,
+          wobble: profile.wobble,
+          strokeWeight: profile.strokeWeight,
+          irregularity: profile.irregularity,
+        },
+      }];
+    });
+    setToast("Font saved to library!");
+    setFontUrl(url);
+    setFontConfig(prev => ({ ...prev, name: trimmedName }));
+    setPendingProfile(profile);
+    setPendingFontToName(null);
+    setPhase('text-writer');
   };
 
   const handleDeleteFont = (id: string) => {
@@ -348,27 +390,6 @@ export default function App() {
       const fontFace = new FontFace('inktwin-preview', buffer);
       await fontFace.load();
       document.fonts.add(fontFace);
-
-      // Auto-save to library
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      const fontName = fontConfig.name || `My Handwriting ${Date.now()}`;
-      setSavedFonts(prev => {
-        const alreadySaved = prev.some(f => f.name === fontName && f.source === 'Phase 1');
-        if (alreadySaved) return prev;
-        return [...prev, {
-          id: Math.random().toString(36).substr(2, 9),
-          name: fontName,
-          url: dataUrl,
-          createdAt: Date.now(),
-          source: 'Phase 1',
-        }];
-      });
-      setToast("Font saved to library!");
 
       setStep(6);
     } catch (err) {
@@ -1056,35 +1077,12 @@ export default function App() {
           <FindFont 
             apiKey={apiKey}
             onFontSelected={(name, url, profile) => {
-              setFontUrl(url);
-              setFontConfig(prev => ({ ...prev, name }));
-              setPendingProfile(profile);
-              setPhase('text-writer');
-
-              // Auto-save to library (deduplicated by font family name)
-              setSavedFonts(prev => {
-                const alreadySaved = prev.some(f => f.fontFamily === profile.fontFamily && f.googleFont);
-                if (alreadySaved) return prev;
-                return [...prev, {
-                  id: Math.random().toString(36).substr(2, 9),
-                  name: profile.fontFamily,
-                  url: url || '',
-                  createdAt: Date.now(),
-                  source: 'Find My Font',
-                  fontFamily: profile.fontFamily,
-                  googleFont: true,
-                  styleProfile: {
-                    slant: profile.slant,
-                    letterSpacing: profile.letterSpacing,
-                    lineHeight: profile.lineHeight,
-                    inkColor: profile.inkColor,
-                    wobble: profile.wobble,
-                    strokeWeight: profile.strokeWeight,
-                    irregularity: profile.irregularity,
-                  },
-                }];
+              setPendingFontToName({
+                name: profile.fontFamily,
+                url: url || '',
+                profile,
+                fontFamily: profile.fontFamily,
               });
-              setToast("Font saved to library!");
             }}
             onGoToPhase1={() => setPhase('font-creation')}
           />
@@ -1192,6 +1190,39 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Find My Font — Name Your Font Modal */}
+      {pendingFontToName && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-brutal-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white border-4 border-brutal-black p-8 w-full max-w-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <h3 className="font-display uppercase text-2xl mb-1">Name Your Font</h3>
+            <p className="font-mono text-xs opacity-50 mb-6">Give it a name before saving to your library.</p>
+            <input
+              type="text"
+              value={pendingFontToName.name}
+              onChange={(e) => setPendingFontToName(prev => prev ? { ...prev, name: e.target.value } : prev)}
+              className="w-full px-4 py-3 brutal-border font-mono text-lg outline-none focus:bg-neon-green/10 mb-6"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') savePendingFont(); if (e.key === 'Escape') setPendingFontToName(null); }}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setPendingFontToName(null)}
+                className="flex-1 brutal-btn brutal-btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={savePendingFont}
+                className="flex-1 brutal-btn bg-neon-green flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={18} />
+                Save & Use
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Toast */}
       <AnimatePresence>
