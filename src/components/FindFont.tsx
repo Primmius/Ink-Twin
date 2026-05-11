@@ -448,7 +448,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                    </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {getFilteredFonts().map((font, i) => (
                       <motion.div 
                         key={font.name}
@@ -457,30 +457,30 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                         transition={{ delay: i * 0.05 }}
                         className="brutal-card bg-white brutal-shadow-small flex flex-col hover:border-neon-green transition-colors group overflow-hidden"
                       >
-                        <div className="p-2 bg-brutal-black/5 border-b border-brutal-black text-[7px] font-mono uppercase font-bold flex justify-between">
-                          <span>Preview in: {font.name}</span>
-                          {!loadedFonts.has(font.name) && <span className="text-error-red">Preview unavailable</span>}
+                        <div className="p-2 bg-brutal-black/5 border-b border-brutal-black text-[8px] font-mono uppercase font-bold flex justify-between items-center">
+                          <span className="truncate">Preview in: {font.name}</span>
+                          {!loadedFonts.has(font.name) && <span className="text-error-red shrink-0 ml-2">Unavailable</span>}
                         </div>
-                        <div className="p-4 space-y-4 flex flex-col flex-grow">
-                          <div className="flex justify-between items-start">
-                            <span className="font-display text-sm uppercase">{font.name}</span>
-                            <span className="font-mono text-[8px] bg-neutral-100 px-1 border border-brutal-black/10 uppercase">{font.style}</span>
+                        <div className="p-6 space-y-4 flex flex-col flex-grow">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="font-display text-base uppercase leading-tight">{font.name}</span>
+                            <span className="font-mono text-[9px] bg-neutral-100 px-2 py-0.5 border border-brutal-black/20 uppercase shrink-0">{font.style}</span>
                           </div>
                           <div 
-                            style={{ fontFamily: `'${font.name}', cursive`, fontSize: '24px' }}
-                            className="py-4 border-y border-brutal-black/5 min-h-[100px] flex items-center justify-center text-center leading-tight"
+                            style={{ fontFamily: `'${font.name}', cursive`, fontSize: '28px' }}
+                            className="py-5 border-y border-brutal-black/10 min-h-[90px] flex items-center justify-center text-center leading-tight"
                           >
                             Rhythm of Ink
                           </div>
                           <div 
-                            style={{ fontFamily: `'${font.name}', cursive`, fontSize: '16px' }}
-                            className="pb-2 opacity-40 font-mono text-center truncate italic"
+                            style={{ fontFamily: `'${font.name}', cursive`, fontSize: '15px' }}
+                            className="pb-1 opacity-50 text-center leading-snug"
                           >
-                            abcdefghijklmnopqrstuvwxyz
+                            abcdefghij...
                           </div>
                           <button 
                             onClick={() => loadFont(font.name, analysis)}
-                            className="w-full py-2 font-mono text-[10px] uppercase font-bold bg-neutral-900 text-white hover:bg-neon-green hover:text-brutal-black transition-colors"
+                            className="w-full py-3 font-mono text-[11px] uppercase font-bold bg-neutral-900 text-white hover:bg-neon-green hover:text-brutal-black transition-colors mt-auto"
                           >
                             Switch to this
                           </button>
