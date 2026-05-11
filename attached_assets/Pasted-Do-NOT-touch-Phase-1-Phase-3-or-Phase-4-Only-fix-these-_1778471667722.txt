@@ -1,0 +1,248 @@
+Do NOT touch Phase 1, Phase 3, or Phase 4.
+Only fix these three specific things in Phase 2.
+
+---
+
+FIX 1 — AI EDIT NOT APPLYING CHANGES:
+
+The AI Smart Editor panel exists and Gemini 
+returns tagged text correctly but nothing 
+visually changes on the canvas after clicking 
+Apply AI Edits.
+
+The root cause is the tag parser is not 
+connected to the canvas renderer.
+
+Fix by doing exactly this:
+
+After Gemini returns the tagged text, parse 
+it using this exact logic:
+
+function applyTaggedTextToCanvas(taggedText) {
+  if (!taggedText || taggedText.trim() === "") {
+    alert("AI returned empty content. No changes made.");
+    return;
+  }
+
+  // Save undo snapshot before making changes
+  const undoSnapshot = {
+    pages: JSON.parse(JSON.stringify(pages)),
+    settings: JSON.parse(JSON.stringify(settings))
+  };
+  setUndoSnapshot(undoSnapshot);
+
+  // Parse tagged text into segments
+  const segments = [];
+  let currentColor = settings.inkColor;
+  let currentSize = settings.fontSize;
+  let currentAlign = "left";
+  let isHeading = false;
+  let addGap = false;
+  let pageBreak = false;
+
+  const lines = taggedText.split("\n");
+
+  for (let line of lines) {
+    // Extract all tags from the line first
+    const tagMatches = line.match(
+      /\[(INK:[^\]]+|SIZE:\d+|HEADING|CENTER|GAP|BREAK)\]/g
+    ) || [];
+
+    for (const tag of tagMatches) {
+      if (tag.startsWith("[INK:")) {
+        const color = tag.slice(5, -1).toLowerCase();
+        if (color === "black") currentColor = "#000000";
+        else if (color === "blue") currentColor = "#1a1aff";
+        else if (color === "red") currentColor = "#cc0000";
+        else if (color === "green") currentColor = "#006600";
+        else if (color.startsWith("#")) currentColor = color;
+      } else if (tag.startsWith("[SIZE:")) {
+        currentSize = parseInt(tag.slice(6, -1));
+      } else if (tag === "[HEADING]") {
+        isHeading = true;
+        currentSize = Math.round(settings.fontSize * 1.4);
+      } else if (tag === "[CENTER]") {
+        currentAlign = "center";
+      } else if (tag === "[GAP]") {
+        addGap = true;
+      } else if (tag === "[BREAK]") {
+        pageBreak = true;
+      }
+    }
+
+    // Remove all tags to get clean text
+    const cleanText = line
+      .replace(/\[(INK:[^\]]+|SIZE:\d+|HEADING|CENTER|GAP|BREAK)\]/g, "")
+      .trim();
+
+    if (cleanText || addGap || pageBreak) {
+      segments.push({
+        text: cleanText,
+        inkColor: currentColor,
+        fontSize: currentSize,
+        align: currentAlign,
+        isHeading,
+        addGap,
+        pageBreak
+      });
+    }
+
+    // Reset one-time flags after each line
+    isHeading = false;
+    currentAlign = "left";
+    addGap = false;
+    pageBreak = false;
+    currentSize = settings.fontSize;
+  }
+
+  if (segments.length === 0) {
+    alert("Could not parse AI response. No changes made.");
+    return;
+  }
+
+  // Now render segments to canvas using existing renderPage function
+  // Update the document text and color map
+  let fullText = "";
+  const colorMap = [];
+  let charIndex = 0;
+
+  for (const segment of segments) {
+    if (segment.pageBreak) {
+      fullText += "\f"; // form feed = page break
+      charIndex++;
+    }
+    if (segment.addGap) {
+      fullText += "\n\n";
+      charIndex += 2;
+    }
+    if (segment.text) {
+      const startIndex = charIndex;
+      fullText += segment.text + "\n";
+      const endIndex = charIndex + segment.text.length;
+      colorMap.push({
+        start: startIndex,
+        end: endIndex,
+        inkColor: segment.inkColor,
+        fontSize: segment.fontSize,
+        align: segment.align
+      });
+      charIndex = endIndex + 1;
+    }
+  }
+
+  // Apply to document using same state setter as manual typing
+  setDocumentText(fullText);
+  setColorMap(colorMap);
+
+  // Force re-render of all pages with new color map
+  renderAllPages(fullText, colorMap);
+
+  // Close the AI panel
+  setShowAIPanel(false);
+
+  // Show success toast
+  showToast("AI edits applied successfully!");
+}
+
+The renderAllPages function must read the 
+colorMap and apply the correct inkColor and 
+fontSize to each character range when drawing 
+on canvas.
+
+When drawing each character check if its index 
+falls within any colorMap range and use that 
+range's inkColor and fontSize instead of the 
+global settings value.
+
+---
+
+FIX 2 — ADD MISSING TYPOGRAPHY CONTROLS:
+
+Add these two missing controls to the 
+Typography section in the sidebar.
+Wire each one directly to renderPage() 
+so changes show instantly.
+
+WORD SPACING:
+Label: "WORD SPACING"
+Control: horizontal slider
+Range: -5 to 20
+Default: 0
+When rendering, add wordSpacing pixels of 
+extra space between each word.
+Implementation: when drawing word by word, 
+after each word add an extra wordSpacing px 
+gap before the next word.
+
+LETTER SPACING:
+Label: "LETTER SPACING"  
+Control: horizontal slider
+Range: -2 to 10
+Default: 0
+When rendering, add letterSpacing pixels 
+between each individual character.
+Implementation: render character by character
+and add letterSpacing px after each character.
+
+Add both sliders to the settings object:
+settings.wordSpacing = 0
+settings.letterSpacing = 0
+
+Both must call renderPage() on every change.
+
+---
+
+FIX 3 — CURSOR POSITION WRONG IN PREVIEW:
+
+When user clicks inside the canvas page preview 
+to edit text, the cursor appears in the wrong 
+position — it shows in the middle of the text 
+instead of where the user clicked.
+
+This happens because the canvas is scaled or 
+transformed and the click coordinates are not 
+being converted to canvas-relative coordinates.
+
+Fix by converting click coordinates correctly:
+
+function getCanvasRelativePosition(event, canvas) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY
+  };
+}
+
+Use this function in the canvas onClick and 
+onMouseDown handlers to get the correct 
+position before calculating which character 
+was clicked.
+
+When user clicks at a position, find the 
+nearest character by:
+1. Converting click to canvas coordinates 
+   using the function above
+2. Looping through rendered character positions
+3. Finding the character whose rendered 
+   x/y position is closest to the click
+4. Placing the cursor after that character
+
+This makes editing in the preview feel natural 
+and the cursor appears exactly where clicked.
+
+---
+
+IMPORTANT RULES:
+- Do NOT touch Phase 1, Phase 3, or Phase 4
+- Do NOT change any other Phase 2 features
+- FIX 1 is the most critical — AI edits must 
+  visually change the canvas after applying
+- FIX 2 just adds two new sliders, nothing else
+- FIX 3 only changes coordinate conversion 
+  in click handlers, nothing else
+- All three fixes are independent of each other
+- Test FIX 1 by applying "questions black 
+  answers blue" and verifying text colors 
+  actually change on the canvas

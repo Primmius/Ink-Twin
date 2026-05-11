@@ -30,6 +30,7 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
   let currentPageLines: string[] = [];
   let currentY = 0;
   let currentLineHeight = config.lineHeight;
+  let lastColorTag = ''; // FIX 1: track the last ink color tag seen
 
   const paragraphs = text.split('\n\n'); // Split by double newline to match CanvasPage.tsx
 
@@ -69,6 +70,7 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
           if (!wp) return;
           if (wp === '[BOLD]') currentIsBold = true;
           else if (wp === '[NORMAL]') currentIsBold = false;
+          else if (wp.startsWith('[INK:')) lastColorTag = wp; // FIX 1: update color tag tracker
           else if (!wp.startsWith('[')) {
             // Measure actual text
             for (const char of wp) {
@@ -92,7 +94,10 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
           }
           currentPageLines.push(currentLine);
           currentY += effectiveLineHeight;
-          currentLine = word;
+          // FIX 1: carry the last color tag to the new wrapped line so colors
+          // don't bleed or reset when a long AI-tagged line wraps to next line
+          const wordHasColorTag = word.includes('[INK:');
+          currentLine = (lastColorTag && !wordHasColorTag) ? lastColorTag + word : word;
           currentX = wordWidth;
         } else {
           currentLine = currentLine ? currentLine + ' ' + word : word;

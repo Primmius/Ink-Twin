@@ -357,14 +357,26 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
             />
           </div>
           <div className="space-y-1">
-            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Spacing</label>
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Letter Spacing</label>
             <input 
-              type="range" min="-5" max="15" 
+              type="range" min="-2" max="10" 
               value={settings.letterSpacing}
               onChange={(e) => updateSetting('letterSpacing', parseInt(e.target.value))}
               className="w-full accent-brutal-black h-8"
             />
           </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Word Spacing</label>
+            <input 
+              type="range" min="-5" max="20" 
+              value={settings.wordSpacing}
+              onChange={(e) => updateSetting('wordSpacing', parseInt(e.target.value))}
+              className="w-full accent-brutal-black h-8"
+            />
+          </div>
+          <div className="space-y-1" />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
@@ -811,24 +823,12 @@ ${documentText}`;
       const originalLines = documentText.split('\n').filter(l => l.trim() !== "").length;
       const responseLines = rawText.split('\n').filter(l => l.trim() !== "").length;
 
-      // Safe tag parser to ensure content integrity and apply settings
+      // Safe tag parser to ensure content integrity only — does NOT mutate global settings
+      // FIX 1: keep newSettings as a clean copy of current settings so that AI ink color
+      // tags in the text don't permanently overwrite the user's chosen global ink color.
       let newSettings = { ...settings };
       const parseTaggedContent = (text: string) => {
         const parts = text.split(/(\[INK:[^\]]+\]|\[SIZE:\d+\]|\[HEADING\]|\[CENTER\]|\[GAP\]|\[BREAK\]|\[BOLD\]|\[NORMAL\]|\[LINE:\d+\])/);
-        
-        parts.forEach(part => {
-          if (!part) return;
-          if (part === '[INK:black]') newSettings.inkColor = '#000000';
-          else if (part === '[INK:blue]') newSettings.inkColor = '#1a1aff';
-          else if (part === '[INK:red]') newSettings.inkColor = '#cc0000';
-          else if (part.startsWith('[INK:')) {
-            const color = part.match(/\[INK:([^\]]+)\]/)?.[1];
-            if (color) newSettings.inkColor = color;
-          } else if (part.startsWith('[SIZE:')) {
-            const size = parseInt(part.match(/\[SIZE:(\d+)\]/)?.[1] || '');
-            if (!isNaN(size)) newSettings.fontSize = size;
-          }
-        });
 
         let hasContent = false;
         for (const part of parts) {
@@ -930,6 +930,19 @@ ${documentText}`;
     // The internal coordinate system is fixed at 595 width
     const rect = containerRef.current.getBoundingClientRect();
     return 595 / rect.width;
+  };
+
+  // FIX 3: Convert a mouse/pointer event's client coordinates into canvas-internal
+  // coordinates (0–595 × 0–842), accounting for any CSS transform scaling applied
+  // to the canvas wrapper on mobile devices.
+  const getCanvasRelativePosition = (event: React.MouseEvent | MouseEvent, canvasEl: HTMLElement) => {
+    const rect = canvasEl.getBoundingClientRect();
+    const scaleX = 595 / rect.width;
+    const scaleY = 842 / rect.height;
+    return {
+      x: (event.clientX - rect.left) * scaleX,
+      y: (event.clientY - rect.top) * scaleY,
+    };
   };
 
   const snap = (x: number, y: number, width: number, height: number) => {
@@ -1490,7 +1503,21 @@ ${documentText}`;
                 transformOrigin: 'top left'
               }}
               ref={containerRef}
-              onClick={() => setSelectedElementId(null)}
+              onClick={(e) => {
+                // FIX 3: convert click to canvas-internal coordinates before hit-testing
+                // so that element deselection works correctly on mobile-scaled canvases
+                if (containerRef.current) {
+                  const pos = getCanvasRelativePosition(e, containerRef.current);
+                  const hitEl = pages[currentPageIndex]?.elements.find(el => {
+                    const w = el.width || 100;
+                    const h = el.height || 24;
+                    return pos.x >= el.x && pos.x <= el.x + w && pos.y >= el.y && pos.y <= el.y + h;
+                  });
+                  if (!hitEl) setSelectedElementId(null);
+                } else {
+                  setSelectedElementId(null);
+                }
+              }}
             >
               <CanvasPage 
                 key={`${effectiveFontName}-${fontVersion}`}
