@@ -7,3 +7,10 @@ coverage/
 # !.env.example # Removed by Orchids to allow .env files
 node_modules
 .venv
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
