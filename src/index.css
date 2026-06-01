@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-display: 'Arial Black', sans-serif;
-  --font-body: 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'Courier New', Courier, monospace;
+  --font-display: 'Space Grotesk', 'Arial Black', sans-serif;
+  --font-body: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
   
   --color-neon-green: #00FF00;
   --color-brutal-black: #141414;
@@ -23,7 +23,7 @@
   --warning-yellow: #FFD700;
   --error-red: #FF4B2B;
   
-  /* Semantic Variables for Theming */
+  /* Semantic Variables for Theming - Light Mode (Swiss Print Substrate) */
   --bg-primary: var(--gallery-white);
   --text-primary: var(--brutal-black);
   --border-primary: var(--brutal-black);
@@ -34,19 +34,64 @@
 }
 
 body.dark {
+  /* Semantic Variables for Theming - Dark Mode (Carbon Substrate) */
   --bg-primary: #121212;
   --text-primary: #eeeeee;
   --border-primary: #333333;
   --bg-secondary: #1a1a1a;
   --bg-card: #1a1a1a;
   --shadow-color: #333333;
+  --warning-yellow: #FFD700;
+  --neon-green: #00FF00;
 }
 
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-body);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow-x: hidden;
+  
+  /* Engineering Blueprint Grid Background Overlay */
+  background-image: 
+    radial-gradient(var(--border-primary) 1.2px, transparent 1.2px);
+  background-size: 32px 32px;
+  background-position: center;
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(13, 14, 17, 0.03) 100%);
+  z-index: 1;
+}
+
+body.dark::before {
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(0, 0, 0, 0.3) 100%);
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-left: 2px solid var(--border-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border: 2px solid var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--warning-yellow);
 }
 
 /* Base Overrides for Dark Mode components */
@@ -62,34 +107,71 @@ body.dark .bg-neutral-200 {
   color: var(--text-primary) !important;
 }
 
+/* Input elements glow and focus effects */
+input, textarea, select {
+  font-family: var(--font-mono);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--warning-yellow) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+/* Utility Definitions with High-End Polish */
 @utility brutal-border {
   border: 2px solid var(--border-primary);
 }
 
 @utility brutal-shadow {
-  box-shadow: 4px 4px 0px var(--shadow-color);
+  box-shadow: 5px 5px 0px var(--shadow-color);
 }
 
 @utility brutal-btn {
-  @apply px-6 py-3 font-display uppercase border-2 border-[var(--border-primary)] bg-[var(--bg-card)] transition-all duration-100 cursor-pointer;
+  @apply px-6 py-3 font-display uppercase tracking-wider font-bold border-2 border-[var(--border-primary)] bg-[var(--bg-card)] cursor-pointer select-none inline-flex items-center justify-center gap-2;
   color: var(--text-primary);
+  border-radius: 4px;
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, box-shadow;
+
   &:hover {
-    @apply -translate-x-0.5 -translate-y-0.5 brutal-shadow;
-    background-color: var(--accent-color);
+    transform: translate(-3px, -3px);
+    box-shadow: 7px 7px 0px var(--shadow-color);
+    background-color: var(--warning-yellow); /* Polished: Hover turns into glorious original bright yellow */
     color: var(--brutal-black);
     border-color: var(--brutal-black);
+  }
+
+  &:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px var(--shadow-color);
   }
 }
 
 @utility brutal-btn-primary {
-  @apply bg-neon-green;
+  @apply bg-warning-yellow; /* Direct brand emphasis on yellow */
   color: var(--brutal-black);
+  
+  &:hover {
+    background-color: #FFEA00;
+  }
 }
 
 @utility brutal-card {
   @apply border-2 border-[var(--border-primary)] p-6;
   background-color: var(--bg-card);
   color: var(--text-primary);
+  border-radius: 4px;
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  &:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0px var(--shadow-color);
+  }
 }
 
 @utility theme-bg {
@@ -106,10 +188,144 @@ body.dark .bg-neutral-200 {
   border-color: var(--border-primary);
 }
 
-/* Global Mobile Rules */
+/* Explicit Original Bright Yellow (#FFD700) Styling & Custom Overrides */
+.bg-warning-yellow {
+  background-color: var(--warning-yellow) !important;
+  color: var(--brutal-black) !important;
+}
+
+.border-warning-yellow {
+  border-color: var(--warning-yellow) !important;
+}
+
+.text-warning-yellow {
+  color: var(--warning-yellow) !important;
+}
+
+.brutal-btn.bg-warning-yellow {
+  background-color: var(--warning-yellow) !important;
+  color: var(--brutal-black) !important;
+  border-color: var(--border-primary) !important;
+  
+  &:hover {
+    background-color: #FFEA00 !important;
+    color: var(--brutal-black) !important;
+    border-color: var(--brutal-black) !important;
+    box-shadow: 7px 7px 0px var(--shadow-color) !important;
+  }
+}
+
+/* 📚 High-End Student Theme Enhancements */
+
+/* Physical Notebook Lined Paper Substrate */
+.student-notebook-ruled {
+  background-color: #FAF9F6 !important;
+  background-image: 
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.3) 59px, rgba(255, 75, 92, 0.3) 61px, transparent 61px),
+    linear-gradient(rgba(171, 206, 215, 0.3) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 24px !important;
+  border: 2px solid var(--border-primary);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  color: #1A1A24 !important;
+  padding-left: 72px !important;
+  padding-right: 24px !important;
+  padding-top: 24px !important;
+  line-height: 24px !important;
+}
+
+body.dark .student-notebook-ruled {
+  background-color: #17181F !important;
+  background-image: 
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.2) 59px, rgba(255, 75, 92, 0.2) 61px, transparent 61px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
+  color: #FAF9F6 !important;
+}
+
+/* Student Neon Highlighter Marker Accents */
+.highlighter-yellow {
+  background-color: rgba(255, 215, 0, 0.2) !important;
+  border-bottom: 2px solid var(--warning-yellow);
+}
+
+.highlighter-pink {
+  background-color: rgba(255, 46, 147, 0.15) !important;
+  border-bottom: 2px solid #FF2E93;
+}
+
+.highlighter-blue {
+  background-color: rgba(0, 229, 255, 0.15) !important;
+  border-bottom: 2px solid #00E5FF;
+}
+
+/* Technical Blueprint Corner Crosshair Overlays */
+.tech-crosshair-container {
+  position: relative;
+}
+
+.tech-crosshair-container::before, 
+.tech-crosshair-container::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: bold;
+  opacity: 0.25;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.tech-crosshair-container::before {
+  top: 4px;
+  left: 6px;
+}
+
+.tech-crosshair-container::after {
+  bottom: 4px;
+  right: 6px;
+}
+
+/* Scanline Matrix and Pulse Effects */
+@keyframes scanning {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.matrix-scanner {
+  position: relative;
+  overflow: hidden;
+}
+
+.matrix-scanner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(255,215,0,0.5), rgba(255,215,0,0));
+  animation: scanning 2s linear infinite;
+  pointer-events: none;
+}
+
+/* Staggered Animations */
+.animate-fade-up {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Global Mobile Rules Overhauled for Students */
 @media (max-width: 768px) {
   body {
     overflow-x: hidden;
+    background-size: 24px 24px;
   }
 
   button, 
@@ -126,7 +342,7 @@ body.dark .bg-neutral-200 {
   }
 
   .brutal-card {
-    padding: 16px;
+    padding: 18px;
   }
 
   .brutal-border {
@@ -138,6 +354,9 @@ body.dark .bg-neutral-200 {
     width: 100vw !important;
     max-width: 100vw !important;
     padding: 16px;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
   }
 
   /* Force single column on mobile and remove rogue splits */
@@ -158,5 +377,24 @@ body.dark .bg-neutral-200 {
   header {
     padding-left: 16px !important;
     padding-right: 16px !important;
+  }
+
+  /* Overhauled Mobile Tabs layout */
+  .nav-tab {
+    font-size: 11px !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 2px 2px 0px var(--shadow-color) !important;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border-color: var(--border-primary) !important;
+    height: 42px !important;
+  }
+  
+  .nav-tab.bg-neon-green {
+    background-color: var(--warning-yellow) !important; /* Active tab is original bright yellow */
+    color: var(--brutal-black) !important;
+    box-shadow: 4px 4px 0px var(--shadow-color) !important;
+    transform: translateY(-2px) !important;
   }
 }

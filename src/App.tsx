@@ -416,8 +416,16 @@ export default function App() {
         <div className="flex flex-col gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
             <Logo size={isMobile ? 32 : 44} showText={false} />
-            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title">
+            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title flex items-baseline gap-2">
               Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+              <a 
+                href="https://primuez.in" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-mono text-xs lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all"
+              >
+                by primuez.in
+              </a>
             </h1>
           </div>
           
@@ -1111,6 +1119,10 @@ export default function App() {
         </div>
         
         <div className="flex items-center gap-4">
+          <span className="font-mono text-[10px] opacity-40">
+            A <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--neon-green)] transition-all">Primuez.in</a> Project
+          </span>
+          <span className="font-mono text-[10px] opacity-40">|</span>
           <span className="font-mono text-[10px] opacity-40">INKTWIN_ENGINE_STABLE_V1.0</span>
           <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
         </div>
