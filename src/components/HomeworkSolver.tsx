@@ -351,10 +351,10 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 theme-card/80 z-50 p-6 text-center"
+                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 matrix-scanner z-50 p-6 text-center bg-neutral-900/95 dark:bg-[#0a0a0c]/98 border-2 border-warning-yellow rounded-[4px] text-white"
                 >
-                  <RefreshCw size={40} className="animate-spin text-neon-green" />
-                  <div className="font-display uppercase text-2xl tracking-tighter animate-pulse text-text-primary">{loadingMessage}</div>
+                  <RefreshCw size={40} className="animate-spin text-warning-yellow" />
+                  <div className="font-display uppercase text-2xl tracking-tighter animate-pulse text-warning-yellow">{loadingMessage}</div>
                   <p className="font-mono text-[10px] opacity-40 max-w-xs text-text-primary">Our AI is crunching the numbers and reading the context to provide the most accurate solution for you.</p>
                 </motion.div>
               ) : result ? (
@@ -368,7 +368,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                     <textarea
                       value={editableAnswer}
                       onChange={(e) => setEditableAnswer(e.target.value)}
-                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed p-4 bg-neon-green/5 border-2 border-dashed border-neon-green/30 outline-none focus:border-neon-green transition-colors resize-none overflow-hidden text-text-primary"
+                      className="w-full min-h-[500px] h-auto font-mono text-sm leading-relaxed student-notebook-ruled outline-none focus:border-warning-yellow transition-all resize-none overflow-hidden tech-crosshair-container border-2 border-brutal-black rounded-[4px] brutal-shadow"
                       style={{ height: 'auto', minHeight: '500px' }}
                       onInput={(e: any) => {
                         e.target.style.height = 'auto';

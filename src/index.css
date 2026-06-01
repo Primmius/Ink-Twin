@@ -215,6 +215,75 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
+/* 📚 High-End Student Theme Enhancements */
+
+/* Physical Notebook Lined Paper Substrate */
+.student-notebook-ruled {
+  background-color: #FAF9F6 !important;
+  background-image: 
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.3) 59px, rgba(255, 75, 92, 0.3) 61px, transparent 61px),
+    linear-gradient(rgba(171, 206, 215, 0.3) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 24px !important;
+  border: 2px solid var(--border-primary);
+  box-shadow: 4px 4px 0px var(--shadow-color);
+  color: #1A1A24 !important;
+  padding-left: 72px !important;
+  padding-right: 24px !important;
+  padding-top: 24px !important;
+  line-height: 24px !important;
+}
+
+body.dark .student-notebook-ruled {
+  background-color: #17181F !important;
+  background-image: 
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.2) 59px, rgba(255, 75, 92, 0.2) 61px, transparent 61px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
+  color: #FAF9F6 !important;
+}
+
+/* Student Neon Highlighter Marker Accents */
+.highlighter-yellow {
+  background-color: rgba(255, 215, 0, 0.2) !important;
+  border-bottom: 2px solid var(--warning-yellow);
+}
+
+.highlighter-pink {
+  background-color: rgba(255, 46, 147, 0.15) !important;
+  border-bottom: 2px solid #FF2E93;
+}
+
+.highlighter-blue {
+  background-color: rgba(0, 229, 255, 0.15) !important;
+  border-bottom: 2px solid #00E5FF;
+}
+
+/* Technical Blueprint Corner Crosshair Overlays */
+.tech-crosshair-container {
+  position: relative;
+}
+
+.tech-crosshair-container::before, 
+.tech-crosshair-container::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: bold;
+  opacity: 0.25;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.tech-crosshair-container::before {
+  top: 4px;
+  left: 6px;
+}
+
+.tech-crosshair-container::after {
+  bottom: 4px;
+  right: 6px;
+}
+
 /* Scanline Matrix and Pulse Effects */
 @keyframes scanning {
   0% { transform: translateY(-100%); }
