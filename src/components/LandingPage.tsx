@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
+import { cn } from '../lib/utils';
 
 interface LandingPageProps {
   onSaveKey: (key: string) => void;
@@ -13,21 +14,25 @@ const features = [
     emoji: '✏️',
     title: 'Create My Font',
     desc: 'Upload a photo of your handwriting. Get a real .ttf font file.',
+    tag: 'MODULE_01 // CREATIVE',
   },
   {
     emoji: '📝',
     title: 'Write with My Handwriting',
     desc: 'Type anything. Download it looking handwritten on real paper.',
+    tag: 'MODULE_02 // UTILITY',
   },
   {
     emoji: '🎓',
     title: 'AI Study Assistant',
     desc: 'Upload any homework question. AI solves it in your handwriting.',
+    tag: 'MODULE_03 // ACADEMIC',
   },
   {
     emoji: '🔍',
     title: 'Find My Font',
     desc: 'Upload any handwriting photo. We find your closest free font match.',
+    tag: 'MODULE_04 // SEARCH',
   },
 ];
 
@@ -40,12 +45,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
     if (trimmed) onSaveKey(trimmed);
   };
 
+  const getBentoStyle = (index: number) => {
+    switch (index) {
+      case 0:
+        return "md:col-span-2 hover:shadow-[7px_7px_0px_var(--neon-green)] bg-white dark:bg-[#12131A]";
+      case 1:
+        return "md:col-span-1 hover:shadow-[7px_7px_0px_var(--warning-yellow)] bg-white dark:bg-[#12131A]";
+      case 2:
+        return "md:col-span-1 hover:shadow-[7px_7px_0px_#FF4B5C] bg-white dark:bg-[#12131A]";
+      case 3:
+        return "md:col-span-2 hover:shadow-[7px_7px_0px_#3B82F6] bg-white dark:bg-[#12131A]";
+      default:
+        return "md:col-span-1 bg-white dark:bg-[#12131A]";
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen theme-bg font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black"
+      className="min-h-screen theme-bg font-body flex flex-col border-[8px] border-brutal-black selection:bg-warning-yellow selection:text-brutal-black"
     >
       {/* Header */}
       <header className="border-b-2 border-brutal-black p-4 md:p-6 flex items-center justify-between bg-[var(--bg-primary)]">
@@ -78,42 +98,78 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
             <h2 className="font-display uppercase tracking-tighter leading-[0.92] text-5xl md:text-7xl break-words">
               Your handwriting.
               <br />
-              <span style={{ color: 'var(--neon-green)' }}>Digitally yours.</span>
+              <span className="text-warning-yellow">Digitally yours.</span>
             </h2>
             <p className="font-mono text-sm md:text-base opacity-80 max-w-2xl">
               Type in your own handwriting. Solve homework with AI. Find your closest font match. All free,
-              forever.
+              forever. Built for students who care about work presentation.
             </p>
+            
+            {/* Student approved chip badges */}
+            <div className="flex flex-wrap gap-2 pt-2">
+              <span 
+                className="bg-warning-yellow text-brutal-black text-[10px] font-mono font-bold uppercase px-3 py-1 border-2 border-brutal-black rounded-full select-none"
+                style={{ boxShadow: '2px 2px 0px var(--shadow-color)' }}
+              >
+                🎓 Student Approved
+              </span>
+              <span 
+                className="bg-neon-green text-brutal-black text-[10px] font-mono font-bold uppercase px-3 py-1 border-2 border-brutal-black rounded-full select-none"
+                style={{ boxShadow: '2px 2px 0px var(--shadow-color)' }}
+              >
+                ⚡ 100% Free
+              </span>
+              <span 
+                className="bg-[#E3F2FD] dark:bg-[#1E293B] text-blue-800 dark:text-blue-300 text-[10px] font-mono font-bold uppercase px-3 py-1 border-2 border-brutal-black rounded-full select-none"
+                style={{ boxShadow: '2px 2px 0px var(--shadow-color)' }}
+              >
+                🔒 Local & Private
+              </span>
+              <span 
+                className="bg-[#FCE4EC] dark:bg-[#3B1F2A] text-pink-800 dark:text-pink-300 text-[10px] font-mono font-bold uppercase px-3 py-1 border-2 border-brutal-black rounded-full select-none"
+                style={{ boxShadow: '2px 2px 0px var(--shadow-color)' }}
+              >
+                ✍️ Save Hand Strain
+              </span>
+            </div>
           </section>
 
-          {/* Features */}
+          {/* Features Asymmetric Bento Grid */}
           <section className="space-y-3">
             <h3 className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
-              [MODULES] WHAT_YOU_GET
+              [STUDENT_TOOLKIT] WHAT_YOU_CAN_DO
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {features.map((f) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {features.map((f, idx) => (
                 <div
                   key={f.title}
-                  className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all"
+                  className={cn(
+                    "brutal-card brutal-shadow hover:-translate-x-1 hover:-translate-y-1 transition-all duration-200",
+                    getBentoStyle(idx)
+                  )}
                 >
-                  <div className="text-3xl mb-3">{f.emoji}</div>
-                  <h4 className="font-display uppercase text-base mb-2 tracking-tight">{f.title}</h4>
-                  <p className="font-mono text-xs opacity-70 leading-snug">{f.desc}</p>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="text-4xl">{f.emoji}</div>
+                    <span className="font-mono text-[9px] uppercase tracking-wider opacity-60 px-2 py-0.5 border border-brutal-black/20 dark:border-white/10 rounded">
+                      {f.tag}
+                    </span>
+                  </div>
+                  <h4 className="font-display uppercase text-lg mb-2 tracking-tight">{f.title}</h4>
+                  <p className="font-mono text-xs opacity-75 leading-snug">{f.desc}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          {/* Founder note */}
-          <section className="brutal-card brutal-shadow">
-            <p className="font-mono text-[10px] uppercase opacity-60 tracking-widest mb-2">
-              [FOUNDER_NOTE]
+          {/* Founder note styled as a tilted Yellow Sticky Note */}
+          <section className="border-2 border-brutal-black p-6 rounded-[4px] bg-[#FFFDE7] dark:bg-[#20211A] text-brutal-black dark:text-neutral-200 brutal-shadow md:rotate-1 hover:rotate-0 transition-transform duration-300">
+            <p className="font-mono text-[10px] uppercase opacity-75 tracking-widest mb-2 border-b border-brutal-black/10 pb-1">
+              📌 [FOUNDER_MEMO]
             </p>
-            <p className="text-sm leading-relaxed">
-              "Built by a student who got an F for typed work after a hand injury. Built free by <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-warning-yellow transition-all">Primuez.in</a> so no one else has to."
+            <p className="text-sm leading-relaxed italic font-display">
+              "Built by a student who got an F for typed work after a hand injury. Built 100% free by <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-[#E6B800] transition-all">Primuez.in</a> so no student ever has to go through that again."
             </p>
-            <p className="font-mono text-xs opacity-70 mt-2">— Rahul, Founder</p>
+            <p className="font-mono text-xs opacity-80 mt-3 text-right">— Rahul, Founder</p>
           </section>
 
           {/* API Key Setup */}
@@ -132,7 +188,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
 
             <ol className="space-y-3">
               <li className="flex gap-3 items-start">
-                <span className="bg-neon-green text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
+                <span className="bg-warning-yellow text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
                   01
                 </span>
                 <span className="text-sm">
@@ -141,7 +197,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
                     href="https://aistudio.google.com/app/apikey"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold underline decoration-2 underline-offset-2 hover:text-[var(--neon-green)] inline-flex items-center gap-1"
+                    className="font-bold underline decoration-2 underline-offset-2 hover:text-warning-yellow inline-flex items-center gap-1"
                   >
                     aistudio.google.com <ChevronRight size={14} />
                   </a>{' '}
@@ -149,7 +205,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
                 </span>
               </li>
               <li className="flex gap-3 items-start">
-                <span className="bg-neon-green text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
+                <span className="bg-warning-yellow text-brutal-black font-display uppercase text-xs px-2 py-1 brutal-border shrink-0">
                   02
                 </span>
                 <span className="text-sm">Paste your key below.</span>
@@ -166,12 +222,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
                 onChange={(e) => setKeyInput(e.target.value)}
                 placeholder="Paste your Gemini API key here..."
                 autoComplete="new-password"
-                className="w-full px-4 py-3 brutal-border font-mono outline-none bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:bg-[color-mix(in_srgb,var(--neon-green)_15%,transparent)]"
+                className="w-full px-4 py-3 brutal-border font-mono outline-none bg-[var(--bg-secondary)] text-[var(--text-primary)] focus:bg-[color-mix(in_srgb,var(--warning-yellow)_15%,transparent)]"
               />
               <button
                 type="submit"
                 disabled={!keyInput.trim()}
-                className="w-full brutal-btn brutal-btn-primary brutal-shadow text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full brutal-btn bg-warning-yellow brutal-shadow text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Start Using InkTwin <ChevronRight size={18} />
               </button>
