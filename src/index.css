@@ -5,11 +5,11 @@
   --font-body: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', Courier, monospace;
   
-  --color-neon-green: #00FFA3;
-  --color-brutal-black: #0D0E11;
-  --color-gallery-white: #FAF9F6;
-  --color-warning-yellow: #FFE600;
-  --color-error-red: #FF4B5C;
+  --color-neon-green: #00FF00;
+  --color-brutal-black: #141414;
+  --color-gallery-white: #FFFFFF;
+  --color-warning-yellow: #FFD700;
+  --color-error-red: #FF4B2B;
 
   --color-text-primary: var(--text-primary);
   --color-bg-primary: var(--bg-primary);
@@ -17,31 +17,32 @@
 }
 
 :root {
-  --neon-green: #00FFA3;
-  --brutal-black: #0D0E11;
-  --gallery-white: #FAF9F6;
-  --warning-yellow: #FFE600;
-  --error-red: #FF4B5C;
+  --neon-green: #00FF00;
+  --brutal-black: #141414;
+  --gallery-white: #FFFFFF;
+  --warning-yellow: #FFD700;
+  --error-red: #FF4B2B;
   
   /* Semantic Variables for Theming - Light Mode (Swiss Print Substrate) */
   --bg-primary: var(--gallery-white);
   --text-primary: var(--brutal-black);
   --border-primary: var(--brutal-black);
-  --bg-secondary: #EAE9E4;
-  --bg-card: #FFFFFF;
+  --bg-secondary: #f5f5f5;
+  --bg-card: var(--gallery-white);
   --shadow-color: var(--brutal-black);
   --accent-color: var(--neon-green);
 }
 
 body.dark {
   /* Semantic Variables for Theming - Dark Mode (Carbon Substrate) */
-  --bg-primary: #0D0E11;
-  --text-primary: #FAF9F6;
-  --border-primary: #33363F;
-  --bg-secondary: #17181F;
-  --bg-card: #12131A;
-  --shadow-color: #050507;
-  --warning-yellow: #FFE600;
+  --bg-primary: #121212;
+  --text-primary: #eeeeee;
+  --border-primary: #333333;
+  --bg-secondary: #1a1a1a;
+  --bg-card: #1a1a1a;
+  --shadow-color: #333333;
+  --warning-yellow: #FFD700;
+  --neon-green: #00FF00;
 }
 
 body {
@@ -115,7 +116,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--warning-yellow) !important;
-  box-shadow: 0 0 0 3px rgba(255, 230, 0, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25) !important;
   transform: translateY(-1px);
 }
 
@@ -139,7 +140,7 @@ input:focus, textarea:focus, select:focus {
   &:hover {
     transform: translate(-3px, -3px);
     box-shadow: 7px 7px 0px var(--shadow-color);
-    background-color: var(--accent-color);
+    background-color: var(--warning-yellow); /* Polished: Hover turns into glorious original bright yellow */
     color: var(--brutal-black);
     border-color: var(--brutal-black);
   }
@@ -151,11 +152,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 @utility brutal-btn-primary {
-  @apply bg-neon-green;
+  @apply bg-warning-yellow; /* Direct brand emphasis on yellow */
   color: var(--brutal-black);
   
   &:hover {
-    background-color: #00E592;
+    background-color: #FFEA00;
   }
 }
 
@@ -187,7 +188,7 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--border-primary);
 }
 
-/* Explicit Bright Yellow Styling Enhancements */
+/* Explicit Original Bright Yellow (#FFD700) Styling & Custom Overrides */
 .bg-warning-yellow {
   background-color: var(--warning-yellow) !important;
   color: var(--brutal-black) !important;
@@ -207,7 +208,7 @@ input:focus, textarea:focus, select:focus {
   border-color: var(--border-primary) !important;
   
   &:hover {
-    background-color: #FFE600 !important;
+    background-color: #FFEA00 !important;
     color: var(--brutal-black) !important;
     border-color: var(--brutal-black) !important;
     box-shadow: 7px 7px 0px var(--shadow-color) !important;
@@ -232,7 +233,7 @@ input:focus, textarea:focus, select:focus {
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(to bottom, rgba(255,230,0,0.5), rgba(255,230,0,0));
+  background: linear-gradient(to bottom, rgba(255,215,0,0.5), rgba(255,215,0,0));
   animation: scanning 2s linear infinite;
   pointer-events: none;
 }
@@ -251,7 +252,7 @@ input:focus, textarea:focus, select:focus {
   }
 }
 
-/* Global Mobile Rules */
+/* Global Mobile Rules Overhauled for Students */
 @media (max-width: 768px) {
   body {
     overflow-x: hidden;
@@ -307,5 +308,24 @@ input:focus, textarea:focus, select:focus {
   header {
     padding-left: 16px !important;
     padding-right: 16px !important;
+  }
+
+  /* Overhauled Mobile Tabs layout */
+  .nav-tab {
+    font-size: 11px !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 2px 2px 0px var(--shadow-color) !important;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border-color: var(--border-primary) !important;
+    height: 42px !important;
+  }
+  
+  .nav-tab.bg-neon-green {
+    background-color: var(--warning-yellow) !important; /* Active tab is original bright yellow */
+    color: var(--brutal-black) !important;
+    box-shadow: 4px 4px 0px var(--shadow-color) !important;
+    transform: translateY(-2px) !important;
   }
 }
