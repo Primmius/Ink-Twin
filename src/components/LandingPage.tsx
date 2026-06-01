@@ -51,8 +51,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
       <header className="border-b-2 border-brutal-black p-4 md:p-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <div className="flex items-center gap-3">
           <Logo size={40} showText={false} />
-          <h1 className="text-2xl md:text-4xl font-display uppercase tracking-tighter leading-none">
+          <h1 className="text-2xl md:text-4xl font-display uppercase tracking-tighter leading-none flex items-baseline gap-2">
             Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+            <a 
+              href="https://primuez.in" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="font-mono text-[10px] lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all"
+            >
+              by primuez.in
+            </a>
           </h1>
         </div>
         <span className="font-mono text-[10px] opacity-50 hidden sm:block uppercase">
@@ -103,8 +111,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
               [FOUNDER_NOTE]
             </p>
             <p className="text-sm leading-relaxed">
-              "Built by a student who got an F for typed work after a hand injury. Built free so no one
-              else has to."
+              "Built by a student who got an F for typed work after a hand injury. Built free by <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-warning-yellow transition-all">Primuez.in</a> so no one else has to."
             </p>
             <p className="font-mono text-xs opacity-70 mt-2">— Rahul, Founder</p>
           </section>
@@ -187,7 +194,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
       {/* Footer */}
       <footer className="border-t-2 border-brutal-black p-4 md:p-6 flex items-center justify-between bg-[var(--bg-primary)]">
         <span className="font-mono text-[10px] opacity-40 uppercase">
-          INKTWIN_ENGINE_STABLE_V1.0
+          A <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--neon-green)] transition-all">Primuez.in</a> Project
         </span>
         <div className="flex items-center gap-2">
           <span className="font-mono text-[10px] opacity-40 uppercase">Free forever</span>
