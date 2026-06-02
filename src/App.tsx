@@ -772,7 +772,7 @@ export default function App() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
                     {uploadedImages.map((img, i) => (
                       <div key={i} className="aspect-[3/4] brutal-border bg-white p-2 relative group brutal-shadow">
-                        <img src={img} className="w-full h-full object-cover" alt={`Page ${i+1}`} />
+                        <img src={img} width={300} height={400} loading="lazy" className="w-full h-full object-cover" alt={`Page ${i+1}`} />
                         <button 
                           onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
                           className="absolute top-4 right-4 p-2 bg-error-red text-white border-2 border-brutal-black opacity-0 group-hover:opacity-100 transition-opacity"
@@ -832,7 +832,7 @@ export default function App() {
                       >
                         <span className="absolute top-1 left-1 font-mono text-[9px] font-bold opacity-40">{char.char}</span>
                         {char.imageData ? (
-                          <img src={char.imageData} className="w-full h-full object-contain p-2" alt={char.char} />
+                          <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain p-2" alt={char.char} />
                         ) : (
                           <AlertCircle size={16} className="opacity-20" />
                         )}
@@ -932,7 +932,7 @@ export default function App() {
                         {/* Hover to see original */}
                         {char.imageData && (
                           <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                            <img src={char.imageData} className="w-full h-full object-contain opacity-40" alt="Original" />
+                            <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain opacity-40" alt="Original" />
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className="bg-brutal-black text-white font-mono text-[8px] px-1">ORIGINAL</span>
                             </div>

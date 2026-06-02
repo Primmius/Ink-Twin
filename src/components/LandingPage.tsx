@@ -15,24 +15,56 @@ const features = [
     title: 'Create My Font',
     desc: 'Upload a photo of your handwriting. Get a real .ttf font file.',
     tag: 'MODULE_01 // CREATIVE',
+    question: 'How does the InkTwin handwriting font creator work?',
+    answer: 'InkTwin converts photographs of natural handwriting into fully functional, high-fidelity downloadable TTF font files using state-of-the-art vector trace algorithms, allowing you to synthesize custom handwriting fonts on Replit and preserve your personal writing style digitally.',
+    benefits: [
+      'Automatic handwriting vectorization',
+      'Universal TTF font generation',
+      'Custom glyph adjustment controls',
+      'Offline font safety and privacy'
+    ]
   },
   {
     emoji: '📝',
     title: 'Write with My Handwriting',
     desc: 'Type anything. Download it looking handwritten on real paper.',
     tag: 'MODULE_02 // UTILITY',
+    question: 'How does the InkTwin text-to-handwriting generator work?',
+    answer: 'InkTwin utilizes a fast text-to-handwriting rendering engine that takes typed inputs and outputs natural, realistic handwritten documents on lined paper using custom handwriting fonts, featuring advanced line-height variance and ink-bleed simulation to look completely authentic.',
+    benefits: [
+      'Realistic ink color & bleed adjustment',
+      'Dynamic letter spacing & hand-strain reduction',
+      'Custom document paper background styles',
+      'Instant high-definition image downloads'
+    ]
   },
   {
     emoji: '🎓',
     title: 'AI Study Assistant',
     desc: 'Upload any homework question. AI solves it in your handwriting.',
     tag: 'MODULE_03 // ACADEMIC',
+    question: 'How does the InkTwin AI homework study assistant function?',
+    answer: 'InkTwin integrates with the advanced Gemini API to process and solve academic questions or homework prompts, rendering the highly accurate answers directly in your unique handwriting style, saving hours of manual drafting while preserving study output presentation.',
+    benefits: [
+      'High-accuracy Gemini intelligence integration',
+      'Direct homework synthesis in your own font',
+      'Automated handwriting document generation',
+      'Flexible BYOK access model for students'
+    ]
   },
   {
     emoji: '🔍',
     title: 'Find My Font',
     desc: 'Upload any handwriting photo. We find your closest free font match.',
     tag: 'MODULE_04 // SEARCH',
+    question: 'How does the InkTwin handwriting font matcher search work?',
+    answer: 'InkTwin matches uploaded photos of hand-written scripts with the closest free handwriting font alternatives in our extensive global database, bypassing complex creation pipelines to find clean digital handwriting matches for quick, high-speed document synthesis workflows.',
+    benefits: [
+      'Rapid font identification database indexing',
+      'Instant closest free alternative font recommendation',
+      'Image vector analysis handwriting matching',
+      'Seamless fallback for quick document generation'
+    ]
   },
 ];
 
@@ -91,11 +123,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
       <main className="flex-grow overflow-y-auto">
         <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12 space-y-12">
           {/* Hero */}
-          <section className="space-y-4">
+          <section className="space-y-4" aria-labelledby="hero-title">
             <p className="font-mono text-[11px] uppercase opacity-60 tracking-widest">
               [PHASE_00] WELCOME_PROTOCOL
             </p>
-            <h2 className="font-display uppercase tracking-tighter leading-[0.92] text-5xl md:text-7xl break-words">
+            <h2 id="hero-title" className="font-display uppercase tracking-tighter leading-[0.92] text-5xl md:text-7xl break-words">
               Your handwriting.
               <br />
               <span className="text-warning-yellow">Digitally yours.</span>
@@ -135,50 +167,62 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
           </section>
 
           {/* Features Asymmetric Bento Grid */}
-          <section className="space-y-3">
-            <h3 className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
+          <section className="space-y-3" aria-labelledby="features-heading">
+            <h3 id="features-heading" className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
               [STUDENT_TOOLKIT] WHAT_YOU_CAN_DO
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {features.map((f, idx) => (
-                <div
+                <article
                   key={f.title}
+                  aria-labelledby={`feature-title-${idx}`}
                   className={cn(
                     "brutal-card brutal-shadow hover:-translate-x-1 hover:-translate-y-1 transition-all duration-200",
                     getBentoStyle(idx)
                   )}
                 >
+                  {/* Visually Hidden GEO Retrieval QA Block */}
+                  <div className="sr-only">
+                    <h2>{f.question}</h2>
+                    <p>{f.answer}</p>
+                    <ul>
+                      {f.benefits.map((b, bIdx) => (
+                        <li key={bIdx}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+
                   <div className="flex justify-between items-start mb-4">
                     <div className="text-4xl">{f.emoji}</div>
                     <span className="font-mono text-[9px] uppercase tracking-wider opacity-60 px-2 py-0.5 border border-brutal-black/20 dark:border-white/10 rounded">
                       {f.tag}
                     </span>
                   </div>
-                  <h4 className="font-display uppercase text-lg mb-2 tracking-tight">{f.title}</h4>
+                  <h4 id={`feature-title-${idx}`} className="font-display uppercase text-lg mb-2 tracking-tight">{f.title}</h4>
                   <p className="font-mono text-xs opacity-75 leading-snug">{f.desc}</p>
-                </div>
+                </article>
               ))}
             </div>
           </section>
 
           {/* Founder note styled as a tilted Yellow Sticky Note */}
-          <section className="border-2 border-brutal-black p-6 rounded-[4px] bg-[#FFFDE7] dark:bg-[#20211A] text-brutal-black dark:text-neutral-200 brutal-shadow md:rotate-1 hover:rotate-0 transition-transform duration-300">
-            <p className="font-mono text-[10px] uppercase opacity-75 tracking-widest mb-2 border-b border-brutal-black/10 pb-1">
+          <article className="border-2 border-brutal-black p-6 rounded-[4px] bg-[#FFFDE7] dark:bg-[#20211A] text-brutal-black dark:text-neutral-200 brutal-shadow md:rotate-1 hover:rotate-0 transition-transform duration-300" aria-labelledby="founder-memo-heading">
+            <p id="founder-memo-heading" className="font-mono text-[10px] uppercase opacity-75 tracking-widest mb-2 border-b border-brutal-black/10 pb-1">
               📌 [FOUNDER_MEMO]
             </p>
             <p className="text-sm leading-relaxed italic font-display">
               "Built by a student who got an F for typed work after a hand injury. Built 100% free by <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-[#E6B800] transition-all">Primuez.in</a> so no student ever has to go through that again."
             </p>
             <p className="font-mono text-xs opacity-80 mt-3 text-right">— Rahul, Founder</p>
-          </section>
+          </article>
 
           {/* API Key Setup */}
-          <section className="brutal-card brutal-shadow space-y-5">
+          <section className="brutal-card brutal-shadow space-y-5" aria-labelledby="setup-heading">
             <div>
               <p className="font-mono text-[10px] uppercase opacity-60 tracking-widest mb-2">
                 [SETUP_REQUIRED] API_KEY
               </p>
-              <h3 className="font-display uppercase text-3xl md:text-4xl tracking-tighter leading-none">
+              <h3 id="setup-heading" className="font-display uppercase text-3xl md:text-4xl tracking-tighter leading-none">
                 Get Started Free
               </h3>
               <p className="font-mono text-xs opacity-70 mt-2">
@@ -227,7 +271,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
               <button
                 type="submit"
                 disabled={!keyInput.trim()}
-                className="w-full brutal-btn bg-warning-yellow brutal-shadow text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full brutal-btn bg-warning-yellow brutal-shadow text-base flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-allowed"
               >
                 Start Using InkTwin <ChevronRight size={18} />
               </button>
@@ -238,8 +282,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey }) => {
           </section>
 
           {/* Support */}
-          <section className="space-y-3">
-            <h3 className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
+          <section className="space-y-3" aria-labelledby="support-heading">
+            <h3 id="support-heading" className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
               [OPTIONAL] SUPPORT_THE_PROJECT
             </h3>
             <SupportCard />
