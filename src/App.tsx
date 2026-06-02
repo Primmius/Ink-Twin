@@ -39,9 +39,11 @@ import { GlyphEditor } from './components/GlyphEditor';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
 import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
+import { UseCasePage } from './use-cases/UseCasePage';
 
 export default function App() {
   const [phase, setPhase] = useState<AppPhase>('font-creation');
+  const [useCaseSlug, setUseCaseSlug] = useState<string | null>(null);
   const [step, setStep] = useState<AppStep>(1);
   const [apiKey, setApiKey] = useState<string>(
     localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || process.env.GEMINI_API_KEY || ''
@@ -78,6 +80,29 @@ export default function App() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    const handleRoute = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path.startsWith('/use-cases/')) {
+        const slug = path.split('/use-cases/')[1];
+        setUseCaseSlug(slug);
+        setPhase('use-case' as any);
+      } else if (hash.startsWith('#/use-cases/')) {
+        const slug = hash.split('#/use-cases/')[1];
+        setUseCaseSlug(slug);
+        setPhase('use-case' as any);
+      }
+    };
+    handleRoute();
+    window.addEventListener('popstate', handleRoute);
+    window.addEventListener('hashchange', handleRoute);
+    return () => {
+      window.removeEventListener('popstate', handleRoute);
+      window.removeEventListener('hashchange', handleRoute);
+    };
   }, []);
 
   // Success toast timer
@@ -1093,6 +1118,15 @@ export default function App() {
               });
             }}
             onGoToPhase1={() => setPhase('font-creation')}
+          />
+        ) : phase === 'use-case' && useCaseSlug ? (
+          <UseCasePage 
+            slug={useCaseSlug} 
+            onBack={() => {
+              window.history.pushState(null, '', '/');
+              setPhase('font-creation');
+              setUseCaseSlug(null);
+            }} 
           />
         ) : null}
       </div>
