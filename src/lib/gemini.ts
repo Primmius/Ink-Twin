@@ -99,7 +99,7 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   If not found, return null. Return as JSON only.`;
 
   const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     contents: {
       parts: [
         { inlineData: { mimeType, data: base64Data } },
