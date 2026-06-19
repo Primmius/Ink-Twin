@@ -461,14 +461,29 @@ export default function App() {
             <style>{`
               .no-scrollbar::-webkit-scrollbar { display: none; }
               .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+              /* Desktop nav: wrap gracefully */
+              @media (min-width: 769px) {
+                .nav-container {
+                  flex-wrap: wrap;
+                  gap: 6px !important;
+                  padding: 0 !important;
+                }
+                .nav-tab {
+                  font-size: 12px !important;
+                  padding: 8px 14px !important;
+                  height: auto !important;
+                  min-height: 40px;
+                }
+              }
               
               @media (max-width: 768px) {
                 .header-mobile-refine {
-                  padding-left: 16px !important;
+                  padding: 12px 16px !important;
                   overflow: visible !important;
                 }
                 .app-title {
-                  font-size: clamp(1.2rem, 5vw, 2rem) !important;
+                  font-size: clamp(1.1rem, 4.5vw, 1.8rem) !important;
                 }
                 .nav-container {
                   display: flex !important;
@@ -477,20 +492,23 @@ export default function App() {
                   overflow-y: hidden !important;
                   -webkit-overflow-scrolling: touch !important;
                   scrollbar-width: none !important;
-                  gap: 8px !important;
-                  padding: 0 16px !important;
+                  gap: 6px !important;
+                  padding: 0 16px 4px !important;
                   margin-left: -16px;
                   margin-right: -16px;
                   width: calc(100% + 32px) !important;
                 }
+                .nav-container::-webkit-scrollbar { display: none; }
                 .nav-tab { 
                   flex-shrink: 0 !important;
-                  min-width: 130px !important;
-                  font-size: 11px !important;
-                  padding: 8px 12px !important;
-                  height: 50px !important;
+                  min-width: 110px !important;
+                  max-width: 160px !important;
+                  font-size: 10px !important;
+                  padding: 7px 10px !important;
+                  height: 44px !important;
                   text-align: center;
                   white-space: nowrap;
+                  line-height: 1.2;
                 }
                 .step-indicator-container {
                   display: flex !important;
@@ -503,9 +521,7 @@ export default function App() {
                   width: calc(100% + 32px) !important;
                   -webkit-overflow-scrolling: touch !important;
                 }
-                .step-indicator-container::-webkit-scrollbar {
-                  display: none;
-                }
+                .step-indicator-container::-webkit-scrollbar { display: none; }
                 .step-btn {
                   flex-shrink: 0 !important;
                   min-width: 44px !important;
@@ -696,17 +712,60 @@ export default function App() {
 
                   {/* Beginner-friendly explainer */}
                   <div className="brutal-card brutal-shadow bg-neon-green/10 border-neon-green">
-                    <div className="flex items-start gap-3 mb-4">
+                    <div className="flex items-start gap-3 mb-5">
                       <span className="text-2xl">👋</span>
                       <div>
-                        <h3 className="text-lg sm:text-xl font-display uppercase">New here? Read this first.</h3>
+                        <h3 className="text-lg sm:text-xl font-display uppercase">New here? Here's everything you can do.</h3>
                         <p className="font-mono text-xs opacity-70 mt-1">
-                          Pick whichever option works for you — all 3 give you a real digital font.
+                          InkTwin has 5 tools — start with whichever fits you best.
                         </p>
                       </div>
                     </div>
 
-                    <div className="space-y-3 font-mono text-xs sm:text-sm">
+                    {/* Feature overview cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>✏️</span> Create My Font
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Turn your real handwriting into a downloadable .ttf font file using AI.</p>
+                        <button onClick={() => setPhase('font-creation')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Start here →
+                        </button>
+                      </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>📝</span> Write with My Handwriting
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Type any text and render it in your handwriting font on a realistic page.</p>
+                        <button onClick={() => setPhase('text-writer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Open writer →
+                        </button>
+                      </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>🎓</span> AI Study Assistant
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Upload homework questions (photo, PDF, or text) and get AI-solved answers ready to write out.</p>
+                        <button onClick={() => setPhase('homework-solver')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Solve homework →
+                        </button>
+                      </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1 relative">
+                        <div className="absolute top-2 right-2 bg-neon-green px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase">NEW</div>
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>✨</span> AI Humanizer
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Paste any AI-generated text and rewrite it to sound like a real student wrote it — 5 styles.</p>
+                        <button onClick={() => setPhase('ai-humanizer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Humanize text →
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Font creation options */}
+                    <div className="border-t-2 border-brutal-black pt-4 space-y-3 font-mono text-xs sm:text-sm">
+                      <p className="font-bold text-[10px] uppercase tracking-widest opacity-50">To create your font, pick one of these:</p>
                       <div className="flex gap-3">
                         <span className="font-bold text-brutal-black whitespace-nowrap">OPTION A</span>
                         <span>
@@ -716,26 +775,26 @@ export default function App() {
                       <div className="flex gap-3">
                         <span className="font-bold text-brutal-black whitespace-nowrap">OPTION B</span>
                         <span>
-                          <span className="font-bold">No printer?</span> Draw a grid that matches the template — <span className="font-bold">4 columns × 5 rows of equal-sized boxes</span> per page, leaving comfortable space between cells. Write the printed label (A, B, C…) in the top-left corner of each box, then the handwritten character clearly inside, filling roughly half the box. Use a black or dark-blue pen.
+                          <span className="font-bold">No printer?</span> Draw a grid — <span className="font-bold">4 columns × 5 rows</span> of equal-sized boxes. Write the label (A, B, C…) top-left and the character inside each box. Use black or dark-blue pen.
                         </span>
                       </div>
                       <div className="flex gap-3">
                         <span className="font-bold text-brutal-black whitespace-nowrap">OPTION C</span>
                         <span>
-                          <span className="font-bold">Just want letters:</span> Write <span className="font-bold">A–Z</span> (uppercase), <span className="font-bold">a–z</span> (lowercase) and <span className="font-bold">0–9</span> clearly on any paper, then upload.
+                          <span className="font-bold">Just want letters:</span> Write <span className="font-bold">A–Z</span>, <span className="font-bold">a–z</span> and <span className="font-bold">0–9</span> clearly on any paper, then upload.
                         </span>
                       </div>
                       <div className="flex gap-3 pt-3 border-t-2 border-brutal-black">
                         <span className="font-bold whitespace-nowrap">⏰ NO TIME?</span>
                         <span>
-                          Skip this entirely — head to{' '}
+                          Skip font creation — head to{' '}
                           <button
                             onClick={() => setPhase('find-font')}
                             className="underline font-bold hover:text-brutal-black"
                           >
                             🔍 Find My Font
                           </button>
-                          {' '}and upload any handwritten sentence or page. We'll match it to the closest font for you.
+                          {' '}and upload any handwriting sample. We'll match it to the closest font.
                         </span>
                       </div>
                     </div>
