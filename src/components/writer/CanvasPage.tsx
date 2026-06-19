@@ -159,6 +159,174 @@ const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, con
   if (config.pageStyle === 'newspaper') { ctx.fillStyle = '#f0eeea'; ctx.fillRect(0, 0, w, h); }
   if (config.pageStyle === 'kraft') { ctx.fillStyle = '#c4a882'; ctx.fillRect(0, 0, w, h); }
 
+  // Indian Project File Paper Styles
+  if (['project-floral','project-ocean','project-music','project-colorful','project-purple','project-pink'].includes(config.pageStyle)) {
+    const bgFills: Record<string,string> = {
+      'project-floral':'#fffef8','project-ocean':'#f8fcff','project-music':'#fdf8ee',
+      'project-colorful':'#fffde7','project-purple':'#f3e5f5','project-pink':'#fff5f8',
+    };
+    ctx.fillStyle = bgFills[config.pageStyle]; ctx.fillRect(0, 0, w, h);
+
+    // Per-style decorations
+    if (config.pageStyle === 'project-floral') {
+      // Green bottom strip
+      ctx.fillStyle = '#2e7d32'; ctx.fillRect(0, h - 58, w, 58);
+      // Red inner border
+      ctx.strokeStyle = '#c62828'; ctx.lineWidth = 2;
+      ctx.strokeRect(12, 12, w - 24, h - 72);
+      // Flower at bottom-left
+      ctx.save(); ctx.translate(48, h - 29);
+      ['#e91e63','#ff5722','#ffc107','#4caf50','#2196f3'].forEach((c, i) => {
+        const a = (i * 72 - 90) * Math.PI / 180;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a)*14, Math.sin(a)*14, 10, 5, a, 0, Math.PI*2);
+        ctx.fillStyle = c; ctx.fill();
+      });
+      ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI*2); ctx.fillStyle = '#ffd740'; ctx.fill();
+      ctx.restore();
+      // Bird at bottom-right
+      ctx.save(); ctx.translate(w - 42, h - 32);
+      ctx.fillStyle = '#795548';
+      ctx.beginPath(); ctx.arc(0, -5, 7, Math.PI, 0, false); ctx.fill();
+      ctx.fillStyle = '#a1887f';
+      ctx.beginPath(); ctx.arc(0, -5, 3.5, 0, Math.PI, false); ctx.fill();
+      ctx.restore();
+    }
+
+    if (config.pageStyle === 'project-ocean') {
+      ctx.save();
+      ctx.fillStyle = '#1565c0'; ctx.globalAlpha = 0.22;
+      ctx.beginPath(); ctx.moveTo(0, h - 72);
+      for (let x = 0; x <= w; x += 28) { ctx.quadraticCurveTo(x+14, h-96+Math.sin(x*0.045)*22, x+28, h-72); }
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#42a5f5'; ctx.globalAlpha = 0.2;
+      ctx.beginPath(); ctx.moveTo(0, h - 44);
+      for (let x = 0; x <= w; x += 28) { ctx.quadraticCurveTo(x+14, h-66+Math.sin((x+14)*0.045)*20, x+28, h-44); }
+      ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      ctx.strokeStyle = '#90caf9'; ctx.lineWidth = 2; ctx.globalAlpha = 0.4;
+      ctx.strokeRect(10, 10, w - 20, h - 20); ctx.globalAlpha = 1;
+    }
+
+    if (config.pageStyle === 'project-music') {
+      ctx.save(); ctx.globalAlpha = 0.09; ctx.fillStyle = '#333'; ctx.font = '26px serif';
+      const noteChars = ['♩','♪','♫','♬'];
+      [[w-82,140],[w-48,260],[w-86,390],[w-52,510],[w-80,640],[w-46,760]].forEach(([x, y]) => {
+        ctx.fillText(noteChars[(x+y)%4], x, y);
+      });
+      ctx.restore();
+      ctx.save(); ctx.globalAlpha = 0.07; ctx.fillStyle = '#5d4037';
+      ctx.beginPath(); ctx.ellipse(w-58, h-88, 36, 46, -0.25, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(w-58, h-180, 24, 34, -0.25, 0, Math.PI*2); ctx.fill();
+      ctx.fillRect(w-65, h-224, 8, 56);
+      ctx.restore();
+      ctx.strokeStyle = '#bcaaa4'; ctx.lineWidth = 1;
+      ctx.strokeRect(8, 8, w-16, h-16);
+      ctx.strokeRect(15, 15, w-30, h-30);
+    }
+
+    if (config.pageStyle === 'project-colorful') {
+      const cols = ['#f44336','#ff9800','#ffeb3b','#4caf50','#2196f3','#9c27b0'];
+      cols.forEach((c, i) => {
+        ctx.strokeStyle = c; ctx.lineWidth = 8;
+        const s = i * 8 + 4;
+        ctx.strokeRect(s, s, w - s*2, h - s*2);
+      });
+      const inner = cols.length * 8;
+      ctx.fillStyle = '#fffde7'; ctx.fillRect(inner, inner, w - inner*2, h - inner*2);
+    }
+
+    if (config.pageStyle === 'project-purple') {
+      // Side bars + top header
+      ctx.fillStyle = '#6a1b9a';
+      ctx.fillRect(0, 0, 18, h); ctx.fillRect(w-18, 0, 18, h);
+      ctx.fillRect(18, 0, w-36, 98);
+      // Flower in purple header
+      ctx.save(); ctx.translate(w/2, 49);
+      ['#ce93d8','#f48fb1','#fff176','#a5d6a7','#90caf9','#ffcc80'].forEach((c, i) => {
+        const a = (i*60)*Math.PI/180;
+        ctx.beginPath(); ctx.ellipse(Math.cos(a)*18, Math.sin(a)*18, 12, 7, a, 0, Math.PI*2);
+        ctx.fillStyle = c; ctx.fill();
+      });
+      ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI*2); ctx.fillStyle = '#fff176'; ctx.fill();
+      ctx.restore();
+      // Inner content area fill
+      ctx.fillStyle = '#f3e5f5'; ctx.fillRect(18, 98, w-36, h-98);
+    }
+
+    if (config.pageStyle === 'project-pink') {
+      // Pink frame
+      ctx.fillStyle = '#f48fb1';
+      ctx.fillRect(0, 0, w, 14); ctx.fillRect(0, h-14, w, 14);
+      ctx.fillRect(0, 0, 14, h); ctx.fillRect(w-14, 0, 14, h);
+      ctx.fillStyle = '#fff5f8'; ctx.fillRect(14, 14, w-28, h-28);
+      ctx.fillStyle = '#e91e63'; ctx.globalAlpha = 0.5; ctx.font = '9px serif';
+      for (let i = 28; i < w-28; i += 38) { ctx.fillText('★', i, 10); ctx.fillText('★', i, h-4); }
+      ctx.globalAlpha = 1;
+      // Cute face bottom-right
+      ctx.save(); ctx.translate(w-52, h-52);
+      ctx.beginPath(); ctx.arc(0,0,22,0,Math.PI*2); ctx.fillStyle = '#ffcc80'; ctx.fill();
+      ctx.fillStyle = '#5d4037';
+      ctx.beginPath(); ctx.arc(-7,-5,3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(7,-5,3,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0,4,9,0.15,Math.PI-0.15); ctx.stroke();
+      ctx.restore();
+    }
+
+    // Header box (Name / Sub / Page) — all styles except project-purple which has its own
+    if (config.pageStyle !== 'project-purple') {
+      const hcMap: Record<string,string> = {
+        'project-floral':'#2e7d32','project-ocean':'#1565c0',
+        'project-music':'#5d4037','project-colorful':'#e65100','project-pink':'#e91e63',
+      };
+      const hc = hcMap[config.pageStyle] || '#444';
+      const hx = 20, hy = 20, hw = w-40, hh = 52;
+      ctx.strokeStyle = hc; ctx.lineWidth = 1;
+      ctx.strokeRect(hx, hy, hw, hh);
+      ctx.beginPath(); ctx.moveTo(hx+hw*0.47, hy); ctx.lineTo(hx+hw*0.47, hy+hh); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx+hw*0.73, hy); ctx.lineTo(hx+hw*0.73, hy+hh); ctx.stroke();
+      ctx.fillStyle = '#888'; ctx.font = '10px Arial, sans-serif';
+      ctx.fillText('Name', hx+7, hy+14); ctx.fillText('Sub', hx+hw*0.48, hy+14); ctx.fillText('Page', hx+hw*0.74, hy+14);
+      ctx.strokeStyle = '#ddd'; ctx.lineWidth = 0.5;
+      ctx.beginPath(); ctx.moveTo(hx+5,hy+38); ctx.lineTo(hx+hw*0.46,hy+38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx+hw*0.48,hy+38); ctx.lineTo(hx+hw*0.72,hy+38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx+hw*0.74,hy+38); ctx.lineTo(hx+hw-5,hy+38); ctx.stroke();
+    } else {
+      // Purple header fields (white on dark)
+      ctx.fillStyle = 'rgba(255,255,255,0.15)'; ctx.fillRect(28,14,w-56,42);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.5; ctx.strokeRect(28,14,w-56,42);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath(); ctx.moveTo(28+(w-56)*0.47,14); ctx.lineTo(28+(w-56)*0.47,56); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(28+(w-56)*0.73,14); ctx.lineTo(28+(w-56)*0.73,56); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = '10px Arial, sans-serif';
+      ctx.fillText('Name',36,27); ctx.fillText('Sub',28+(w-56)*0.49,27); ctx.fillText('Page',28+(w-56)*0.75,27);
+    }
+
+    // Ruled horizontal lines
+    const lColorMap: Record<string,string> = {
+      'project-floral':'#3d3d3d','project-ocean':'#1a73e8','project-music':'#555',
+      'project-colorful':'#aaaaaa','project-purple':'#8e24aa','project-pink':'#ec407a',
+    };
+    const lc = lColorMap[config.pageStyle];
+    const lineTop    = config.pageStyle === 'project-purple' ? 106 : 82;
+    const lineBottom = config.pageStyle === 'project-floral'    ? h - 62
+                     : config.pageStyle === 'project-colorful'  ? h - 50 : h - 18;
+    const lineRight  = config.pageStyle === 'project-colorful'  ? w - 52
+                     : config.pageStyle === 'project-purple'    ? w - 22 : w - 18;
+
+    ctx.strokeStyle = lc; ctx.lineWidth = 0.6;
+    for (let y = lineTop; y < lineBottom; y += 30) {
+      ctx.beginPath(); ctx.moveTo(config.leftMargin, y); ctx.lineTo(lineRight, y); ctx.stroke();
+    }
+
+    // Red/pink margin line (matches existing lined-paper behaviour)
+    ctx.strokeStyle = '#ff6666'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(config.leftMargin, lineTop - 4);
+    ctx.lineTo(config.leftMargin, lineBottom);
+    ctx.stroke();
+  }
+
   // 3. Margin Lines
   const isLined = ['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle);
   if (isLined) {

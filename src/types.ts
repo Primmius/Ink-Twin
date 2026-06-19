@@ -59,7 +59,7 @@ export interface PageConfig {
   inkVariation: boolean;
   inkVariationIntensity: number;
   effect: 'normal' | 'shadow' | 'scanner' | 'saturate';
-  pageStyle: 'white' | 'black-lined' | 'paper2' | 'blue-lined' | 'gray-lined' | 'grid' | 'old-paper' | 'note' | 'wishlist' | 'birthday' | 'love-letter' | 'legal-pad' | 'newspaper' | 'graph-paper' | 'kraft' | 'blackboard';
+  pageStyle: 'white' | 'black-lined' | 'paper2' | 'blue-lined' | 'gray-lined' | 'grid' | 'old-paper' | 'note' | 'wishlist' | 'birthday' | 'love-letter' | 'legal-pad' | 'newspaper' | 'graph-paper' | 'kraft' | 'blackboard' | 'project-floral' | 'project-ocean' | 'project-music' | 'project-colorful' | 'project-purple' | 'project-pink';
 }
 
 export interface WriterPage {

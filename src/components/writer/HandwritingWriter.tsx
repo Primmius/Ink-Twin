@@ -260,61 +260,172 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     </section>
   );
 
-  const renderPageStyle = () => (
-    <section className="space-y-4">
-      <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-        <Palette size={14} /> Page Style
-      </h3>
-      <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto max-h-[300px] pr-2 scrollbar-thin scrollbar-thumb-brutal-black">
-        {([
-          'white', 'black-lined', 'paper2', 'blue-lined', 'gray-lined', 'grid', 'old-paper', 'note', 'wishlist',
-          'birthday', 'love-letter', 'legal-pad', 'newspaper', 'graph-paper', 'kraft', 'blackboard'
-        ] as const).map(bg => (
-          <button 
-            key={bg}
-            onClick={() => updateSetting('pageStyle', bg)}
-            className={cn(
-              "flex flex-col border-2 border-brutal-black hover:scale-105 transition-transform overflow-hidden min-h-[60px]",
-              settings.pageStyle === bg ? "ring-2 ring-neon-green" : "opacity-80 hover:opacity-100"
-            )}
-          >
-            <div 
-              className={cn(
-                "w-full aspect-square border-b border-brutal-black flex items-center justify-center relative bg-white",
-                bg === 'paper2' && 'bg-[#faf8f5]',
-                bg === 'note' && 'bg-[#fff9c4]',
-                bg === 'old-paper' && 'bg-[#f5e6c8]',
-                bg === 'birthday' && 'bg-[#fff0f5]',
-                bg === 'love-letter' && 'bg-[#fdf6e3]',
-                bg === 'legal-pad' && 'bg-[#fefbd8]',
-                bg === 'newspaper' && 'bg-[#f0eeea]',
-                bg === 'blackboard' && 'bg-[#1a1a1b]',
-                bg === 'kraft' && 'bg-[#c4a882]'
-              )}
-            >
-               {bg === 'black-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#333333]" /><div className="w-full h-[0.5px] bg-[#333333]" /><div className="w-full h-[0.5px] bg-[#333333]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
-               {bg === 'blue-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="w-full h-[0.5px] bg-[#a8c4e0]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
-               {bg === 'gray-lined' && <div className="absolute inset-0 flex flex-col gap-[4px] p-2"><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="w-full h-[0.5px] bg-[#cccccc]" /><div className="absolute left-3 top-0 bottom-0 w-[0.5px] bg-[#ffaaaa]" /></div>}
-               {bg === 'grid' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '4px 4px' }} />}
-               {bg === 'graph-paper' && <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(#0055ff 1px, transparent 1px), linear-gradient(90deg, #0055ff 1px, transparent 1px)', backgroundSize: '3px 3px' }} />}
-               {bg === 'wishlist' && <div className="w-4/5 h-4/5 border border-dashed border-[#d4a0a0]" />}
-               {bg === 'birthday' && <div className="text-[10px]">⭐</div>}
-               {bg === 'love-letter' && <div className="w-4/5 h-4/5 border-2 border-[#e8b4b8]" />}
-               {bg === 'blackboard' && (
-                 <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #ffffff 1%, transparent 1%)', backgroundSize: '2px 2px' }} />
-                   <div className="text-[10px] text-white opacity-40 font-mono italic">CHALK</div>
-                 </div>
-               )}
-            </div>
-            <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate">
-              {bg.replace('-', ' ')}
-            </span>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
+  const renderPageStyle = () => {
+    const STYLE_LABELS: Record<string, string> = {
+      'white':'White','black-lined':'Black Lined','paper2':'Paper',
+      'blue-lined':'Blue Lined','gray-lined':'Gray Lined','grid':'Grid',
+      'old-paper':'Old Paper','note':'Note','wishlist':'Wishlist',
+      'birthday':'Birthday','love-letter':'Love Letter','legal-pad':'Legal Pad',
+      'newspaper':'Newspaper','graph-paper':'Graph Paper','kraft':'Kraft','blackboard':'Blackboard',
+      'project-floral':'Floral File','project-ocean':'Ocean File','project-music':'Music File',
+      'project-colorful':'Colorful File','project-purple':'Purple File','project-pink':'Pink File',
+    };
+    const BG: Record<string,string> = {
+      'paper2':'#faf8f5','note':'#fff9c4','old-paper':'#f5e6c8','birthday':'#fff0f5',
+      'love-letter':'#fdf6e3','legal-pad':'#fefbd8','newspaper':'#f0eeea',
+      'blackboard':'#1a1a1b','kraft':'#c4a882',
+      'project-floral':'#fffef8','project-ocean':'#f8fcff','project-music':'#fdf8ee',
+      'project-colorful':'#fffde7','project-purple':'#f3e5f5','project-pink':'#fff5f8',
+    };
+    const LINE_CLR: Record<string,string> = {
+      'black-lined':'#444','blue-lined':'#90b8d8','gray-lined':'#ccc','legal-pad':'#90b8d8',
+      'project-floral':'#555','project-ocean':'#1a73e8','project-music':'#666',
+      'project-colorful':'#bbb','project-purple':'#9c27b0','project-pink':'#ec407a',
+    };
+    const LINED = new Set(['black-lined','blue-lined','gray-lined','legal-pad',
+      'project-floral','project-ocean','project-music','project-colorful','project-pink']);
+    const GRID_SET = new Set(['grid','graph-paper']);
+    const PROJECT = new Set(['project-floral','project-ocean','project-music','project-colorful','project-purple','project-pink']);
+
+    const allStyles = [
+      'white','black-lined','paper2','blue-lined','gray-lined','grid','old-paper','note',
+      'wishlist','birthday','love-letter','legal-pad','newspaper','graph-paper','kraft','blackboard',
+      'project-floral','project-ocean','project-music','project-colorful','project-purple','project-pink',
+    ] as const;
+
+    return (
+      <section className="space-y-4">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+          <Palette size={14} /> Page Style
+        </h3>
+        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto max-h-[420px] pr-1">
+          {allStyles.map(bg => {
+            const isLined   = LINED.has(bg);
+            const isGrid    = GRID_SET.has(bg);
+            const isProject = PROJECT.has(bg);
+            const bgColor   = BG[bg] || '#ffffff';
+            const lineColor = LINE_CLR[bg] || '#888';
+            const lineStart = isProject ? 23 : (bg === 'legal-pad' ? 18 : 13);
+            const lineStep  = isProject ? 8 : 8.5;
+            const lineCount = 9;
+
+            return (
+              <button
+                key={bg}
+                onClick={() => updateSetting('pageStyle', bg)}
+                className={cn(
+                  "flex flex-col border-2 border-brutal-black hover:scale-105 transition-transform overflow-hidden",
+                  settings.pageStyle === bg ? "ring-2 ring-neon-green" : "opacity-80 hover:opacity-100"
+                )}
+              >
+                {/* Thumbnail — A4 proportioned */}
+                <div
+                  className="w-full aspect-[3/4] border-b border-brutal-black relative overflow-hidden"
+                  style={{ backgroundColor: bgColor }}
+                >
+                  {/* Grid / graph */}
+                  {isGrid && (
+                    <div className="absolute inset-0" style={{
+                      backgroundImage: `linear-gradient(${bg==='grid'?'#ccc':'#b0d0f0'} 1px,transparent 1px),linear-gradient(90deg,${bg==='grid'?'#ccc':'#b0d0f0'} 1px,transparent 1px)`,
+                      backgroundSize: bg==='grid' ? '20% 20%' : '12% 12%',
+                    }} />
+                  )}
+
+                  {/* Blackboard grain + text */}
+                  {bg === 'blackboard' && (
+                    <>
+                      <div className="absolute inset-0 opacity-10" style={{ backgroundImage:'radial-gradient(circle,#fff 1%,transparent 1%)', backgroundSize:'3px 3px' }} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-mono text-[6px] text-white opacity-25 italic">CHALK</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Wishlist dashed border */}
+                  {bg === 'wishlist' && <div className="absolute inset-[10%] border border-dashed border-[#d4a0a0]" />}
+
+                  {/* Love letter solid border */}
+                  {bg === 'love-letter' && <div className="absolute inset-[8%] border-2 border-[#e8b4b8]" />}
+
+                  {/* Birthday star */}
+                  {bg === 'birthday' && <div className="absolute inset-0 flex items-center justify-center text-xl opacity-25">⭐</div>}
+
+                  {/* project-colorful: inset rainbow border */}
+                  {bg === 'project-colorful' && (
+                    <div className="absolute inset-0 pointer-events-none" style={{ boxShadow:'inset 0 0 0 4px #f44336,inset 0 0 0 8px #ff9800,inset 0 0 0 12px #ffeb3b,inset 0 0 0 16px #4caf50,inset 0 0 0 20px #2196f3,inset 0 0 0 24px #9c27b0' }} />
+                  )}
+
+                  {/* project-purple: dark side bars + top */}
+                  {bg === 'project-purple' && (
+                    <>
+                      <div className="absolute top-0 left-0 right-0" style={{ height:'22%', backgroundColor:'#6a1b9a' }} />
+                      <div className="absolute left-0" style={{ top:'22%', bottom:0, width:'9%', backgroundColor:'#6a1b9a' }} />
+                      <div className="absolute right-0" style={{ top:'22%', bottom:0, width:'9%', backgroundColor:'#6a1b9a' }} />
+                      <div className="absolute" style={{ top:'11%', left:'50%', transform:'translateX(-50%)', width:8, height:8, borderRadius:'50%', backgroundColor:'#fff176' }} />
+                      {/* lines inside purple content area */}
+                      {Array.from({length:8}).map((_,i)=>(
+                        <div key={i} className="absolute" style={{ top:`${27+i*9}%`, left:'11%', right:'11%', height:'0.5px', backgroundColor:'#9c27b0', opacity:0.55 }} />
+                      ))}
+                      <div className="absolute" style={{ top:'26%', bottom:'3%', left:'22%', width:'1px', backgroundColor:'#ff8888', opacity:0.65 }} />
+                    </>
+                  )}
+
+                  {/* project-floral: green bottom strip */}
+                  {bg === 'project-floral' && (
+                    <div className="absolute bottom-0 left-0 right-0" style={{ height:'14%', backgroundColor:'#2e7d32', opacity:0.85 }} />
+                  )}
+
+                  {/* project-ocean: blue wave bottom */}
+                  {bg === 'project-ocean' && (
+                    <div className="absolute bottom-0 left-0 right-0" style={{ height:'18%', backgroundColor:'#1565c0', opacity:0.28, borderRadius:'70% 70% 0 0 / 90% 90% 0 0', transform:'scaleX(1.4)' }} />
+                  )}
+
+                  {/* project-pink: inset pink border */}
+                  {bg === 'project-pink' && (
+                    <div className="absolute inset-0 pointer-events-none" style={{ boxShadow:'inset 0 0 0 6px #f48fb1', opacity:0.75 }} />
+                  )}
+
+                  {/* Lined styles (excluding project-purple which is inline above) */}
+                  {isLined && (
+                    <>
+                      {/* Project header box */}
+                      {isProject && (
+                        <div className="absolute" style={{ top:'5%', left:'8%', right:'8%', height:'15%', border:`0.5px solid ${lineColor}`, opacity:0.6 }}>
+                          <div className="absolute top-0 bottom-0" style={{ left:'48%', width:'0.5px', backgroundColor:lineColor }} />
+                          <div className="absolute top-0 bottom-0" style={{ left:'74%', width:'0.5px', backgroundColor:lineColor }} />
+                        </div>
+                      )}
+                      {/* Horizontal lines */}
+                      {Array.from({length:lineCount}).map((_,i)=>(
+                        <div key={i} className="absolute" style={{
+                          top:`${lineStart + i*lineStep}%`,
+                          left:'20%', right:'4%',
+                          height:'0.5px',
+                          backgroundColor: lineColor,
+                          opacity: 0.8,
+                        }} />
+                      ))}
+                      {/* Red margin line */}
+                      <div className="absolute" style={{
+                        top:`${lineStart-2}%`,
+                        bottom: bg==='project-floral' ? '16%' : '3%',
+                        left:'20%', width:'1px',
+                        backgroundColor:'#ff8888', opacity:0.75,
+                      }} />
+                    </>
+                  )}
+                </div>
+
+                <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate leading-tight">
+                  {STYLE_LABELS[bg]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
 
   const renderTypography = () => (
     <section className="space-y-4">
