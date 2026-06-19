@@ -95,15 +95,94 @@ body.dark::before {
 }
 
 /* Base Overrides for Dark Mode components */
-body.dark aside, 
-body.dark section, 
-body.dark header, 
-body.dark footer, 
+body.dark aside,
+body.dark header,
+body.dark footer {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+body.dark section {
+  background-color: inherit !important;
+  color: var(--text-primary) !important;
+}
+
 body.dark .bg-white,
 body.dark .bg-neutral-100,
 body.dark .bg-neutral-50,
 body.dark .bg-neutral-200 {
-  background-color: var(--bg-primary) !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Borders: make brutal-black borders visible in dark mode */
+body.dark .border-brutal-black {
+  border-color: var(--border-primary) !important;
+}
+body.dark .border-b,
+body.dark .border-t,
+body.dark .border-l,
+body.dark .border-r,
+body.dark .border {
+  border-color: var(--border-primary);
+}
+
+/* Ring in dark mode */
+body.dark .ring-2 {
+  --tw-ring-color: var(--neon-green);
+}
+
+/* Text that should flip with theme */
+body.dark .text-brutal-black {
+  color: var(--text-primary) !important;
+}
+body.dark .text-black {
+  color: var(--text-primary) !important;
+}
+body.dark .text-neutral-500,
+body.dark .text-neutral-600,
+body.dark .text-neutral-700,
+body.dark .text-gray-500,
+body.dark .text-gray-600 {
+  color: rgba(238, 238, 238, 0.6) !important;
+}
+
+/* Inputs / selects in dark mode */
+body.dark input:not([type="range"]),
+body.dark textarea,
+body.dark select {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Nav tab — base hover/active pop (desktop) */
+.nav-tab {
+  transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, box-shadow;
+}
+.nav-tab:not(.bg-neon-green):not(.bg-warning-yellow):hover {
+  background-color: var(--warning-yellow) !important;
+  color: var(--brutal-black) !important;
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-color: var(--brutal-black) !important;
+}
+.nav-tab:not(.bg-neon-green):not(.bg-warning-yellow):active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--shadow-color);
+}
+
+/* Nav tab dark mode */
+body.dark .nav-tab:not(.bg-neon-green):not(.bg-warning-yellow) {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Page style thumbnail labels in dark mode */
+body.dark .page-style-label {
+  background-color: var(--bg-card) !important;
   color: var(--text-primary) !important;
 }
 
@@ -392,7 +471,7 @@ body.dark .student-notebook-ruled {
   }
   
   .nav-tab.bg-neon-green {
-    background-color: var(--warning-yellow) !important; /* Active tab is original bright yellow */
+    background-color: var(--warning-yellow) !important;
     color: var(--brutal-black) !important;
     box-shadow: 4px 4px 0px var(--shadow-color) !important;
     transform: translateY(-2px) !important;

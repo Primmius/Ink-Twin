@@ -416,7 +416,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                   )}
                 </div>
 
-                <span className="text-[7px] font-bold uppercase p-1 bg-white text-center w-full truncate leading-tight">
+                <span className="text-[7px] font-bold uppercase p-1 bg-white page-style-label text-center w-full truncate leading-tight">
                   {STYLE_LABELS[bg]}
                 </span>
               </button>
@@ -553,8 +553,10 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               key={eff}
               onClick={() => updateSetting('effect', eff)}
               className={cn(
-                "px-2 py-3 border-2 border-brutal-black text-[10px] font-bold uppercase min-h-[44px]",
-                settings.effect === eff ? "bg-neon-green" : "bg-white"
+                "px-2 py-3 border-2 border-[var(--border-primary)] text-[10px] font-bold uppercase min-h-[44px] transition-all duration-150 cursor-pointer",
+                settings.effect === eff
+                  ? "bg-neon-green text-brutal-black shadow-[2px_2px_0px_var(--shadow-color)]"
+                  : "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--warning-yellow)] hover:text-brutal-black hover:border-brutal-black hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[3px_3px_0px_var(--shadow-color)] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_var(--shadow-color)]"
               )}
             >
               {eff}

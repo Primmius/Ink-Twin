@@ -531,8 +531,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('font-creation')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
-                phase === 'font-creation' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'font-creation' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
             >
               ✏️ Create My Font
@@ -540,8 +540,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('text-writer')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
-                phase === 'text-writer' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'text-writer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
             >
               📝 Write with My Handwriting
@@ -549,8 +549,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('homework-solver')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
-                phase === 'homework-solver' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'homework-solver' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
             >
               🎓 AI Study Assistant
@@ -558,8 +558,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('find-font')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
-                phase === 'find-font' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'find-font' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
             >
               🔍 Find My Font
@@ -567,8 +567,8 @@ export default function App() {
             <button 
               onClick={() => setPhase('ai-humanizer')}
               className={cn(
-                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
-                phase === 'ai-humanizer' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'ai-humanizer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
             >
               ✨ AI Humanizer
