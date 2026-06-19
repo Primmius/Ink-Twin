@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Brain,
   Trash2,
-  Trash
+  Trash,
+  Wand2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import mammoth from 'mammoth';
@@ -26,11 +27,12 @@ import { HomeworkHistory } from './HomeworkHistory';
 interface HomeworkSolverProps {
   apiKey: string;
   onSendToWriter: (text: string) => void;
+  onSendToHumanizer: (text: string) => void;
   onOpenSettings: () => void;
   onOpenCamera: () => void;
 }
 
-export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onOpenSettings, onOpenCamera }) => {
+export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onSendToHumanizer, onOpenSettings, onOpenCamera }) => {
   const [input, setInput] = useState<HomeworkInput>({});
   const [inputText, setInputText] = useState('');
   const [url, setUrl] = useState('');
@@ -435,6 +437,18 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                 <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </div>
               <span className="text-[9px] font-mono opacity-50 uppercase text-left">Auto-layout in your handwriting font</span>
+            </button>
+
+            <button 
+              onClick={() => onSendToHumanizer(editableAnswer)}
+              disabled={!editableAnswer}
+              className="w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale transition-all"
+            >
+              <div className="flex items-center justify-between w-full">
+                <span className="font-display uppercase text-sm">Humanize with AI</span>
+                <Wand2 size={18} className="group-hover:scale-110 transition-transform" />
+              </div>
+              <span className="text-[9px] font-mono opacity-50 uppercase text-left">Make it sound naturally human</span>
             </button>
 
             <button 

@@ -39,6 +39,7 @@ import { GlyphEditor } from './components/GlyphEditor';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
 import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
+import { AIHumanizer } from './components/AIHumanizer';
 import { UseCasePage } from './use-cases/UseCasePage';
 
 export default function App() {
@@ -54,6 +55,7 @@ export default function App() {
   const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
   const [pendingFontToName, setPendingFontToName] = useState<{ name: string; url: string; profile: any; fontFamily: string } | null>(null);
+  const [humanizerPrefill, setHumanizerPrefill] = useState<string | null>(null);
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -545,6 +547,15 @@ export default function App() {
               )}
             >
               🔍 Find My Font
+            </button>
+            <button 
+              onClick={() => setPhase('ai-humanizer')}
+              className={cn(
+                "px-4 py-2 border-2 border-brutal-black font-display uppercase text-sm transition-all nav-tab whitespace-nowrap",
+                phase === 'ai-humanizer' ? "bg-neon-green brutal-shadow" : "bg-white hover:bg-neutral-50"
+              )}
+            >
+              ✨ AI Humanizer
             </button>
           </div>
         </div>
@@ -1104,7 +1115,21 @@ export default function App() {
               setPrefilledWriterText(text);
               setPhase('text-writer');
             }}
+            onSendToHumanizer={(text) => {
+              setHumanizerPrefill(text);
+              setPhase('ai-humanizer');
+            }}
             onOpenCamera={() => setIsCameraOpen(true)}
+          />
+        ) : phase === 'ai-humanizer' ? (
+          <AIHumanizer
+            apiKey={apiKey}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            onSendToWriter={(text) => {
+              setPrefilledWriterText(text);
+              setPhase('text-writer');
+            }}
+            prefillText={humanizerPrefill}
           />
         ) : phase === 'find-font' ? (
           <FindFont 
