@@ -433,13 +433,13 @@ export default function App() {
   };
 
   if (!apiKey) {
-    return <LandingPage onSaveKey={saveApiKey} />;
+    return <LandingPage onSaveKey={saveApiKey} theme={theme} onToggleTheme={toggleTheme} />;
   }
 
   return (
-    <div className="min-h-screen bg-white text-brutal-black font-body flex flex-col border-[8px] border-brutal-black selection:bg-neon-green selection:text-brutal-black">
+    <div className="min-h-screen font-body flex flex-col border-[8px] selection:bg-neon-green selection:text-brutal-black" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}>
       {/* Header */}
-      <header className="border-b-2 border-brutal-black p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 bg-white z-40 header-mobile-refine">
+      <header className="border-b-2 p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 z-40 header-mobile-refine" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
         <div className="flex flex-col gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
             <Logo size={isMobile ? 32 : 44} showText={false} />

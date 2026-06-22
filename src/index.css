@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable Tailwind dark: prefix to work with body.dark class */
+@custom-variant dark (.dark &);
+
 @theme {
   --font-display: 'Space Grotesk', 'Arial Black', sans-serif;
   --font-body: 'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif;
