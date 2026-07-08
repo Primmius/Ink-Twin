@@ -7,3 +7,8 @@ coverage/
 # !.env.example # Removed by Orchids to allow .env files
 node_modules
 .venv
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
