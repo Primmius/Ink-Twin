@@ -15,7 +15,7 @@ We actively release security patches and updates for the latest version on the `
 We take the security of InkTwin and our users' privacy very seriously. If you discover a security vulnerability or sensitive data issue:
 
 1. **Do NOT open a public GitHub issue.**
-2. Please send a detailed report via email to: **[contact@primuez.com](mailto:contact@primuez.com)** with the subject line `[SECURITY VULNERABILITY] InkTwin`.
+2. Please send a detailed report via email to: **[contact@primuez.in](mailto:contact@primuez.in)** with the subject line `[SECURITY VULNERABILITY] InkTwin`.
 3. Include in your report:
    * A detailed description of the vulnerability.
    * Steps or a script to reproduce the issue.

@@ -11,7 +11,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4+-38B2AC.svg)](https://tailwindcss.com/)
 [![Privacy: Client--Side BYOK](https://img.shields.io/badge/Privacy-100%25%20Client--Side%20BYOK-success.svg)](#-privacy--security)
 
-**[🌐 Live Demo: inktwin.primuez.com](https://inktwin.primuez.com)**
+**[🌐 Live Demo: inktwin.primuez.in](https://inktwin.primuez.in)**
 
 </div>
 
@@ -88,8 +88,8 @@ All font vectorization and `.ttf` compilation run **100% client-side in the brow
 ### Installation
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Primmius/tth.git
-cd tth
+git clone https://github.com/Primmius/Ink-Twin.git
+cd Ink-Twin
 
 # 2. Install dependencies
 npm install
@@ -125,7 +125,7 @@ npm run build
 * **Source Code**: Licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](./LICENSE).
 * **Trademark & Brand Protection**: The **"InkTwin"** name, logo, favicon, and brand styling are protected trademarks of Rahul Kasturiya. Reusing or distributing forks requires complete rebranding. See [`TRADEMARKS.md`](./TRADEMARKS.md).
 * **Asset Exclusions**: Demo handwriting datasets, evaluation samples, and model prompt configurations are excluded from the open-source grant. See [`NOTICE.md`](./NOTICE.md).
-* **Commercial Inquiries**: For proprietary dual-licensing or commercial inquiries, contact [contact@primuez.com](mailto:contact@primuez.com).
+* **Commercial Inquiries**: For proprietary dual-licensing or commercial inquiries, contact [contact@primuez.in](mailto:contact@primuez.in).
 
 ---
 
@@ -138,6 +138,6 @@ We welcome contributions! Please review our [Contributing Guidelines and Contrib
 ## 👤 Author
 
 **Rahul Kasturiya**  
-* Website: [primuez.com](https://primuez.com)  
-* Project: [inktwin.primuez.com](https://inktwin.primuez.com)  
+* Website: [primuez.in](https://primuez.in)  
+* Project: [inktwin.primuez.in](https://inktwin.primuez.in)  
 * GitHub: [@Primmius](https://github.com/Primmius)

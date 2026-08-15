@@ -12,7 +12,7 @@ While the software source code in this repository is licensed under the [GNU Aff
 The following assets are exclusively owned and fully protected:
 * The names **"InkTwin"**, **"Ink-Twin"**, and **"HandFont"**.
 * The InkTwin logo mark, favicon, and brand graphics in `public/` and `src/components/Logo.tsx`.
-* The domain `inktwin.primuez.com` and associated web properties.
+* The domain `inktwin.primuez.in` and associated web properties.
 * Official UI theme configurations and marketing taglines.
 
 ---
@@ -29,4 +29,4 @@ If you distribute or host a modified version, fork, or build of this software:
 ## 3. Permitted Descriptive Use
 You may make fair, truthful, and non-misleading factual references to InkTwin solely to indicate compatibility or historical origin (e.g., *"Based on the open-source engine originally developed by Rahul Kasturiya"*).
 
-For trademark inquiries, commercial licensing, or brand usage permissions, contact: [contact@primuez.com](mailto:contact@primuez.com).
+For trademark inquiries, commercial licensing, or brand usage permissions, contact: [contact@primuez.in](mailto:contact@primuez.in).
