@@ -14,8 +14,8 @@ Thank you for your interest in contributing to InkTwin! We welcome contributions
 ### Getting Started
 1. **Fork and clone** the repository:
    ```bash
-   git clone https://github.com/<your-username>/tth.git
-   cd tth
+   git clone https://github.com/<your-username>/Ink-Twin.git
+   cd Ink-Twin
    ```
 2. **Install dependencies**:
    ```bash
@@ -62,5 +62,5 @@ By submitting a Pull Request, issue, patch, or code contribution to the InkTwin 
 ---
 
 ## 💬 Community & Support
-* Issues & Feature Requests: [GitHub Issues](https://github.com/Primmius/tth/issues)
+* Issues & Feature Requests: [GitHub Issues](https://github.com/Primmius/Ink-Twin/issues)
 * Security Reports: Please refer to [`SECURITY.md`](./SECURITY.md)

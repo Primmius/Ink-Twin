@@ -26,5 +26,5 @@ The AGPL-3.0 license applies **strictly to the executable software engine and in
 If your organization requires a proprietary commercial license that exempts you from the reciprocal copyleft requirements of AGPL-3.0, or if you wish to license the official brand and datasets, please reach out directly:
 
 * **Author & Maintainer**: Rahul Kasturiya
-* **Official Website**: [inktwin.primuez.com](https://inktwin.primuez.com)
-* **Email**: [contact@primuez.com](mailto:contact@primuez.com)
+* **Official Website**: [inktwin.primuez.in](https://inktwin.primuez.in)
+* **Email**: [contact@primuez.in](mailto:contact@primuez.in)

@@ -12,7 +12,8 @@ import {
   CheckCircle2, 
   ArrowRight,
   ShieldCheck,
-  Zap
+  Zap,
+  ExternalLink
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
@@ -127,7 +128,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
         className="sticky top-0 z-40 border-b p-3.5 sm:p-5 flex items-center justify-between backdrop-blur-md bg-white/90 dark:bg-neutral-900/90"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => {
               if (window.location.hash || window.location.pathname.startsWith('/use-cases/')) {
@@ -135,20 +136,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               }
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
-            className="flex items-center gap-2.5 text-left bg-transparent border-0 p-0 cursor-pointer group active:scale-95 transition-transform"
-            title="Go to Home"
+            className="flex items-center gap-2 text-left bg-transparent border-0 p-0 cursor-pointer group active:scale-95 transition-transform"
+            title="Go to InkTwin Home"
             aria-label="Go to InkTwin Home"
           >
             <Logo size={36} showText={false} className="group-hover:scale-105 transition-transform" />
-            <div>
-              <h1 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-1">
-                Ink<span className="text-warning-yellow">Twin</span>
-              </h1>
-              <span className="text-[10px] font-mono text-neutral-500 block leading-tight">
-                by primuez.in
-              </span>
-            </div>
+            <h1 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-0.5 text-neutral-950 dark:text-white">
+              Ink<span className="text-warning-yellow">Twin</span>
+            </h1>
           </button>
+
+          <a
+            href="https://primuez.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-tight border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-warning-yellow hover:border-warning-yellow transition-all"
+            title="Visit Primuez portfolio (primuez.in)"
+          >
+            <span className="opacity-60 text-[9px]">by</span>
+            <span className="underline underline-offset-2">primuez.in</span>
+            <ExternalLink size={10} className="opacity-60" />
+          </a>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">

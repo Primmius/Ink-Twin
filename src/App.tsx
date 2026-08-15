@@ -31,7 +31,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
@@ -538,20 +539,30 @@ export default function App() {
         className="sticky top-0 z-30 border-b p-3 sm:p-4 flex items-center justify-between backdrop-blur-md bg-white/90 dark:bg-neutral-900/90"
         style={{ borderColor: 'var(--border-primary)' }}
       >
-        <div className="flex items-center gap-2.5 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleGoHome}
             className="flex items-center gap-2 text-left bg-transparent border-0 p-0 cursor-pointer group active:scale-95 transition-transform"
-            title="Go to Home"
+            title="Go to InkTwin Home"
             aria-label="Go to InkTwin Home"
           >
             <Logo size={32} showText={false} className="group-hover:scale-105 transition-transform" />
-            <div>
-              <h1 className="text-lg sm:text-xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-1">
-                Ink<span className="text-warning-yellow">Twin</span>
-              </h1>
-            </div>
+            <h1 className="text-lg sm:text-xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-0.5 text-neutral-950 dark:text-white">
+              Ink<span className="text-warning-yellow">Twin</span>
+            </h1>
           </button>
+
+          <a
+            href="https://primuez.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-warning-yellow hover:border-warning-yellow transition-all"
+            title="Visit Primuez portfolio (primuez.in)"
+          >
+            <span className="opacity-60 text-[9px]">by</span>
+            <span className="underline underline-offset-2">primuez.in</span>
+            <ExternalLink size={10} className="opacity-60" />
+          </a>
 
           {/* Desktop Navigation Pill Bar */}
           <nav className="hidden md:flex items-center gap-1.5 ml-4 bg-neutral-100 dark:bg-neutral-800/70 p-1 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
