@@ -1909,7 +1909,7 @@ ${documentText}`;
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed top-0 right-0 h-full w-[380px] max-w-full bg-white border-l-4 border-brutal-black z-[101] shadow-2xl flex flex-col"
+                className="fixed top-0 right-0 h-full w-[380px] max-w-full bg-white border-l-2 border-brutal-black z-[101] shadow-2xl flex flex-col"
               >
                 {/* Panel Header */}
                 <div className="p-6 border-b-2 border-brutal-black flex items-center justify-between bg-neutral-50">
@@ -2095,10 +2095,10 @@ ${documentText}`;
             </AnimatePresence>
 
             {/* Bottom Tab Bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-brutal-black z-[100] px-2 py-3 flex gap-1 items-center justify-between shadow-2xl">
+            <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t-2 border-neutral-900 dark:border-neutral-700 z-[100] px-2 py-2 pb-safe flex gap-1 items-center justify-between shadow-2xl">
               {[
                 { id: 'font' as const, icon: <Type size={18} />, label: 'Font' },
-                { id: 'style' as const, icon: <Palette size={18} />, label: 'Style' },
+                { id: 'style' as const, icon: <Palette size={18} />, label: 'Paper & Ink' },
                 { id: 'type' as const, icon: <Sparkles size={18} />, label: 'Type' },
                 { id: 'effects' as const, icon: <Settings size={18} />, label: 'Effects' },
                 { id: 'elements' as const, icon: <Layout size={18} />, label: 'Elements' },
@@ -2107,17 +2107,17 @@ ${documentText}`;
                   key={tab.id}
                   onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1 flex-1 py-1 transition-all",
-                    activeMobileDrawer === tab.id ? "text-brutal-black" : "text-brutal-black/40"
+                    "flex flex-col items-center gap-1 flex-1 py-1 transition-all active:scale-95",
+                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white" : "text-neutral-500"
                   )}
                 >
                   <div className={cn(
-                    "p-2 rounded-lg transition-all",
-                    activeMobileDrawer === tab.id ? "bg-neon-green border-2 border-brutal-black translate-x-1 translate-y-1 shadow-none" : ""
+                    "p-2 rounded-xl transition-all",
+                    activeMobileDrawer === tab.id ? "bg-neon-green text-neutral-950 shadow-sm" : ""
                   )}>
                     {tab.icon}
                   </div>
-                  <span className="text-[10px] font-bold uppercase">{tab.label}</span>
+                  <span className="text-[10px] font-display font-bold uppercase tracking-tight">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -2130,16 +2130,16 @@ ${documentText}`;
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed bottom-[84px] left-0 right-0 bg-white border-t-4 border-brutal-black z-[90] h-[40vh] flex flex-col shadow-2xl"
+                  className="fixed bottom-[74px] left-0 right-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 z-[90] h-[55vh] flex flex-col shadow-2xl rounded-t-2xl overflow-hidden"
                 >
                   {/* Drag Indicator / Close Handle */}
                   <div 
-                    className="w-full h-8 flex items-center justify-center cursor-pointer"
+                    className="w-full h-8 flex items-center justify-center cursor-pointer bg-neutral-50 dark:bg-neutral-950/50"
                     onClick={() => setActiveMobileDrawer(null)}
                   >
-                    <div className="w-12 h-1.5 bg-brutal-black/20 rounded-full" />
+                    <div className="w-12 h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
                   </div>
-                  <div className="flex-grow overflow-y-auto p-6 pb-12">
+                  <div className="flex-grow overflow-y-auto p-5 pb-10">
                     {activeMobileDrawer === 'font' && renderFontLibrary()}
                     {activeMobileDrawer === 'style' && renderPageStyle()}
                     {activeMobileDrawer === 'type' && renderTypography()}
@@ -2161,13 +2161,13 @@ ${documentText}`;
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowAIWarning(false)}
-              className="absolute inset-0 bg-brutal-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-white border-4 border-brutal-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-[201]"
+              className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border-2 border-neutral-900 dark:border-neutral-700 p-6 rounded-2xl shadow-2xl z-[201]"
             >
               <div className="flex items-center gap-3 text-error-red mb-4">
                 <AlertTriangle size={24} />

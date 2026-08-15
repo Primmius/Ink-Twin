@@ -358,26 +358,26 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               {/* Primary Match - Hero Card */}
               <div className="space-y-4">
                 <h2 className="text-sm font-mono uppercase font-black tracking-[0.2em] opacity-40">Your Absolute Best Match</h2>
-                <div className="brutal-card brutal-shadow bg-neon-green border-4 border-brutal-black overflow-hidden">
+                <div className="brutal-card brutal-shadow bg-neon-green border-2 border-brutal-black overflow-hidden">
                   <div className="p-4 bg-brutal-black/5 border-b-2 border-brutal-black flex justify-between items-center">
                     <span className="font-mono text-[9px] uppercase font-bold">Preview rendered in: {analysis.fontFamily}</span>
                     {!loadedFonts.has(analysis.fontFamily) && <span className="font-mono text-[9px] uppercase font-bold text-error-red">Preview unavailable</span>}
                   </div>
-                  <div className="p-8 border-b-4 border-brutal-black bg-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+                  <div className="p-6 md:p-8 border-b-2 border-brutal-black bg-white flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                      <h3 className="text-6xl font-display uppercase leading-none mb-2">{analysis.fontFamily}</h3>
+                      <h3 className="text-4xl md:text-6xl font-display uppercase leading-none mb-2">{analysis.fontFamily}</h3>
                       <p className="font-mono text-sm opacity-60 uppercase italic tracking-wide">{analysis.styleLabel}</p>
                     </div>
                     <button 
                       onClick={() => loadFont(analysis.fontFamily, analysis)}
-                      className="brutal-btn bg-brutal-black text-white px-10 py-5 text-xl whitespace-nowrap"
+                      className="brutal-btn bg-brutal-black text-white px-6 md:px-10 py-4 md:py-5 text-base md:text-xl whitespace-nowrap"
                     >
                       Use High-Fidelity Match
                     </button>
                   </div>
                   
                   <div className="grid md:grid-cols-2">
-                    <div className="p-12 bg-white flex flex-col justify-center gap-8 border-b-4 md:border-b-0 md:border-r-4 border-brutal-black min-h-[300px]">
+                    <div className="p-6 md:p-12 bg-white flex flex-col justify-center gap-6 md:gap-8 border-b-2 md:border-b-0 md:border-r-2 border-brutal-black min-h-[240px] md:min-h-[300px]">
                       <div 
                         style={{ fontFamily: `'${analysis.fontFamily}', cursive`, fontSize: '28px' }} 
                         className="leading-snug text-brutal-black"

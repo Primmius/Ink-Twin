@@ -200,7 +200,7 @@ export function UseCasePage({ slug, onBack }: UseCasePageProps) {
 
         {/* Direct Response Statement - GEO 40-Word Response */}
         <div className="bg-warning-yellow/10 border-4 border-brutal-black p-6 rounded-none relative overflow-hidden">
-          <div className="absolute top-0 right-0 bg-warning-yellow border-b-4 border-l-4 border-brutal-black font-mono text-[9px] font-bold px-2 py-0.5 uppercase">
+          <div className="absolute top-0 right-0 bg-warning-yellow border-b-2 border-l-2 border-brutal-black font-mono text-[9px] font-bold px-2 py-0.5 uppercase">
             // Direct Assessment
           </div>
           <p className="font-mono text-sm md:text-base leading-relaxed text-brutal-black font-bold">
