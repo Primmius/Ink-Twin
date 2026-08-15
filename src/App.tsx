@@ -1390,74 +1390,87 @@ export default function App() {
         ) : null}
       </div>
 
-      {/* Mobile Bottom Navigation Dock */}
+      {/* Mobile Bottom Navigation Dock (All 6 Tabs Always Accessible) */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 md:hidden flex items-center justify-around px-2 py-2 pb-safe shadow-lg"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 md:hidden flex items-center justify-between px-1 py-1.5 pb-safe shadow-lg"
         aria-label="Mobile Navigation Dock"
       >
         <button
           onClick={handleGoHome}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'home' 
               ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <span className="text-lg">🏠</span>
-          <span className="text-[10px] font-display uppercase tracking-tight">Home</span>
+          <span className="text-base leading-none">🏠</span>
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Home</span>
         </button>
 
         <button
           onClick={() => setPhase('font-creation')}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'font-creation' 
               ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <PenTool size={19} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
-          <span className="text-[10px] font-display uppercase tracking-tight">Create Font</span>
+          <PenTool size={16} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Create</span>
         </button>
 
         <button
           onClick={() => setPhase('text-writer')}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'text-writer' 
               ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <FileText size={19} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
-          <span className="text-[10px] font-display uppercase tracking-tight">Studio</span>
+          <FileText size={16} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Studio</span>
         </button>
 
         <button
           onClick={() => setPhase('homework-solver')}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'homework-solver' 
               ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <GraduationCap size={19} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
-          <span className="text-[10px] font-display uppercase tracking-tight">AI Solver</span>
+          <GraduationCap size={16} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Solver</span>
+        </button>
+
+        <button
+          onClick={() => setPhase('ai-humanizer')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            phase === 'ai-humanizer' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <Sparkles size={16} className={phase === 'ai-humanizer' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Humanizer</span>
         </button>
 
         <button
           onClick={() => setPhase('find-font')}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'find-font' 
               ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <Search size={19} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
-          <span className="text-[10px] font-display uppercase tracking-tight">Find Font</span>
+          <Search size={16} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Find Font</span>
         </button>
       </nav>
 

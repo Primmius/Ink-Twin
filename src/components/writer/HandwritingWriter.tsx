@@ -1470,22 +1470,33 @@ ${documentText}`;
         "bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-3 sm:p-4 z-30 transition-all shadow-sm",
         isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"
       )}>
-        <div className={cn("flex flex-wrap items-center gap-3", isMobile && "justify-center w-full")}>
+        <div className={cn("flex flex-wrap items-center gap-2 sm:gap-3", isMobile && "justify-between w-full")}>
+          {onNavigate && isMobile && (
+            <button 
+              onClick={() => onNavigate('home')}
+              className="brutal-btn p-2 min-h-[40px] min-w-[40px] flex items-center justify-center gap-1 text-xs"
+              title="Return to Home"
+            >
+              <ChevronLeft size={16} />
+              <span className="font-display uppercase text-[10px] font-bold">Home</span>
+            </button>
+          )}
+
           <button 
             onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px]"
+            className="brutal-btn p-2 min-h-[40px] min-w-[40px] flex items-center justify-center"
             title={mode === 'default' ? "Collapse sidebars" : "Expand sidebars"}
           >
-            {mode === 'default' ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+            {mode === 'default' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
           {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700" />}
           
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-4 h-11 transition-colors"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-1.5 px-3 h-10 transition-colors"
             >
-              <Sparkles size={17} />
+              <Sparkles size={15} />
               <span className="font-display uppercase text-xs font-bold">✨ AI Edit</span>
             </button>
           </div>
@@ -1498,10 +1509,10 @@ ${documentText}`;
                 setIsAIEditPanelOpen(true);
                 setShowReflowPrompt(false);
               }}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-4 border-dashed h-11"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-3 border-dashed h-10"
             >
-              <RefreshCw size={15} />
-              <span className="font-mono text-[10px] font-bold uppercase">Smart reflow available?</span>
+              <RefreshCw size={14} />
+              <span className="font-mono text-[9px] font-bold uppercase">Reflow?</span>
             </motion.button>
           )}
         </div>
@@ -1634,7 +1645,7 @@ ${documentText}`;
         {/* Center: Canvas Area Workbench */}
         <main className={cn(
           "flex-grow flex flex-col items-center bg-neutral-200 dark:bg-[#0c0d11] overflow-x-hidden",
-          isMobile ? "gap-6 p-4 overflow-y-auto" : "gap-12 p-12 overflow-auto"
+          isMobile ? "gap-6 p-4 pb-36 overflow-y-auto" : "gap-12 p-12 overflow-auto"
         )}>
           {/* Canvas Wrapper for Scaling */}
           <div
@@ -2111,7 +2122,7 @@ ${documentText}`;
           </aside>
         )}
 
-        {/* Mobile Bottom Navigation & Drawer */}
+        {/* Mobile Floating Studio Tool Ribbon & Drawer (Docked above global bottom nav) */}
         {isMobile && (
           <>
             {/* Drawer Overlay (Clear, non-blurring to keep live paper view completely visible) */}
@@ -2122,57 +2133,69 @@ ${documentText}`;
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setActiveMobileDrawer(null)}
-                  className="fixed inset-0 bg-black/5 z-[80]"
+                  className="fixed inset-0 bg-black/10 z-[25]"
                 />
               )}
             </AnimatePresence>
 
-            {/* Bottom Tab Bar */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t-2 border-neutral-900 dark:border-neutral-700 z-[100] px-2 py-2 pb-safe flex gap-1 items-center justify-between shadow-2xl">
+            {/* Floating Studio Editing Toolbar (Docked above the global navigation dock) */}
+            <div className="fixed bottom-[58px] left-2 right-2 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border-2 border-neutral-900 dark:border-neutral-700 rounded-2xl z-30 px-2 py-1.5 flex gap-1 items-center justify-between shadow-xl">
               {[
-                { id: 'font' as const, icon: <Type size={18} />, label: 'Font' },
-                { id: 'style' as const, icon: <Palette size={18} />, label: 'Paper & Ink' },
-                { id: 'type' as const, icon: <Sparkles size={18} />, label: 'Type' },
-                { id: 'effects' as const, icon: <Settings size={18} />, label: 'Effects' },
-                { id: 'elements' as const, icon: <Layout size={18} />, label: 'Elements' },
+                { id: 'font' as const, icon: <Type size={16} />, label: 'Font' },
+                { id: 'style' as const, icon: <Palette size={16} />, label: 'Paper & Ink' },
+                { id: 'type' as const, icon: <Sparkles size={16} />, label: 'Type' },
+                { id: 'effects' as const, icon: <Settings size={16} />, label: 'Effects' },
+                { id: 'elements' as const, icon: <Layout size={16} />, label: 'Elements' },
               ].map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
                   className={cn(
-                    "flex flex-col items-center gap-1 flex-1 py-1 transition-all active:scale-95",
-                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white font-bold" : "text-neutral-500"
+                    "flex flex-col items-center gap-0.5 flex-1 py-1 transition-all active:scale-95",
+                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white font-bold" : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
                   )}
                 >
                   <div className={cn(
-                    "p-2 rounded-xl transition-all",
+                    "p-1.5 rounded-xl transition-all",
                     activeMobileDrawer === tab.id ? "bg-warning-yellow text-neutral-950 shadow-sm" : ""
                   )}>
                     {tab.icon}
                   </div>
-                  <span className="text-[10px] font-display font-bold uppercase tracking-tight">{tab.label}</span>
+                  <span className="text-[9px] font-display font-bold uppercase tracking-tight">{tab.label}</span>
                 </button>
               ))}
             </div>
 
-            {/* Bottom Drawer (Compact height so paper is always visible) */}
+            {/* Bottom Drawer (Compact height above floating tool ribbon so paper is always visible) */}
             <AnimatePresence>
               {activeMobileDrawer && (
                 <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
+                  initial={{ y: '100%', opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: '100%', opacity: 0 }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed bottom-[74px] left-0 right-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 z-[90] h-[45vh] max-h-[380px] flex flex-col shadow-2xl rounded-t-2xl overflow-hidden"
+                  className="fixed bottom-[118px] left-2 right-2 bg-white dark:bg-neutral-900 border-2 border-neutral-900 dark:border-neutral-700 z-35 h-[42vh] max-h-[360px] flex flex-col shadow-2xl rounded-2xl overflow-hidden"
                 >
-                  {/* Drag Indicator / Close Handle */}
+                  {/* Header / Drag Handle */}
                   <div 
-                    className="w-full h-8 flex items-center justify-center cursor-pointer bg-neutral-50 dark:bg-neutral-950/50"
+                    className="w-full h-9 flex items-center justify-between px-3.5 cursor-pointer bg-neutral-100 dark:bg-neutral-950/70 border-b border-neutral-200 dark:border-neutral-800 select-none"
                     onClick={() => setActiveMobileDrawer(null)}
                   >
-                    <div className="w-12 h-1.5 bg-neutral-300 dark:bg-neutral-700 rounded-full" />
+                    <span className="font-display text-[11px] uppercase font-bold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                      {activeMobileDrawer === 'font' && '🔤 Font Library'}
+                      {activeMobileDrawer === 'style' && '🎨 Paper & Ink Style'}
+                      {activeMobileDrawer === 'type' && '✨ Typography & Spacing'}
+                      {activeMobileDrawer === 'effects' && '⚙️ Realism & Effects'}
+                      {activeMobileDrawer === 'elements' && '🧩 Document Elements'}
+                    </span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setActiveMobileDrawer(null); }}
+                      className="px-2 py-0.5 rounded-lg bg-warning-yellow text-neutral-950 text-[10px] font-display font-bold uppercase hover:scale-105 active:scale-95 transition-transform"
+                    >
+                      Done ✕
+                    </button>
                   </div>
-                  <div className="flex-grow overflow-y-auto p-5 pb-10">
+                  <div className="flex-grow overflow-y-auto p-4 pb-8">
                     {activeMobileDrawer === 'font' && renderFontLibrary()}
                     {activeMobileDrawer === 'style' && renderPageStyle()}
                     {activeMobileDrawer === 'type' && renderTypography()}
