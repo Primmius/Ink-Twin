@@ -136,7 +136,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           <h2 className="text-xl font-display uppercase">Humanize Text</h2>
           <button
             onClick={handlePaste}
-            className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white hover:bg-neon-green transition-colors font-mono text-[10px] uppercase font-bold"
+            className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white hover:bg-warning-yellow transition-colors font-mono text-[10px] uppercase font-bold"
           >
             <ClipboardPaste size={12} />
             Paste
@@ -149,12 +149,12 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Paste your AI-generated text here..."
-            className="w-full h-32 md:h-40 lg:h-48 brutal-border p-3 md:p-4 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors resize-none"
+            className="w-full h-32 md:h-40 lg:h-48 brutal-border p-3 md:p-4 font-mono text-xs outline-none focus:bg-warning-yellow/5 transition-colors resize-none"
           />
           {/* Desktop-only paste button inside textarea */}
           <button
             onClick={handlePaste}
-            className="hidden lg:flex absolute bottom-3 right-3 p-1.5 brutal-border bg-white hover:bg-neon-green transition-colors"
+            className="hidden lg:flex absolute bottom-3 right-3 p-1.5 brutal-border bg-white hover:bg-warning-yellow transition-colors"
             title="Paste from clipboard"
           >
             <ClipboardPaste size={13} />
@@ -175,7 +175,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 onClick={() => setStyle(s)}
                 className={cn(
                   'flex-shrink-0 px-3 py-2 brutal-border text-left transition-all flex items-center gap-1.5',
-                  style === s ? 'bg-neon-green brutal-shadow' : 'theme-card bg-white'
+                  style === s ? 'bg-warning-yellow brutal-shadow' : 'theme-card bg-white'
                 )}
               >
                 <span className="text-sm">{STYLE_EMOJI[s]}</span>
@@ -194,7 +194,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 onClick={() => setStyle(s)}
                 className={cn(
                   'p-3 brutal-border text-left transition-all',
-                  style === s ? 'bg-neon-green brutal-shadow' : 'theme-card hover:bg-neutral-50'
+                  style === s ? 'bg-warning-yellow brutal-shadow' : 'theme-card hover:bg-neutral-50'
                 )}
               >
                 <div className="font-display uppercase text-xs font-bold text-text-primary flex items-center gap-2">
@@ -221,7 +221,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           onClick={handleHumanize}
           disabled={isProcessing || !inputText.trim()}
           className={cn(
-            'w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all flex items-center justify-center gap-2 group lg:mt-auto py-3 md:py-4',
+            'w-full brutal-btn bg-brutal-black text-white hover:bg-warning-yellow hover:text-brutal-black transition-all flex items-center justify-center gap-2 group lg:mt-auto py-3 md:py-4',
             'disabled:opacity-50 disabled:grayscale'
           )}
         >
@@ -263,7 +263,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                   onClick={() => setView(view === 'humanized' ? 'compare' : 'humanized')}
                   className={cn(
                     "p-1.5 md:p-2 brutal-border transition-colors",
-                    view === 'compare' ? "bg-neon-green" : "hover:bg-neon-green"
+                    view === 'compare' ? "bg-warning-yellow" : "hover:bg-warning-yellow"
                   )}
                   title="Toggle compare view"
                 >
@@ -271,10 +271,10 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 </button>
                 <button
                   onClick={handleCopy}
-                  className="p-1.5 md:p-2 brutal-border hover:bg-neon-green transition-colors"
+                  className="p-1.5 md:p-2 brutal-border hover:bg-warning-yellow transition-colors"
                   title="Copy"
                 >
-                  {copied ? <CheckCircle2 size={13} className="text-neon-green" /> : <Copy size={13} />}
+                  {copied ? <CheckCircle2 size={13} className="text-warning-yellow" /> : <Copy size={13} />}
                 </button>
               </div>
             )}
@@ -289,10 +289,10 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 z-50 p-6 text-center bg-neutral-900/95 dark:bg-[#0a0a0c]/98 border-2 border-neon-green text-white"
+                  className="absolute inset-0 flex flex-col items-center justify-center space-y-4 z-50 p-6 text-center bg-neutral-900/95 dark:bg-[#0a0a0c]/98 border-2 border-warning-yellow text-white"
                 >
-                  <Wand2 size={36} className="animate-pulse text-neon-green" />
-                  <div className="font-display uppercase text-xl md:text-2xl tracking-tighter animate-pulse text-neon-green">
+                  <Wand2 size={36} className="animate-pulse text-warning-yellow" />
+                  <div className="font-display uppercase text-xl md:text-2xl tracking-tighter animate-pulse text-warning-yellow">
                     Making it human...
                   </div>
                   <p className="font-mono text-[10px] opacity-40 max-w-xs text-white">
@@ -315,10 +315,10 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <div className="font-mono text-[9px] uppercase font-bold text-neon-green tracking-widest">
+                    <div className="font-mono text-[9px] uppercase font-bold text-warning-yellow tracking-widest">
                       Humanized ✨
                     </div>
-                    <div className="brutal-border p-3 md:p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-neon-green/5 min-h-[200px] md:min-h-[300px] text-text-primary">
+                    <div className="brutal-border p-3 md:p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap bg-warning-yellow/5 min-h-[200px] md:min-h-[300px] text-text-primary">
                       {result.humanized}
                     </div>
                   </div>
@@ -334,14 +334,14 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                     <textarea
                       value={editableOutput}
                       onChange={(e) => setEditableOutput(e.target.value)}
-                      className="w-full min-h-[300px] md:min-h-[400px] h-auto font-mono text-sm leading-relaxed student-notebook-ruled outline-none focus:border-neon-green transition-all resize-none overflow-hidden border-2 border-brutal-black rounded-[4px] brutal-shadow"
+                      className="w-full min-h-[300px] md:min-h-[400px] h-auto font-mono text-sm leading-relaxed student-notebook-ruled outline-none focus:border-warning-yellow transition-all resize-none overflow-hidden border-2 border-brutal-black rounded-[4px] brutal-shadow"
                       style={{ height: 'auto', minHeight: '300px' }}
                       onInput={(e: any) => {
                         e.target.style.height = 'auto';
                         e.target.style.height = e.target.scrollHeight + 'px';
                       }}
                     />
-                    <div className="absolute top-2 right-2 bg-neon-green px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
+                    <div className="absolute top-2 right-2 bg-warning-yellow px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
                       Editable
                     </div>
                   </div>
@@ -380,7 +380,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           <button
             onClick={() => onSendToWriter(editableOutput)}
             disabled={!editableOutput}
-            className="w-full brutal-btn bg-neon-green flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
+            className="w-full brutal-btn bg-warning-yellow flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
           >
             <div className="flex items-center justify-between w-full">
               <span className="font-display uppercase text-sm">Send to Writer</span>
@@ -398,7 +398,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
               disabled={!editableOutput}
               className="brutal-btn flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-mono uppercase bg-theme-bg text-text-primary disabled:opacity-50 border-theme-border py-2.5"
             >
-              {copied ? <CheckCircle2 size={14} className="text-neon-green" /> : <Copy size={14} />}
+              {copied ? <CheckCircle2 size={14} className="text-warning-yellow" /> : <Copy size={14} />}
               {copied ? 'Copied!' : 'Copy'}
             </button>
             <button
@@ -423,7 +423,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 <button
                   key={s}
                   onClick={() => { setStyle(s); setTimeout(handleHumanize, 0); }}
-                  className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary flex items-center gap-2"
+                  className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-warning-yellow/10 transition-colors text-text-primary flex items-center gap-2"
                 >
                   <span>{STYLE_EMOJI[s]}</span>
                   {STYLE_LABELS[s]}
@@ -434,7 +434,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
         )}
 
         <div className="lg:mt-auto p-3 md:p-4 theme-card brutal-border border-dashed space-y-2">
-          <div className="flex items-center gap-2 text-neon-green">
+          <div className="flex items-center gap-2 text-warning-yellow">
             <CheckCircle2 size={14} />
             <span className="font-display uppercase text-[10px]">Humanizer v1.0 · gemini-2.0-flash</span>
           </div>

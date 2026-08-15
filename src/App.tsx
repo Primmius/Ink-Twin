@@ -3,12 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Download, 
   Upload, 
-  Type as TypeIcon, 
   Settings, 
   ChevronRight, 
   ChevronLeft, 
@@ -22,7 +21,17 @@ import {
   Trash2,
   Sparkles,
   GraduationCap,
-  Coffee
+  Coffee,
+  PenTool,
+  Search,
+  Check,
+  RotateCcw,
+  Sliders,
+  Layers,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Info
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
@@ -36,6 +45,7 @@ import { vectorizeImage } from './lib/vectorizer';
 import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
 import { GlyphEditor } from './components/GlyphEditor';
+import { TouchDrawingPad } from './components/TouchDrawingPad';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
 import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
@@ -79,10 +89,12 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
+  const [drawingCharIndex, setDrawingCharIndex] = useState<number | null>(null);
   const [prefilledWriterText, setPrefilledWriterText] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
   const [pendingFontToName, setPendingFontToName] = useState<{ name: string; url: string; profile: any; fontFamily: string } | null>(null);
   const [humanizerPrefill, setHumanizerPrefill] = useState<string | null>(null);
+  const [charFilter, setCharFilter] = useState<'all' | 'detected' | 'missing'>('all');
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -95,7 +107,7 @@ export default function App() {
     name: 'MyHandwriting',
     author: 'Anonymous',
     letterSpacing: 0,
-    fontSize: 48
+    fontSize: 44
   });
   const [fontUrl, setFontUrl] = useState<string | null>(null);
   const [savedFonts, setSavedFonts] = useState<SavedFont[]>([]);
@@ -178,7 +190,7 @@ export default function App() {
     const fontName = fontConfig.name || `Custom Font ${savedFonts.length + 1}`;
     const alreadySaved = savedFonts.some(f => f.name === fontName && f.source === 'Phase 1');
     if (alreadySaved) {
-      setToast("Already saved!");
+      setToast("Already in library!");
       return;
     }
     const response = await fetch(fontUrl);
@@ -244,14 +256,6 @@ export default function App() {
     setSavedFonts(prev => prev.map(f => f.id === id ? { ...f, name: newName } : f));
   };
 
-  const handleEditFont = (font: SavedFont) => {
-    // This is tricky because we don't store the original detectedChars/paths
-    // For now, we'll just load the font into the writer
-    setFontUrl(font.url);
-    setFontConfig(prev => ({ ...prev, name: font.name }));
-    setPhase('text-writer');
-  };
-
   const handleGoHome = () => {
     setPhase('home');
     setStep(1);
@@ -263,7 +267,7 @@ export default function App() {
   };
 
   const promptApiKey = (message?: string, isInvalid = false) => {
-    setApiKeyModalMessage(message || "You don't have the API key set up yet. Please set up the API key.");
+    setApiKeyModalMessage(message || "Connect your free Gemini API key to enable AI handwriting recognition and homework solving.");
     setApiKeyModalInvalid(isInvalid);
     setIsApiKeyModalOpen(true);
   };
@@ -276,7 +280,7 @@ export default function App() {
     setIsApiKeyModalOpen(false);
     setIsSettingsOpen(false);
     setError(null);
-    setToast("API key saved successfully!");
+    setToast("API key saved!");
   };
 
   const handleDownloadTemplate = async () => {
@@ -349,10 +353,10 @@ export default function App() {
       }
       
       if (allDetected.length === 0) {
-        throw new Error("No characters were detected. Please ensure your handwriting is clear and the image is well-lit.");
+        throw new Error("No characters were detected. Please ensure your handwriting photo is well-lit and clear.");
       }
       
-      // Merge results (if multiple pages detected same char, take highest confidence)
+      // Merge results
       const merged = CHARACTERS_TO_DETECT.map(targetChar => {
         const found = allDetected.filter(d => d.char === targetChar)
           .sort((a, b) => b.confidence - a.confidence)[0];
@@ -369,7 +373,7 @@ export default function App() {
         localStorage.removeItem('gemini_api_key');
         promptApiKey("Your API key is invalid or not set up. Please set up the API key.", true);
       } else {
-        setError(err.message || "Failed to analyze handwriting. Check your image quality.");
+        setError(err.message || "Failed to analyze handwriting. Check image quality.");
       }
     } finally {
       setIsAnalyzing(false);
@@ -404,7 +408,6 @@ export default function App() {
         
         count++;
         setProcessingProgress(Math.round((count / total) * 100));
-        // Small delay to allow UI to breathe
         await new Promise(r => setTimeout(r, 10));
       }
 
@@ -476,7 +479,6 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       setFontUrl(url);
 
-      // Register font under a stable name so renaming doesn't break the preview
       const fontFace = new FontFace('inktwin-preview', buffer);
       await fontFace.load();
       document.fonts.add(fontFace);
@@ -495,6 +497,23 @@ export default function App() {
     a.click();
   };
 
+  const stepNames: Record<AppStep, string> = {
+    1: "Template & Upload",
+    2: "Review Uploaded Scans",
+    3: "Character Extraction",
+    4: "Vectorizing Paths",
+    5: "Fine-tune Glyphs",
+    6: "Test & Export Font"
+  };
+
+  const filteredChars = detectedChars.filter(c => {
+    if (charFilter === 'detected') return c.confidence > 0;
+    if (charFilter === 'missing') return !c.confidence || c.confidence === 0;
+    return true;
+  });
+
+  const detectedCount = detectedChars.filter(c => c.confidence > 0).length;
+
   if (phase === 'home') {
     return (
       <LandingPage
@@ -507,729 +526,786 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen font-body flex flex-col border-[8px] selection:bg-neon-green selection:text-brutal-black" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}>
-      {/* Header */}
-      <header className="border-b-2 p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 z-40 header-mobile-refine" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
-        <div className="flex flex-col gap-4 w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleGoHome}
-              className="flex items-center gap-3 text-left bg-transparent border-0 p-0 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-green rounded transition-transform active:scale-95"
-              title="Go to Home"
-              aria-label="Go to InkTwin Home"
-            >
-              <Logo size={isMobile ? 32 : 44} showText={false} className="group-hover:scale-105 transition-transform" />
-              <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title flex items-baseline gap-2 group-hover:opacity-90 transition-opacity">
-                Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+    <div 
+      className="min-h-screen font-body flex flex-col selection:bg-warning-yellow selection:text-neutral-950 pb-20 md:pb-0" 
+      style={{ 
+        backgroundColor: 'var(--bg-primary)', 
+        color: 'var(--text-primary)' 
+      }}
+    >
+      {/* Sticky Top Header */}
+      <header 
+        className="sticky top-0 z-30 border-b p-3 sm:p-4 flex items-center justify-between backdrop-blur-md bg-white/90 dark:bg-neutral-900/90"
+        style={{ borderColor: 'var(--border-primary)' }}
+      >
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          <button
+            onClick={handleGoHome}
+            className="flex items-center gap-2 text-left bg-transparent border-0 p-0 cursor-pointer group active:scale-95 transition-transform"
+            title="Go to Home"
+            aria-label="Go to InkTwin Home"
+          >
+            <Logo size={32} showText={false} className="group-hover:scale-105 transition-transform" />
+            <div>
+              <h1 className="text-lg sm:text-xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-1">
+                Ink<span className="text-warning-yellow">Twin</span>
               </h1>
-            </button>
-            <a
-              href="https://primuez.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-xs lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all self-end md:self-baseline pb-1"
-            >
-              by primuez.in
-            </a>
-          </div>
-          
-          {/* Phase Navigation */}
-          <div className="flex gap-2 p-1 overflow-x-auto no-scrollbar scroll-smooth -webkit-overflow-scrolling-touch relative nav-container max-w-full">
-            <style>{`
-              .no-scrollbar::-webkit-scrollbar { display: none; }
-              .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            </div>
+          </button>
 
-              /* Desktop nav: wrap gracefully */
-              @media (min-width: 769px) {
-                .nav-container {
-                  flex-wrap: wrap;
-                  gap: 6px !important;
-                  padding: 0 !important;
-                }
-                .nav-tab {
-                  font-size: 12px !important;
-                  padding: 8px 14px !important;
-                  height: auto !important;
-                  min-height: 40px;
-                }
-              }
-              
-              @media (max-width: 768px) {
-                .header-mobile-refine {
-                  padding: 12px 16px !important;
-                  overflow: visible !important;
-                }
-                .app-title {
-                  font-size: clamp(1.1rem, 4.5vw, 1.8rem) !important;
-                }
-                .nav-container {
-                  display: flex !important;
-                  flex-direction: row !important;
-                  overflow-x: auto !important;
-                  overflow-y: hidden !important;
-                  -webkit-overflow-scrolling: touch !important;
-                  scrollbar-width: none !important;
-                  gap: 6px !important;
-                  padding: 0 16px 4px !important;
-                  margin-left: -16px;
-                  margin-right: -16px;
-                  width: calc(100% + 32px) !important;
-                }
-                .nav-container::-webkit-scrollbar { display: none; }
-                .nav-tab {
-                  flex-shrink: 0 !important;
-                  min-width: 110px !important;
-                  max-width: 160px !important;
-                  font-size: 10px !important;
-                  padding: 7px 10px !important;
-                  height: 44px !important;
-                  text-align: center;
-                  white-space: nowrap;
-                  line-height: 1.2;
-                }
-                .step-indicator-container {
-                  display: flex !important;
-                  overflow-x: auto !important;
-                  scrollbar-width: none !important;
-                  gap: 6px !important;
-                  padding: 8px 16px !important;
-                  margin-left: -16px;
-                  margin-right: -16px;
-                  width: calc(100% + 32px) !important;
-                  -webkit-overflow-scrolling: touch !important;
-                }
-                .step-indicator-container::-webkit-scrollbar { display: none; }
-                .step-btn {
-                  flex-shrink: 0 !important;
-                  min-width: 44px !important;
-                }
-              }
-            `}</style>
+          {/* Desktop Navigation Pill Bar */}
+          <nav className="hidden md:flex items-center gap-1.5 ml-4 bg-neutral-100 dark:bg-neutral-800/70 p-1 rounded-xl border border-neutral-200 dark:border-neutral-700/60">
             <button
               onClick={handleGoHome}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'home' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'home' 
+                  ? "bg-white dark:bg-neutral-900 text-neutral-950 dark:text-white shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              🏠 Home
+              Home
             </button>
             <button
               onClick={() => setPhase('font-creation')}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'font-creation' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'font-creation' 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              ✏️ Create My Font
+              ✏️ Create Font
             </button>
             <button
               onClick={() => setPhase('text-writer')}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'text-writer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'text-writer' 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              📝 Write with My Handwriting
+              📝 Studio Writer
             </button>
             <button
               onClick={() => setPhase('homework-solver')}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'homework-solver' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'homework-solver' 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              🎓 AI Study Assistant
+              🎓 AI Solver
             </button>
             <button
               onClick={() => setPhase('find-font')}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'find-font' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'find-font' 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              🔍 Find My Font
+              🔍 Find Font
             </button>
             <button
               onClick={() => setPhase('ai-humanizer')}
               className={cn(
-                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
-                phase === 'ai-humanizer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+                "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
+                phase === 'ai-humanizer' 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
+                  : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
-              ✨ AI Humanizer
+              ✨ Humanizer
             </button>
-          </div>
+          </nav>
         </div>
-        
-        {phase === 'font-creation' && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 step-indicator-container">
-            {[
-              { id: 1, label: "01 TEMPLATE", short: "01" },
-              { id: 2, label: "02 UPLOAD", short: "02" },
-              { id: 3, label: "03 DETECT", short: "03" },
-              { id: 4, label: "04 PROCESS", short: "04" },
-              { id: 5, label: "05 VECTOR", short: "05" },
-              { id: 6, label: "06 PREVIEW", short: "06" }
-            ].map((s) => (
-              <div 
-                key={s.id}
-                className={cn(
-                  "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all flex-shrink-0 min-h-[44px] flex items-center justify-center min-w-[44px] step-btn",
-                  step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30 bg-white"
-                )}
-              >
-                <span className="hidden sm:inline">{s.label}</span>
-                <span className="sm:hidden">{s.short}</span>
-              </div>
-            ))}
-          </div>
-        )}
 
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={toggleTheme}
-            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors bg-white text-brutal-black dark:bg-brutal-black dark:text-white"
-            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
+        {/* Right Tools: API status, Theme, Settings */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* API Key Status Badge */}
           <button
             onClick={() => promptApiKey(undefined, false)}
-            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
-            title="API Key Settings"
+            className={cn(
+              "px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-semibold flex items-center gap-1.5 transition-all active:scale-95",
+              apiKey 
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" 
+                : "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+            )}
+            title="Gemini API Key Connection"
           >
-            <Settings size={20} />
+            <div className={cn("w-2 h-2 rounded-full", apiKey ? "bg-emerald-500" : "bg-amber-500 animate-pulse")} />
+            <span className="hidden sm:inline">{apiKey ? "AI Connected" : "Connect AI"}</span>
           </button>
-          <button
-            onClick={() => {
-              document.getElementById('support-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}
-            title="Support InkTwin"
-            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+
+          <button 
+            onClick={toggleTheme}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            aria-label="Toggle dark mode"
           >
-            <Coffee size={20} />
+            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+          </button>
+
+          <button
+            onClick={() => promptApiKey(undefined, false)}
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            title="Settings"
+            aria-label="Open Settings"
+          >
+            <Settings size={17} />
           </button>
         </div>
       </header>
 
-      <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+      {/* Main Container */}
+      <div className="flex-grow flex flex-col overflow-x-hidden">
         {phase === 'font-creation' ? (
-          <>
-            {/* Sidebar */}
-            <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
-          <div className="space-y-4">
-            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
-            <div className="space-y-2 font-mono text-sm">
-              <div className="flex justify-between">
-                <span>Step:</span>
-                <span className="font-bold">0{step}</span>
+          <div className="flex-grow flex flex-col">
+            {/* Step Navigation Sub-Header */}
+            <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 z-20 shadow-xs">
+              <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  {step > 1 && (
+                    <button
+                      onClick={() => setStep((prev) => (prev - 1) as AppStep)}
+                      className="p-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-95 transition-all"
+                      title="Previous step"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono font-bold uppercase text-warning-yellow bg-warning-yellow/10 px-2 py-0.5 rounded border border-warning-yellow/30">
+                      Step 0{step} / 06
+                    </span>
+                    <span className="font-display font-bold text-xs sm:text-sm text-neutral-900 dark:text-white">
+                      {stepNames[step]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step indicator pills */}
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  {[1, 2, 3, 4, 5, 6].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => {
+                        // Allow jumping to steps already unlocked
+                        if (s <= step || (s === 2 && uploadedImages.length > 0) || (s === 3 && detectedChars.length > 0)) {
+                          setStep(s as AppStep);
+                        }
+                      }}
+                      className={cn(
+                        "w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-[10px] sm:text-xs font-mono font-bold flex items-center justify-center transition-all",
+                        step === s 
+                          ? "bg-warning-yellow text-black font-bold shadow-sm ring-2 ring-warning-yellow/50" 
+                          : s < step 
+                            ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700" 
+                            : "bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 opacity-40 cursor-not-allowed"
+                      )}
+                      title={`Step ${s}: ${stepNames[s as AppStep]}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>API:</span>
-                <span className={cn("font-bold", apiKey ? "text-green-600" : "text-red-600")}>
-                  {apiKey ? "CONNECTED" : "MISSING"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pages:</span>
-                <span className="font-bold">{uploadedImages.length}</span>
+            </div>
+
+            {/* Step Body */}
+            <div className="flex-grow p-4 sm:p-6 md:p-8 bg-neutral-50 dark:bg-neutral-950 overflow-y-auto">
+              <div className="max-w-4xl mx-auto space-y-6">
+                <AnimatePresence mode="wait">
+
+                  {/* Step 1: Welcome & Template Options */}
+                  {step === 1 && (
+                    <motion.div 
+                      key="step1"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      className="space-y-6"
+                    >
+                      <div className="space-y-2 text-center sm:text-left pb-2 border-b border-neutral-200 dark:border-neutral-800">
+                        <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                          Step 01 // Template & Upload
+                        </span>
+                        <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                          Turn Handwriting into a Font
+                        </h2>
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">
+                          Create your own .ttf font file from handwriting photos or draw glyphs directly on your screen.
+                        </p>
+                      </div>
+
+                      {/* Primary Action Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* Option 1: Mobile Camera */}
+                        <div className="p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm hover:border-neutral-900 dark:hover:border-neutral-600 transition-all flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="w-12 h-12 rounded-xl bg-warning-yellow/20 text-neutral-950 dark:text-warning-yellow flex items-center justify-center">
+                              <Camera size={24} />
+                            </div>
+                            <h3 className="font-display font-bold text-lg text-neutral-900 dark:text-white">
+                              Snap with Mobile Camera
+                            </h3>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                              Take a photo of your handwritten A–Z and 0–9 on paper with your phone's camera.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setIsCameraOpen(true)}
+                            className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+                          >
+                            <Camera size={16} />
+                            Open Camera Shutter
+                          </button>
+                        </div>
+
+                        {/* Option 2: Upload Photo / PDF */}
+                        <div className="p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm hover:border-neutral-900 dark:hover:border-neutral-600 transition-all flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="w-12 h-12 rounded-xl bg-warning-yellow/20 text-neutral-950 dark:text-warning-yellow flex items-center justify-center">
+                              <Upload size={24} />
+                            </div>
+                            <h3 className="font-display font-bold text-lg text-neutral-900 dark:text-white">
+                              Upload Existing Photo / PDF
+                            </h3>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                              Choose a photo or PDF scan from your photo gallery or files.
+                            </p>
+                          </div>
+                          <label className="w-full py-3 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-95 transition-transform">
+                            <Upload size={16} />
+                            <span>Select Image / PDF</span>
+                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
+                          </label>
+                        </div>
+
+                        {/* Option 3: Download A4 Grid Template */}
+                        <div className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center">
+                              <Download size={20} />
+                            </div>
+                            <h3 className="font-display font-bold text-base text-neutral-900 dark:text-white">
+                              Download Printable Template
+                            </h3>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                              Print our pre-formatted A4 boxes to write in with a black pen, then photograph it.
+                            </p>
+                          </div>
+                          <button
+                            onClick={handleDownloadTemplate}
+                            className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-display font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center gap-2 transition-colors"
+                          >
+                            <Download size={15} />
+                            Download PDF Grid
+                          </button>
+                        </div>
+
+                        {/* Option 4: Draw directly on screen */}
+                        <div className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm flex flex-col justify-between">
+                          <div className="space-y-2">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center">
+                              <PenTool size={20} />
+                            </div>
+                            <h3 className="font-display font-bold text-base text-neutral-900 dark:text-white">
+                              Draw on Screen with Finger
+                            </h3>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                              No paper needed. Draw all characters one-by-one right on your touchscreen or tablet.
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              // Initialize blank detection and jump to Step 3
+                              const blankChars = CHARACTERS_TO_DETECT.map(char => ({
+                                char,
+                                boundingBox: { x: 0, y: 0, width: 0, height: 0 },
+                                confidence: 0
+                              }));
+                              setDetectedChars(blankChars);
+                              setStep(3);
+                            }}
+                            className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-display font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center gap-2 transition-colors"
+                          >
+                            <PenTool size={15} />
+                            Start Drawing on Screen
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 2: Review Scans / Uploads */}
+                  {step === 2 && (
+                    <motion.div 
+                      key="step2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+                        <div>
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 02 // Review Uploads
+                          </span>
+                          <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                            Review Uploaded Scans
+                          </h2>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            {uploadedImages.length} page{uploadedImages.length !== 1 ? 's' : ''} ready for AI analysis
+                          </p>
+                        </div>
+
+                        <button 
+                          onClick={startAnalysis}
+                          disabled={isAnalyzing || uploadedImages.length === 0}
+                          className="px-6 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                          {isAnalyzing ? (
+                            <>
+                              <RefreshCw className="animate-spin" size={16} />
+                              Analyzing Characters...
+                            </>
+                          ) : (
+                            <>
+                              <span>Start AI Analysis</span>
+                              <ChevronRight size={16} />
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Upload grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        {uploadedImages.map((img, i) => (
+                          <div 
+                            key={i} 
+                            className="aspect-[3/4] rounded-xl border-2 border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-2 relative group overflow-hidden shadow-sm"
+                          >
+                            <img 
+                              src={img} 
+                              loading="lazy" 
+                              className="w-full h-full object-contain rounded-lg" 
+                              alt={`Scan Page ${i+1}`} 
+                            />
+                            <div className="absolute top-3 left-3 bg-neutral-900/80 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded">
+                              Page {i+1}
+                            </div>
+                            <button 
+                              onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
+                              className="absolute top-3 right-3 p-2 bg-red-600 text-white rounded-lg opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Delete page"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        ))}
+
+                        <label className="aspect-[3/4] rounded-xl border-2 border-dashed border-neutral-300 dark:border-neutral-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors p-4 text-center">
+                          <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center text-neutral-600 dark:text-neutral-300">
+                            <Upload size={18} />
+                          </div>
+                          <span className="font-display font-bold text-xs uppercase text-neutral-700 dark:text-neutral-300">
+                            Add Another Page
+                          </span>
+                          <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
+                        </label>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 3: Detected Glyphs Grid */}
+                  {step === 3 && (
+                    <motion.div 
+                      key="step3"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-6"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+                        <div>
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 03 // Character Extraction
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                              Character Review &amp; Tuning
+                            </h2>
+                            <span className="px-2.5 py-0.5 rounded-full bg-warning-yellow/20 text-neutral-950 dark:text-yellow-300 font-mono text-xs font-bold">
+                              {detectedCount} / {detectedChars.length} Detected
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            Tap any character to draw or adjust it directly on your screen
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={startAnalysis}
+                            disabled={isAnalyzing || uploadedImages.length === 0}
+                            className="px-3 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-xs font-mono font-bold flex items-center gap-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                            title="Re-analyze images"
+                          >
+                            <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={14} />
+                            <span className="hidden sm:inline">Re-scan</span>
+                          </button>
+                          <button 
+                            onClick={() => setStep(4)}
+                            className="px-5 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                          >
+                            <span>Vectorize &amp; Continue</span>
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Filter Chips */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCharFilter('all')}
+                          className={cn(
+                            "px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all",
+                            charFilter === 'all'
+                              ? "bg-neutral-900 dark:bg-white text-white dark:text-neutral-900"
+                              : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                          )}
+                        >
+                          All ({detectedChars.length})
+                        </button>
+                        <button
+                          onClick={() => setCharFilter('detected')}
+                          className={cn(
+                            "px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all",
+                            charFilter === 'detected'
+                              ? "bg-emerald-500 text-white"
+                              : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                          )}
+                        >
+                          Detected ({detectedCount})
+                        </button>
+                        <button
+                          onClick={() => setCharFilter('missing')}
+                          className={cn(
+                            "px-3 py-1 rounded-lg text-xs font-mono font-semibold transition-all",
+                            charFilter === 'missing'
+                              ? "bg-amber-500 text-white"
+                              : "bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+                          )}
+                        >
+                          Missing ({detectedChars.length - detectedCount})
+                        </button>
+                      </div>
+
+                      {/* Character Grid */}
+                      <div className="p-4 sm:p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2.5 sm:gap-3">
+                        {filteredChars.map((char) => {
+                          const originalIdx = detectedChars.findIndex(c => c.char === char.char);
+                          const hasData = !!char.imageData;
+
+                          return (
+                            <div 
+                              key={char.char} 
+                              onClick={() => {
+                                if (hasData) {
+                                  setEditingCharIndex(originalIdx);
+                                } else {
+                                  setDrawingCharIndex(originalIdx);
+                                }
+                              }}
+                              className={cn(
+                                "aspect-square rounded-xl border-2 relative group overflow-hidden flex flex-col items-center justify-center cursor-pointer transition-all active:scale-95 p-1.5",
+                                char.confidence > 0.8 
+                                  ? "border-emerald-500 bg-emerald-500/5 hover:border-emerald-600" 
+                                  : char.confidence > 0.4 
+                                    ? "border-amber-500 bg-amber-500/5 hover:border-amber-600" 
+                                    : "border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/30 hover:border-warning-yellow"
+                              )}
+                              title={hasData ? `Edit '${char.char}'` : `Draw '${char.char}' on screen`}
+                            >
+                              <span className="absolute top-1 left-1.5 font-mono text-[10px] font-bold text-neutral-600 dark:text-neutral-400">
+                                {char.char}
+                              </span>
+
+                              {hasData ? (
+                                <img 
+                                  src={char.imageData} 
+                                  loading="lazy" 
+                                  className="w-full h-full object-contain p-1.5" 
+                                  alt={char.char} 
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center opacity-40 group-hover:opacity-100 group-hover:text-warning-yellow transition-all">
+                                  <PenTool size={16} />
+                                  <span className="text-[8px] font-mono mt-0.5">DRAW</span>
+                                </div>
+                              )}
+                              
+                              {char.confidence > 0 && (
+                                <div className={cn(
+                                  "absolute bottom-1 right-1 px-1 rounded text-[8px] font-mono font-bold text-white",
+                                  char.confidence > 0.8 ? "bg-emerald-500" : "bg-amber-500"
+                                  )}>
+                                  {Math.round(char.confidence * 100)}%
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 4: Vectorizing Loading Screen */}
+                  {step === 4 && (
+                    <motion.div 
+                      key="step4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col items-center justify-center py-20 sm:py-28 space-y-6 text-center"
+                    >
+                      <div className="relative">
+                        <div className="w-24 h-24 rounded-full border-4 border-neutral-200 dark:border-neutral-800 border-t-warning-yellow animate-spin" />
+                        <div className="absolute inset-0 flex items-center justify-center font-display font-bold text-xl text-neutral-900 dark:text-white">
+                          {processingProgress}%
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                          Step 04 // Vectorization
+                        </span>
+                        <h2 className="text-2xl sm:text-3xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
+                          Vectorizing Glyph Paths...
+                        </h2>
+                        <p className="font-mono text-xs text-neutral-500 uppercase">
+                          CURRENT GLYPH: <span className="font-bold text-warning-yellow">{processingChar || 'INITIALIZING'}</span>
+                        </p>
+                      </div>
+
+                      <div className="w-full max-w-xs h-3 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-warning-yellow transition-all duration-200 rounded-full" 
+                          style={{ width: `${processingProgress}%` }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 5: Vector Review Grid */}
+                  {step === 5 && (
+                    <motion.div 
+                      key="step5"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="space-y-6"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
+                        <div>
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 05 // Bezier Inspection
+                          </span>
+                          <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                            Fine-tune Vector Glyphs
+                          </h2>
+                          <p className="text-xs text-neutral-500 mt-0.5">
+                            Mathematical bezier curves converted for font compilation
+                          </p>
+                        </div>
+
+                        <button 
+                          onClick={generateFont}
+                          className="px-6 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                        >
+                          <Check size={16} />
+                          <span>Assemble TrueType Font →</span>
+                        </button>
+                      </div>
+
+                      <div className="p-4 sm:p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2.5 sm:gap-3">
+                        {detectedChars.map((char, i) => (
+                          <div 
+                            key={i} 
+                            onClick={() => {
+                              if (char.imageData) setEditingCharIndex(i);
+                              else setDrawingCharIndex(i);
+                            }}
+                            className={cn(
+                              "aspect-square rounded-xl border-2 relative group flex items-center justify-center p-2 cursor-pointer transition-all active:scale-95",
+                              char.svgPath 
+                                ? "border-emerald-500 bg-white dark:bg-neutral-800" 
+                                : "border-neutral-200 dark:border-neutral-700 border-dashed bg-neutral-50 dark:bg-neutral-800/30"
+                            )}
+                            title={`Inspect/Edit ${char.char}`}
+                          >
+                            <span className="absolute top-1 left-1.5 font-mono text-[9px] font-bold text-neutral-400">
+                              {char.char}
+                            </span>
+                            
+                            {char.svgPath ? (
+                              <svg viewBox="0 0 500 500" className="w-full h-full fill-neutral-900 dark:fill-white">
+                                <path d={char.svgPath} fillRule="evenodd" />
+                              </svg>
+                            ) : (
+                              <span className="font-mono text-[8px] text-neutral-400 opacity-40">EMPTY</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 6: Font Test Playground & Export */}
+                  {step === 6 && (
+                    <motion.div 
+                      key="step6"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-6"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        {/* Font Configuration Panel */}
+                        <div className="space-y-4">
+                          <div className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm">
+                            <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                              Step 06 // Font Assembly
+                            </span>
+                            <h3 className="font-display font-bold text-base text-neutral-900 dark:text-white uppercase">
+                              Font Details &amp; Metadata
+                            </h3>
+
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-[11px] font-mono font-bold uppercase text-neutral-500 block mb-1">
+                                  Font Name
+                                </label>
+                                <input 
+                                  type="text" 
+                                  value={fontConfig.name}
+                                  onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-medium focus:ring-2 focus:ring-warning-yellow outline-none"
+                                />
+                              </div>
+
+                              <div>
+                                <div className="flex justify-between text-[11px] font-mono font-bold text-neutral-500 mb-1">
+                                  <span>Letter Spacing</span>
+                                  <span>{fontConfig.letterSpacing}px</span>
+                                </div>
+                                <input 
+                                  type="range" min="-30" max="80" 
+                                  value={fontConfig.letterSpacing}
+                                  onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
+                                  className="w-full accent-warning-yellow"
+                                />
+                              </div>
+
+                              <div>
+                                <div className="flex justify-between text-[11px] font-mono font-bold text-neutral-500 mb-1">
+                                  <span>Preview Size</span>
+                                  <span>{fontConfig.fontSize}px</span>
+                                </div>
+                                <input 
+                                  type="range" min="16" max="96" 
+                                  value={fontConfig.fontSize}
+                                  onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
+                                  className="w-full accent-warning-yellow"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Export Buttons */}
+                            <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                              <button 
+                                onClick={downloadFont}
+                                className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+                              >
+                                <Download size={16} />
+                                Download .TTF Font File
+                              </button>
+
+                              <button 
+                                onClick={handleSaveFont}
+                                className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-display font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center gap-2 transition-colors"
+                              >
+                                <CheckCircle2 size={15} />
+                                Save to Font Library
+                              </button>
+
+                              <button 
+                                onClick={async () => {
+                                  await handleSaveFont();
+                                  setPhase('text-writer');
+                                }}
+                                className="w-full py-3 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+                              >
+                                <Sparkles size={16} />
+                                Write Documents in Studio →
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Quick Mobile Installation Guide */}
+                          <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/50 space-y-2 text-xs text-neutral-600 dark:text-neutral-400">
+                            <div className="font-display font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
+                              <Info size={14} className="text-warning-yellow" />
+                              <span>How to install .ttf on mobile</span>
+                            </div>
+                            <p className="text-[11px] leading-relaxed">
+                              <strong>iOS:</strong> Download .ttf and open with <em>iFont</em> app.<br />
+                              <strong>Android:</strong> Apply in Theme / Font Settings.<br />
+                              <strong>PC/Mac:</strong> Double-click to install universally.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Interactive Mobile Typing Playground */}
+                        <div className="lg:col-span-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-display font-bold text-base text-neutral-900 dark:text-white uppercase">
+                              Live Handwriting Playground
+                            </h3>
+                            <span className="text-[11px] font-mono text-neutral-500">
+                              Type to test your font
+                            </span>
+                          </div>
+
+                          <div className="p-5 sm:p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-sm min-h-[360px] flex flex-col justify-between">
+                            <textarea 
+                              className="w-full flex-grow bg-transparent outline-none resize-none leading-relaxed font-normal"
+                              placeholder="Type something in your handwriting font..."
+                              style={{ 
+                                fontFamily: 'inktwin-preview, sans-serif',
+                                fontSize: `${fontConfig.fontSize}px`,
+                                letterSpacing: `${fontConfig.letterSpacing / 10}px`
+                              }}
+                              defaultValue="The quick brown fox jumps over the lazy dog. 0123456789"
+                            />
+
+                            <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs font-mono text-neutral-500">
+                              <span>Font: {fontConfig.name}</span>
+                              <span className="text-warning-yellow font-bold">Vectorized .TTF Ready</span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </div>
+                    </motion.div>
+                  )}
+
+                </AnimatePresence>
               </div>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Instructions</h3>
-            <p className="text-xs leading-relaxed">
-              {step === 1 && "Start by downloading the template and filling it with your unique handwriting style."}
-              {step === 2 && "Upload your completed template pages. Ensure the lighting is even and the text is clear."}
-              {step === 3 && "Review the detected characters. Gemini has identified the bounding boxes for each glyph."}
-              {step === 5 && "The characters have been vectorized. Review the paths before generating the final font file."}
-              {step === 6 && "Your font is ready! Test it in the preview area and download the .ttf file."}
-            </p>
-          </div>
-
-          <div className="mt-auto pt-6">
-            {step === 3 && (
-              <button 
-                onClick={startAnalysis}
-                disabled={isAnalyzing}
-                className="w-full brutal-btn mb-3 flex items-center justify-center gap-2 bg-warning-yellow"
-              >
-                <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={16} />
-                Re-analyze All
-              </button>
-            )}
-            {step > 1 && (
-              <button 
-                onClick={() => setStep((prev) => (prev - 1) as AppStep)}
-                className="w-full brutal-btn mb-3"
-              >
-                ← Back
-              </button>
-            )}
-            <button
-              onClick={() => promptApiKey(undefined, false)}
-              className="w-full brutal-btn text-xs"
-            >
-              Update API Key
-            </button>
-          </div>
-        </aside>
-
-        {/* Main Content Area */}
-        <section className="flex-grow p-6 bg-neutral-100 overflow-y-auto">
-          <div className="max-w-4xl mx-auto">
-            <AnimatePresence mode="wait">
-              {/* Step 1: Welcome & Template */}
-              {step === 1 && (
-                <motion.div 
-                  key="step1"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.05 }}
-                  className="space-y-8"
-                >
-                  <div className="space-y-4">
-                    <h2 className="text-4xl sm:text-6xl font-display uppercase leading-none tracking-tighter break-words">Handwriting to Digital Font.</h2>
-                    <p className="text-base sm:text-xl font-mono opacity-70">
-                      [VERSION_1.0] AI-POWERED VECTORIZATION ENGINE
-                    </p>
-                  </div>
-
-                  {/* Beginner-friendly explainer */}
-                  <div className="brutal-card brutal-shadow bg-neon-green/10 border-neon-green">
-                    <div className="flex items-start gap-3 mb-5">
-                      <span className="text-2xl">👋</span>
-                      <div>
-                        <h3 className="text-lg sm:text-xl font-display uppercase">New here? Here's everything you can do.</h3>
-                        <p className="font-mono text-xs opacity-70 mt-1">
-                          InkTwin has 5 tools — start with whichever fits you best.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Feature overview cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
-                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
-                          <span>✏️</span> Create My Font
-                        </div>
-                        <p className="font-mono text-[10px] opacity-60 leading-snug">Turn your real handwriting into a downloadable .ttf font file using AI.</p>
-                        <button onClick={() => setPhase('font-creation')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
-                          Start here →
-                        </button>
-                      </div>
-                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
-                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
-                          <span>📝</span> Write with My Handwriting
-                        </div>
-                        <p className="font-mono text-[10px] opacity-60 leading-snug">Type any text and render it in your handwriting font on a realistic page.</p>
-                        <button onClick={() => setPhase('text-writer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
-                          Open writer →
-                        </button>
-                      </div>
-                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
-                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
-                          <span>🎓</span> AI Study Assistant
-                        </div>
-                        <p className="font-mono text-[10px] opacity-60 leading-snug">Upload homework questions (photo, PDF, or text) and get AI-solved answers ready to write out.</p>
-                        <button onClick={() => setPhase('homework-solver')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
-                          Solve homework →
-                        </button>
-                      </div>
-                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1 relative">
-                        <div className="absolute top-2 right-2 bg-neon-green px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase">NEW</div>
-                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
-                          <span>✨</span> AI Humanizer
-                        </div>
-                        <p className="font-mono text-[10px] opacity-60 leading-snug">Paste any AI-generated text and rewrite it to sound like a real student wrote it — 5 styles.</p>
-                        <button onClick={() => setPhase('ai-humanizer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
-                          Humanize text →
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Font creation options */}
-                    <div className="border-t-2 border-brutal-black pt-4 space-y-3 font-mono text-xs sm:text-sm">
-                      <p className="font-bold text-[10px] uppercase tracking-widest opacity-50">To create your font, pick one of these:</p>
-                      <div className="flex gap-3">
-                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION A</span>
-                        <span>
-                          <span className="font-bold">Easy:</span> Tap <span className="font-bold">Download PDF</span> below, print it, fill every box with a black pen, then snap a photo and upload.
-                        </span>
-                      </div>
-                      <div className="flex gap-3">
-                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION B</span>
-                        <span>
-                          <span className="font-bold">No printer?</span> Draw a grid — <span className="font-bold">4 columns × 5 rows</span> of equal-sized boxes. Write the label (A, B, C…) top-left and the character inside each box. Use black or dark-blue pen.
-                        </span>
-                      </div>
-                      <div className="flex gap-3">
-                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION C</span>
-                        <span>
-                          <span className="font-bold">Just want letters:</span> Write <span className="font-bold">A–Z</span>, <span className="font-bold">a–z</span> and <span className="font-bold">0–9</span> clearly on any paper, then upload.
-                        </span>
-                      </div>
-                      <div className="flex gap-3 pt-3 border-t-2 border-brutal-black">
-                        <span className="font-bold whitespace-nowrap">⏰ NO TIME?</span>
-                        <span>
-                          Skip font creation — head to{' '}
-                          <button
-                            onClick={() => setPhase('find-font')}
-                            className="underline font-bold hover:text-brutal-black"
-                          >
-                            🔍 Find My Font
-                          </button>
-                          {' '}and upload any handwriting sample. We'll match it to the closest font.
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid sm:grid-cols-2 gap-8 mt-8">
-                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
-                        <Download size={24} />
-                      </div>
-                      <h3 className="text-2xl font-display uppercase mb-4">01. Download</h3>
-                      <p className="font-mono text-sm mb-8 opacity-70">
-                        Optional — grab the A4 template if you'd like printed boxes to write in. Skip if you're using your own paper.
-                      </p>
-                      <button 
-                        onClick={handleDownloadTemplate}
-                        className="w-full brutal-btn brutal-btn-primary"
-                      >
-                        Download PDF
-                      </button>
-                    </div>
-
-                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
-                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
-                        <Upload size={24} />
-                      </div>
-                      <h3 className="text-2xl font-display uppercase mb-4">02. Upload</h3>
-                      <p className="font-mono text-sm mb-8 opacity-70">
-                        Photograph or scan your filled template, your own grid, or your A–Z & 0–9 page. Multiple photos OK.
-                      </p>
-                      <div className="flex flex-col gap-3">
-                        <label className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 cursor-pointer">
-                          <Upload size={18} />
-                          Upload Photo or PDF
-                          <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
-                        </label>
-                        <button 
-                          onClick={() => setIsCameraOpen(true)}
-                          className="w-full brutal-btn flex items-center justify-center gap-2"
-                        >
-                          <Camera size={18} />
-                          Capture with Camera
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 2: Review Uploads */}
-              {step === 2 && (
-                <motion.div 
-                  key="step2"
-                  initial={{ opacity: 0, x: 50 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  className="space-y-8"
-                >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
-                    <h2 className="text-3xl font-display uppercase">Review Uploads</h2>
-                    <button 
-                      onClick={startAnalysis}
-                      disabled={isAnalyzing}
-                      className="brutal-btn brutal-btn-primary flex items-center gap-2"
-                    >
-                      {isAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : "Start AI Analysis →"}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                    {uploadedImages.map((img, i) => (
-                      <div key={i} className="aspect-[3/4] brutal-border bg-white p-2 relative group brutal-shadow">
-                        <img src={img} width={300} height={400} loading="lazy" className="w-full h-full object-cover" alt={`Page ${i+1}`} />
-                        <button 
-                          onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute top-4 right-4 p-2 bg-error-red text-white border-2 border-brutal-black opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="aspect-[3/4] brutal-border border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-neon-green/10 transition-colors">
-                      <Upload size={32} className="opacity-30" />
-                      <span className="font-mono text-xs font-bold uppercase">Add Photo/PDF</span>
-                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 3: Detection Results */}
-              {step === 3 && (
-                <motion.div 
-                  key="step3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-8"
-                >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
-                    <h2 className="text-3xl font-display uppercase">Detected Glyphs</h2>
-                    <div className="flex gap-4">
-                      <button 
-                        onClick={startAnalysis}
-                        disabled={isAnalyzing}
-                        className="brutal-btn flex items-center gap-2"
-                      >
-                        <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={18} />
-                        Re-analyze
-                      </button>
-                      <button 
-                        onClick={() => setStep(4)}
-                        className="brutal-btn brutal-btn-primary"
-                      >
-                        Process & Vectorize →
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
-                    {detectedChars.map((char, i) => (
-                      <div 
-                        key={i} 
-                        onClick={() => setEditingCharIndex(i)}
-                        className={cn(
-                          "aspect-square border-2 relative group overflow-hidden flex items-center justify-center cursor-pointer hover:scale-105 transition-transform",
-                          char.confidence > 0.8 ? "border-neon-green bg-neon-green/5" :
-                          char.confidence > 0.5 ? "border-warning-yellow bg-warning-yellow/5" :
-                          char.confidence > 0 ? "border-error-red bg-error-red/5" : "border-neutral-200 border-dashed"
-                        )}
-                      >
-                        <span className="absolute top-1 left-1 font-mono text-[9px] font-bold opacity-40">{char.char}</span>
-                        {char.imageData ? (
-                          <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain p-2" alt={char.char} />
-                        ) : (
-                          <AlertCircle size={16} className="opacity-20" />
-                        )}
-                        
-                        {char.confidence > 0 && (
-                          <div className={cn(
-                            "absolute bottom-0 right-0 px-1 font-mono text-[8px] font-bold text-white",
-                            char.confidence > 0.8 ? "bg-neon-green text-brutal-black" :
-                            char.confidence > 0.5 ? "bg-warning-yellow text-brutal-black" : "bg-error-red"
-                          )}>
-                            {char.confidence.toFixed(2)}
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-brutal-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <RefreshCw size={16} className="text-white" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 4: Processing */}
-              {step === 4 && (
-                <motion.div 
-                  key="step4"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center py-32 space-y-8 min-h-[400px]"
-                >
-                  <div className="relative">
-                    <RefreshCw size={80} className="text-brutal-black animate-spin" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-xl font-display text-brutal-black">{processingProgress}%</div>
-                    </div>
-                  </div>
-                  <div className="text-center space-y-4">
-                    <div className="space-y-1">
-                      <h2 className="text-4xl font-display uppercase text-brutal-black">Vectorizing...</h2>
-                      <p className="font-mono text-sm opacity-60 text-brutal-black">CHARACTER: {processingChar || 'INITIALIZING'}</p>
-                    </div>
-                    <div className="w-64 h-4 brutal-border bg-white overflow-hidden">
-                      <div 
-                        className="h-full bg-neon-green transition-all duration-300" 
-                        style={{ width: `${processingProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 5: Vector Review */}
-              {step === 5 && (
-                <motion.div 
-                  key="step5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="space-y-8"
-                >
-                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
-                    <div className="space-y-1">
-                      <h2 className="text-3xl font-display uppercase">Vector Paths</h2>
-                      <p className="font-mono text-[10px] opacity-60 uppercase">Review the mathematical paths generated from your ink.</p>
-                    </div>
-                    <button 
-                      onClick={generateFont}
-                      className="brutal-btn brutal-btn-primary"
-                    >
-                      Assemble Font →
-                    </button>
-                  </div>
-
-                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
-                    {detectedChars.map((char, i) => (
-                      <div 
-                        key={i} 
-                        className={cn(
-                          "aspect-square border-2 relative group flex items-center justify-center p-2",
-                          char.svgPath ? "border-neon-green bg-white" : "border-neutral-200 border-dashed bg-neutral-50"
-                        )}
-                      >
-                        <span className="absolute top-1 left-1 font-mono text-[8px] font-bold opacity-30">{char.char}</span>
-                        
-                        {char.svgPath ? (
-                          <svg viewBox="0 0 500 500" className="w-full h-full fill-brutal-black">
-                            <path d={char.svgPath} fillRule="evenodd" />
-                          </svg>
-                        ) : char.imageData ? (
-                          <div className="flex flex-col items-center gap-1 opacity-40">
-                            <AlertCircle size={12} />
-                            <span className="font-mono text-[8px]">FAILED</span>
-                          </div>
-                        ) : (
-                          <span className="font-mono text-[8px] opacity-20">EMPTY</span>
-                        )}
-
-                        {/* Hover to see original */}
-                        {char.imageData && (
-                          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
-                            <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain opacity-40" alt="Original" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <span className="bg-brutal-black text-white font-mono text-[8px] px-1">ORIGINAL</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Step 6: Preview & Download */}
-              {step === 6 && (
-                <motion.div 
-                  key="step6"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-8"
-                >
-                  <div className="grid lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1 space-y-6">
-                      <div className="brutal-card brutal-shadow space-y-6">
-                        <h3 className="font-display uppercase text-xl">Font Config</h3>
-                        <div className="space-y-4">
-                          <div className="space-y-1">
-                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Name</label>
-                            <input 
-                              type="text" 
-                              value={fontConfig.name}
-                              onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
-                              className="w-full px-4 py-2 brutal-border font-mono outline-none focus:bg-neon-green/10"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Letter Spacing</label>
-                            <input 
-                              type="range" min="-50" max="100" 
-                              value={fontConfig.letterSpacing}
-                              onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
-                              className="w-full accent-brutal-black"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Preview Size</label>
-                            <input 
-                              type="range" min="12" max="120" 
-                              value={fontConfig.fontSize}
-                              onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
-                              className="w-full accent-brutal-black"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={downloadFont}
-                            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2"
-                          >
-                            <Download size={20} />
-                            Download .TTF
-                          </button>
-                          <button 
-                            onClick={handleSaveFont}
-                            className="brutal-btn bg-neon-green flex items-center justify-center p-2"
-                            title="Save to Library"
-                          >
-                            <CheckCircle2 size={20} />
-                          </button>
-                        </div>
-                        <button 
-                          onClick={async () => {
-                            await handleSaveFont();
-                            setPhase('text-writer');
-                          }}
-                          className="w-full brutal-btn bg-warning-yellow flex items-center justify-center gap-2"
-                        >
-                          <Sparkles size={20} />
-                          Use this Handwriting
-                        </button>
-                      </div>
-
-                      <div className="p-6 brutal-border bg-neon-green/5 space-y-4">
-                        <h4 className="font-display uppercase text-sm flex items-center gap-2">
-                          <AlertCircle size={16} />
-                          Installation
-                        </h4>
-                        <div className="font-mono text-[11px] space-y-2 leading-relaxed">
-                          <p>WIN: Right-click &gt; Install</p>
-                          <p>MAC: Double-click &gt; Install</p>
-                          <p>IOS: Use iFont app</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-2 space-y-4">
-                      <h3 className="font-display uppercase text-xl">Live Preview</h3>
-                      <div className="brutal-card brutal-shadow min-h-[500px] flex flex-col">
-                        <textarea 
-                          className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-4"
-                          placeholder="Type to test your font..."
-                          style={{ 
-                            fontFamily: 'inktwin-preview',
-                            fontSize: `${fontConfig.fontSize}px`,
-                            letterSpacing: `${fontConfig.letterSpacing / 10}px`
-                          }}
-                          defaultValue="THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. 0123456789 !?@#"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </section>
-          </>
         ) : phase === 'text-writer' ? (
           <HandwritingWriter 
             fontUrl={fontUrl} 
@@ -1303,36 +1379,76 @@ export default function App() {
         ) : null}
       </div>
 
-      {/* Support Section */}
-      <div className="px-6 py-6 border-t-2 border-brutal-black bg-[var(--bg-secondary)]">
-        <div className="max-w-2xl mx-auto">
-          <SupportCard id="support-card" />
-        </div>
-      </div>
+      {/* Mobile Bottom Navigation Dock */}
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 md:hidden flex items-center justify-around px-2 py-2 pb-safe shadow-lg"
+        aria-label="Mobile Navigation Dock"
+      >
+        <button
+          onClick={handleGoHome}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            phase === 'home' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <span className="text-lg">🏠</span>
+          <span className="text-[10px] font-display uppercase tracking-tight">Home</span>
+        </button>
 
-      {/* Footer */}
-      <footer className="border-t-2 border-brutal-black p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
-        <div className="flex gap-6">
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
-            <div className="w-3 h-3 bg-neon-green brutal-border" /> HIGH (0.8+)
-          </div>
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
-            <div className="w-3 h-3 bg-warning-yellow brutal-border" /> MED (0.5-0.8)
-          </div>
-          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
-            <div className="w-3 h-3 bg-error-red brutal-border" /> LOW (&lt;0.5)
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] opacity-40">
-            A <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--neon-green)] transition-all">Primuez.in</a> Project
-          </span>
-          <span className="font-mono text-[10px] opacity-40">|</span>
-          <span className="font-mono text-[10px] opacity-40">INKTWIN_ENGINE_STABLE_V1.0</span>
-          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
-        </div>
-      </footer>
+        <button
+          onClick={() => setPhase('font-creation')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            phase === 'font-creation' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <PenTool size={19} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
+          <span className="text-[10px] font-display uppercase tracking-tight">Create Font</span>
+        </button>
+
+        <button
+          onClick={() => setPhase('text-writer')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            phase === 'text-writer' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <FileText size={19} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
+          <span className="text-[10px] font-display uppercase tracking-tight">Studio</span>
+        </button>
+
+        <button
+          onClick={() => setPhase('homework-solver')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            phase === 'homework-solver' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <GraduationCap size={19} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
+          <span className="text-[10px] font-display uppercase tracking-tight">AI Solver</span>
+        </button>
+
+        <button
+          onClick={() => setPhase('find-font')}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
+            phase === 'find-font' 
+              ? "text-warning-yellow font-bold" 
+              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+          )}
+        >
+          <Search size={19} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
+          <span className="text-[10px] font-display uppercase tracking-tight">Find Font</span>
+        </button>
+      </nav>
 
       {/* API Key Modal */}
       <ApiKeyModal
@@ -1351,18 +1467,18 @@ export default function App() {
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-12 left-12 z-50 bg-error-red text-white px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 max-w-md"
+            exit={{ opacity: 0, y: 40 }}
+            className="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-50 bg-red-600 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 font-body text-sm"
           >
-            <AlertCircle size={24} className="shrink-0" />
-            <div className="flex flex-col">
-              <span className="font-display uppercase text-xs">Notice</span>
-              <span className="font-mono text-xs">{error}</span>
-            </div>
-            <button onClick={() => setError(null)} className="ml-auto hover:rotate-180 transition-transform shrink-0 p-1" title="Dismiss">
-              <RefreshCw size={16} />
+            <AlertCircle size={20} className="shrink-0" />
+            <span className="flex-1 text-xs sm:text-sm">{error}</span>
+            <button 
+              onClick={() => setError(null)} 
+              className="p-1 rounded-lg hover:bg-white/20 transition-colors"
+            >
+              <RotateCcw size={15} />
             </button>
           </motion.div>
         )}
@@ -1370,48 +1486,56 @@ export default function App() {
 
       {/* Find My Font — Name Your Font Modal */}
       {pendingFontToName && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-brutal-black/60 backdrop-blur-sm px-4">
-          <div className="bg-white border-4 border-brutal-black p-8 w-full max-w-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-            <h3 className="font-display uppercase text-2xl mb-1">Name Your Font</h3>
-            <p className="font-mono text-xs opacity-50 mb-6">Give it a name before saving to your library.</p>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-4">
+            <div>
+              <h3 className="font-display font-bold uppercase text-xl text-neutral-900 dark:text-white">
+                Name Your Font
+              </h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Give your matched handwriting font a name before adding to your studio library.
+              </p>
+            </div>
+
             <input
               type="text"
               value={pendingFontToName.name}
               onChange={(e) => setPendingFontToName(prev => prev ? { ...prev, name: e.target.value } : prev)}
-              className="w-full px-4 py-3 brutal-border font-mono text-lg outline-none focus:bg-neon-green/10 mb-6"
+              className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 font-display font-bold text-base outline-none focus:ring-2 focus:ring-warning-yellow"
               autoFocus
               onKeyDown={(e) => { if (e.key === 'Enter') savePendingFont(); if (e.key === 'Escape') setPendingFontToName(null); }}
             />
-            <div className="flex gap-3">
+
+            <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setPendingFontToName(null)}
-                className="flex-1 brutal-btn brutal-btn-secondary"
+                className="flex-1 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-mono text-xs font-bold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={savePendingFont}
-                className="flex-1 brutal-btn bg-neon-green flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
               >
-                <CheckCircle2 size={18} />
-                Save & Use
+                <CheckCircle2 size={16} />
+                Save &amp; Use in Studio
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Global Toast */}
+      {/* Global Success Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-12 right-12 z-[100] bg-neon-green text-brutal-black px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 font-display uppercase text-sm"
+            exit={{ opacity: 0, y: 40 }}
+            className="fixed bottom-24 right-4 sm:right-6 z-[100] bg-warning-yellow text-neutral-950 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-display font-bold uppercase text-xs tracking-wider"
           >
-            <CheckCircle2 size={24} />
-            {toast}
+            <CheckCircle2 size={18} />
+            <span>{toast}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1428,7 +1552,29 @@ export default function App() {
         />
       )}
 
-      {/* Glyph Editor Modal */}
+      {/* Touch / Stylus Drawing Pad Modal (Mobile Native Drawing) */}
+      {drawingCharIndex !== null && (
+        <TouchDrawingPad
+          char={detectedChars[drawingCharIndex].char}
+          initialImage={detectedChars[drawingCharIndex].imageData}
+          onSave={async (newImg) => {
+            const normalized = await normalizeManualDrawing(newImg);
+            setDetectedChars(prev => {
+              const next = [...prev];
+              next[drawingCharIndex] = {
+                ...next[drawingCharIndex],
+                imageData: normalized,
+                confidence: 1.0
+              };
+              return next;
+            });
+            setDrawingCharIndex(null);
+          }}
+          onClose={() => setDrawingCharIndex(null)}
+        />
+      )}
+
+      {/* Glyph Fine-Tuning Modal */}
       {editingCharIndex !== null && (
         <GlyphEditor 
           char={detectedChars[editingCharIndex].char}
@@ -1440,7 +1586,7 @@ export default function App() {
               next[editingCharIndex] = {
                 ...next[editingCharIndex],
                 imageData: normalized,
-                confidence: 1.0 // Manual edit is high confidence
+                confidence: 1.0
               };
               return next;
             });

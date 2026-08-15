@@ -69,7 +69,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 border-2 border-brutal-black dark:border-white/20 hover:bg-neon-green hover:text-brutal-black transition-colors cursor-pointer"
+            className="absolute top-4 right-4 p-2 border-2 border-brutal-black dark:border-white/20 hover:bg-warning-yellow hover:text-brutal-black transition-colors cursor-pointer"
             title="Close"
             aria-label="Close modal"
           >
@@ -131,7 +131,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                     href="https://aistudio.google.com/app/apikey"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold underline underline-offset-2 text-blue-600 dark:text-blue-400 hover:text-neon-green inline-flex items-center gap-1"
+                    className="font-bold underline underline-offset-2 text-blue-600 dark:text-blue-400 hover:text-warning-yellow inline-flex items-center gap-1"
                   >
                     Google AI Studio <ExternalLink size={12} />
                   </a>
@@ -185,7 +185,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 type="submit"
                 className="flex-1 brutal-btn flex items-center justify-center gap-2 py-3 font-display uppercase text-sm"
                 style={{
-                  backgroundColor: 'var(--neon-green)',
+                  backgroundColor: 'var(--warning-yellow)',
                   color: '#141414',
                   boxShadow: '3px 3px 0px var(--shadow-color)',
                 }}
@@ -209,7 +209,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 
           {/* Footer Privacy Note */}
           <div className="flex items-center gap-2 pt-1 opacity-60 font-mono text-[10px]">
-            <ShieldCheck size={14} className="text-neon-green shrink-0" />
+            <ShieldCheck size={14} className="text-warning-yellow shrink-0" />
             <span>Stored strictly in your local browser storage. Never sent to any server.</span>
           </div>
         </motion.div>

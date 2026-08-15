@@ -12,6 +12,34 @@ interface CanvasPageProps {
   skipImages?: boolean;
 }
 
+export const getPageBackgroundColor = (pageStyle: PageConfig['pageStyle']): string => {
+  switch (pageStyle) {
+    case 'blackboard': return '#1a1a1b';
+    case 'paper2': return '#faf8f5';
+    case 'note': return '#fff9c4';
+    case 'old-paper': return '#f5e6c8';
+    case 'birthday': return '#fff0f5';
+    case 'love-letter': return '#fdf6e3';
+    case 'legal-pad': return '#fefbd8';
+    case 'newspaper': return '#f0eeea';
+    case 'kraft': return '#c4a882';
+    case 'project-floral': return '#fffef8';
+    case 'project-ocean': return '#f8fcff';
+    case 'project-music': return '#fdf8ee';
+    case 'project-colorful': return '#fffde7';
+    case 'project-purple': return '#f3e5f5';
+    case 'project-pink': return '#fff5f8';
+    case 'black-lined':
+    case 'blue-lined':
+    case 'gray-lined':
+    case 'grid':
+    case 'graph-paper':
+    case 'white':
+    default:
+      return '#FFFFFF';
+  }
+};
+
 export const CanvasPage: React.FC<CanvasPageProps> = ({ 
   page, 
   config, 
@@ -33,13 +61,16 @@ export const CanvasPage: React.FC<CanvasPageProps> = ({
     renderCanvasPage(ctx, page, config, fontName, width, height, imageCache.current, skipImages);
   }, [page, config, fontName, width, height, skipImages]);
 
+  const bgColor = getPageBackgroundColor(config.pageStyle);
+
   return (
     <div 
-      className={cn("relative shadow-2xl overflow-hidden", config.pageStyle)} 
+      className={cn("relative shadow-2xl overflow-hidden handwriting-paper-surface", config.pageStyle)} 
       style={{ 
         width, 
         height,
-        backgroundColor: config.pageStyle === 'white' ? '#FFFFFF' : 'transparent' 
+        backgroundColor: bgColor,
+        color: config.pageStyle === 'blackboard' ? '#FFFFFF' : '#141414'
       }}
     >
       <canvas 
