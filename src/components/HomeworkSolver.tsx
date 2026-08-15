@@ -121,8 +121,27 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
     }
   };
 
+  const isApiKeyProblem = (err: any) => {
+    if (!err) return false;
+    const msg = typeof err === 'string' ? err : err?.message || JSON.stringify(err) || '';
+    const lower = msg.toLowerCase();
+    return (
+      lower.includes("you don't have the api key set up yet") ||
+      lower.includes("api key not valid") ||
+      lower.includes("api_key_invalid") ||
+      lower.includes("invalid api key") ||
+      lower.includes("api key not found") ||
+      lower.includes("api key missing") ||
+      lower.includes("invalid_argument") ||
+      lower.includes("unauthenticated") ||
+      lower.includes("permission_denied") ||
+      lower.includes("400") ||
+      lower.includes("403")
+    );
+  };
+
   const handleSolve = async () => {
-    if (!apiKey || !apiKey.trim()) {
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
       setError("You don't have the API key set up yet. Please set up the API key.");
       onOpenSettings();
       return;
@@ -141,14 +160,19 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       saveHistory(res);
     } catch (err: any) {
       console.error("Solver failed", err);
-      setError(err?.message || "Solver failed");
+      if (isApiKeyProblem(err)) {
+        setError("You don't have the API key set up yet. Please set up the API key.");
+        onOpenSettings();
+      } else {
+        setError(err?.message || "Solver failed. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleFollowUp = async () => {
-    if (!apiKey || !apiKey.trim()) {
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
       setError("You don't have the API key set up yet. Please set up the API key.");
       onOpenSettings();
       return;
@@ -163,7 +187,12 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       setFollowUp('');
     } catch (err: any) {
       console.error("Follow-up failed", err);
-      setError(err?.message || "Follow-up failed");
+      if (isApiKeyProblem(err)) {
+        setError("You don't have the API key set up yet. Please set up the API key.");
+        onOpenSettings();
+      } else {
+        setError(err?.message || "Follow-up failed. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }

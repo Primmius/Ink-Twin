@@ -41,7 +41,7 @@ export interface SavedFont {
   };
 }
 
-export type AppPhase = 'font-creation' | 'text-writer' | 'homework-solver' | 'find-font' | 'ai-humanizer';
+export type AppPhase = 'home' | 'font-creation' | 'text-writer' | 'homework-solver' | 'find-font' | 'ai-humanizer' | 'use-case';
 
 export interface PageConfig {
   fontSize: number;

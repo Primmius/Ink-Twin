@@ -57,9 +57,10 @@ interface FindFontProps {
   apiKey: string;
   onFontSelected: (fontName: string, fontUrl: string, profile: HandwritingProfile) => void;
   onGoToPhase1: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGoToPhase1 }) => {
+export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGoToPhase1, onOpenSettings }) => {
   const [step, setStep] = useState<'upload' | 'analyzing' | 'results'>('upload');
   const [analysis, setAnalysis] = useState<HandwritingProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -139,9 +140,29 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
     }
   }, [step, analysis]);
 
+  const isApiKeyProblem = (err: any) => {
+    if (!err) return false;
+    const msg = typeof err === 'string' ? err : err?.message || JSON.stringify(err) || '';
+    const lower = msg.toLowerCase();
+    return (
+      lower.includes("you don't have the api key set up yet") ||
+      lower.includes("api key not valid") ||
+      lower.includes("api_key_invalid") ||
+      lower.includes("invalid api key") ||
+      lower.includes("api key not found") ||
+      lower.includes("api key missing") ||
+      lower.includes("invalid_argument") ||
+      lower.includes("unauthenticated") ||
+      lower.includes("permission_denied") ||
+      lower.includes("400") ||
+      lower.includes("403")
+    );
+  };
+
   const startDiscovery = async (imgData: string) => {
-    if (!apiKey || !apiKey.trim()) {
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
       setError("You don't have the API key set up yet. Please set up the API key.");
+      onOpenSettings?.();
       return;
     }
 
@@ -181,7 +202,13 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
       setAnalysis(profile);
       setStep('results');
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      console.error("Font discovery error", err);
+      if (isApiKeyProblem(err)) {
+        setError("You don't have the API key set up yet. Please set up the API key.");
+        onOpenSettings?.();
+      } else {
+        setError(err.message || "Something went wrong during handwriting analysis.");
+      }
       setStep('upload');
     } finally {
       clearInterval(interval);

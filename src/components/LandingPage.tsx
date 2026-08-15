@@ -68,6 +68,17 @@ const features: Array<{
     answer: 'InkTwin matches uploaded handwriting photos with the closest free handwriting font alternatives in our extensive database.',
     benefits: ['Rapid font identification','Instant free alternative recommendation','Image vector analysis matching','Seamless fallback for quick workflows']
   },
+  {
+    emoji: '✨',
+    title: 'AI Humanizer',
+    desc: 'Transform stiff AI answers into natural student phrasing and tone.',
+    tag: 'MODULE_05 // WRITING',
+    phase: 'ai-humanizer',
+    accentShadow: 'hover:shadow-[7px_7px_0px_#A855F7]',
+    question: 'How does the InkTwin AI Humanizer work?',
+    answer: 'InkTwin uses natural tone models to rewrite robotic text into genuine student language while maintaining 100% accuracy.',
+    benefits: ['5 student persona styles','Zero detection markers','Side-by-side comparison','One-click send to handwriting writer']
+  },
 ];
 
 const card = {

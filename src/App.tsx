@@ -41,15 +41,41 @@ import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
 import { AIHumanizer } from './components/AIHumanizer';
 import { UseCasePage } from './use-cases/UseCasePage';
+import { ApiKeyModal } from './components/ApiKeyModal';
+
+export function isApiKeyProblem(err: any): boolean {
+  if (!err) return false;
+  const msg = typeof err === 'string' ? err : err?.message || JSON.stringify(err) || '';
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("you don't have the api key set up yet") ||
+    lower.includes("api key not valid") ||
+    lower.includes("api_key_invalid") ||
+    lower.includes("invalid api key") ||
+    lower.includes("api key not found") ||
+    lower.includes("api key missing") ||
+    lower.includes("invalid_argument") ||
+    lower.includes("unauthenticated") ||
+    lower.includes("permission_denied") ||
+    lower.includes("400") ||
+    lower.includes("403")
+  );
+}
 
 export default function App() {
-  const [phase, setPhase] = useState<AppPhase>('font-creation');
+  const [phase, setPhase] = useState<AppPhase>('home');
   const [useCaseSlug, setUseCaseSlug] = useState<string | null>(null);
   const [step, setStep] = useState<AppStep>(1);
-  const [apiKey, setApiKey] = useState<string>(
-    localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || process.env.GEMINI_API_KEY || ''
-  );
-  const [hasEnteredApp, setHasEnteredApp] = useState<boolean>(false);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    const saved = localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || '';
+    if (!saved || saved.includes('YOUR_API') || saved.trim().length < 8) {
+      return '';
+    }
+    return saved.trim();
+  });
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [apiKeyModalInvalid, setApiKeyModalInvalid] = useState(false);
+  const [apiKeyModalMessage, setApiKeyModalMessage] = useState<string | undefined>(undefined);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
@@ -227,7 +253,7 @@ export default function App() {
   };
 
   const handleGoHome = () => {
-    setPhase('font-creation');
+    setPhase('home');
     setStep(1);
     setUseCaseSlug(null);
     if (window.location.hash || window.location.pathname.startsWith('/use-cases/')) {
@@ -236,10 +262,21 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const promptApiKey = (message?: string, isInvalid = false) => {
+    setApiKeyModalMessage(message || "You don't have the API key set up yet. Please set up the API key.");
+    setApiKeyModalInvalid(isInvalid);
+    setIsApiKeyModalOpen(true);
+  };
+
   const saveApiKey = (key: string) => {
-    setApiKey(key);
-    localStorage.setItem('geminiApiKey', key);
+    const cleanKey = key.trim();
+    setApiKey(cleanKey);
+    localStorage.setItem('geminiApiKey', cleanKey);
+    localStorage.setItem('gemini_api_key', cleanKey);
+    setIsApiKeyModalOpen(false);
     setIsSettingsOpen(false);
+    setError(null);
+    setToast("API key saved successfully!");
   };
 
   const handleDownloadTemplate = async () => {
@@ -280,10 +317,8 @@ export default function App() {
   }, [step]);
 
   const startAnalysis = async () => {
-    if (!apiKey || !apiKey.trim()) {
-      setError("You don't have the API key set up yet. Please set up the API key.");
-      setToast("You don't have the API key set up yet. Please set up the API key.");
-      setIsSettingsOpen(true);
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
+      promptApiKey("You don't have the API key set up yet. Please set up the API key.");
       return;
     }
     
@@ -327,7 +362,15 @@ export default function App() {
       setDetectedChars(merged);
       setStep(3);
     } catch (err: any) {
-      setError(err.message || "Failed to analyze handwriting. Check your API key.");
+      console.error("Analysis error", err);
+      if (isApiKeyProblem(err)) {
+        setApiKey('');
+        localStorage.removeItem('geminiApiKey');
+        localStorage.removeItem('gemini_api_key');
+        promptApiKey("Your API key is invalid or not set up. Please set up the API key.", true);
+      } else {
+        setError(err.message || "Failed to analyze handwriting. Check your image quality.");
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -375,10 +418,8 @@ export default function App() {
   };
 
   const handleReanalyzeChar = async (index: number) => {
-    if (!apiKey || !apiKey.trim()) {
-      setError("You don't have the API key set up yet. Please set up the API key.");
-      setToast("You don't have the API key set up yet. Please set up the API key.");
-      setIsSettingsOpen(true);
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
+      promptApiKey("You don't have the API key set up yet. Please set up the API key.");
       throw new Error("You don't have the API key set up yet. Please set up the API key.");
     }
 
@@ -399,6 +440,13 @@ export default function App() {
           }
         }
       } catch (e: any) {
+        if (isApiKeyProblem(e)) {
+          setApiKey('');
+          localStorage.removeItem('geminiApiKey');
+          localStorage.removeItem('gemini_api_key');
+          promptApiKey("Your API key is invalid or expired. Please set up a valid Gemini API key.", true);
+          return;
+        }
         errors.push(e?.message || String(e));
       }
     }
@@ -447,14 +495,11 @@ export default function App() {
     a.click();
   };
 
-  if (!apiKey && !hasEnteredApp) {
+  if (phase === 'home') {
     return (
       <LandingPage
         onSaveKey={saveApiKey}
-        onExplore={(p) => {
-          setHasEnteredApp(true);
-          if (p) setPhase(p);
-        }}
+        onExplore={(p) => setPhase(p || 'font-creation')}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -531,7 +576,7 @@ export default function App() {
                   width: calc(100% + 32px) !important;
                 }
                 .nav-container::-webkit-scrollbar { display: none; }
-                .nav-tab { 
+                .nav-tab {
                   flex-shrink: 0 !important;
                   min-width: 110px !important;
                   max-width: 160px !important;
@@ -560,7 +605,16 @@ export default function App() {
                 }
               }
             `}</style>
-            <button 
+            <button
+              onClick={handleGoHome}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'home' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
+            >
+              🏠 Home
+            </button>
+            <button
               onClick={() => setPhase('font-creation')}
               className={cn(
                 "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
@@ -569,7 +623,7 @@ export default function App() {
             >
               ✏️ Create My Font
             </button>
-            <button 
+            <button
               onClick={() => setPhase('text-writer')}
               className={cn(
                 "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
@@ -578,7 +632,7 @@ export default function App() {
             >
               📝 Write with My Handwriting
             </button>
-            <button 
+            <button
               onClick={() => setPhase('homework-solver')}
               className={cn(
                 "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
@@ -587,7 +641,7 @@ export default function App() {
             >
               🎓 AI Study Assistant
             </button>
-            <button 
+            <button
               onClick={() => setPhase('find-font')}
               className={cn(
                 "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
@@ -596,7 +650,7 @@ export default function App() {
             >
               🔍 Find My Font
             </button>
-            <button 
+            <button
               onClick={() => setPhase('ai-humanizer')}
               className={cn(
                 "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
@@ -640,9 +694,10 @@ export default function App() {
           >
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
           </button>
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
+          <button
+            onClick={() => promptApiKey(undefined, false)}
             className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+            title="API Key Settings"
           >
             <Settings size={20} />
           </button>
@@ -713,8 +768,8 @@ export default function App() {
                 ← Back
               </button>
             )}
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
+            <button
+              onClick={() => promptApiKey(undefined, false)}
               className="w-full brutal-btn text-xs"
             >
               Update API Key
@@ -1223,7 +1278,7 @@ export default function App() {
             prefillText={humanizerPrefill}
           />
         ) : phase === 'find-font' ? (
-          <FindFont 
+          <FindFont
             apiKey={apiKey}
             onFontSelected={(name, url, profile) => {
               setPendingFontToName({
@@ -1234,15 +1289,16 @@ export default function App() {
               });
             }}
             onGoToPhase1={() => setPhase('font-creation')}
+            onOpenSettings={() => promptApiKey()}
           />
         ) : phase === 'use-case' && useCaseSlug ? (
-          <UseCasePage 
-            slug={useCaseSlug} 
+          <UseCasePage
+            slug={useCaseSlug}
             onBack={() => {
               window.history.pushState(null, '', '/');
               setPhase('font-creation');
               setUseCaseSlug(null);
-            }} 
+            }}
           />
         ) : null}
       </div>
@@ -1278,76 +1334,35 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {isSettingsOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-neutral-950/60 backdrop-blur-sm"
-              onClick={() => apiKey && setIsSettingsOpen(false)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white w-full max-w-md p-8 brutal-shadow relative z-10 border-4 border-brutal-black"
-            >
-              <h2 className="text-3xl font-display uppercase mb-2">Gemini API Key</h2>
-              <p className="font-mono text-xs opacity-60 mb-6 uppercase">
-                [SECURE_STORAGE_V1] LOCAL_ONLY_ENCRYPTION
-              </p>
-              
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">API Key</label>
-                  <input 
-                    type="password" 
-                    placeholder="Enter key..."
-                    className="w-full px-4 py-3 bg-neutral-50 brutal-border font-mono outline-none focus:bg-neon-green/10"
-                    onChange={(e) => setApiKey(e.target.value)}
-                    value={apiKey}
-                  />
-                </div>
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-brutal-black text-xs font-bold uppercase underline flex items-center gap-1 hover:text-neon-green"
-                >
-                  Get a free key from Google AI Studio
-                  <ChevronRight size={14} />
-                </a>
-                <button 
-                  onClick={() => saveApiKey(apiKey)}
-                  className="w-full brutal-btn brutal-btn-primary"
-                >
-                  Save & Continue
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* API Key Modal */}
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen || isSettingsOpen}
+        onClose={() => {
+          setIsApiKeyModalOpen(false);
+          setIsSettingsOpen(false);
+        }}
+        onSave={saveApiKey}
+        currentKey={apiKey}
+        isInvalid={apiKeyModalInvalid}
+        customMessage={apiKeyModalMessage}
+      />
 
-      {/* Error Toast */}
+      {/* Notification Toast */}
       <AnimatePresence>
         {error && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-12 left-12 z-50 bg-error-red text-white px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4"
+            className="fixed bottom-12 left-12 z-50 bg-error-red text-white px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 max-w-md"
           >
-            <AlertCircle size={24} />
+            <AlertCircle size={24} className="shrink-0" />
             <div className="flex flex-col">
-              <span className="font-display uppercase text-xs">System Error</span>
-              <span className="font-mono text-[10px]">{error}</span>
+              <span className="font-display uppercase text-xs">Notice</span>
+              <span className="font-mono text-xs">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="ml-4 hover:rotate-180 transition-transform">
-              <RefreshCw size={20} />
+            <button onClick={() => setError(null)} className="ml-auto hover:rotate-180 transition-transform shrink-0 p-1" title="Dismiss">
+              <RefreshCw size={16} />
             </button>
           </motion.div>
         )}

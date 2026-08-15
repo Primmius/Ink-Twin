@@ -967,7 +967,17 @@ ${documentText}`;
       applyAIResult(validatedText, newSettings);
     } catch (e: any) {
       console.error("AI Edit error:", e);
-      setAiError(e.message || "Failed to call Gemini API");
+      const msg = e?.message || "";
+      if (
+        msg.toLowerCase().includes("api key") ||
+        msg.toLowerCase().includes("invalid_argument") ||
+        msg.toLowerCase().includes("400") ||
+        msg.toLowerCase().includes("403")
+      ) {
+        setAiError("You don't have the API key set up yet. Please set up the API key.");
+      } else {
+        setAiError(e.message || "Failed to call Gemini API");
+      }
       // Recovery is handled by ensuring setPages is NOT called with bad data
     } finally {
       setIsAIProcessing(false);

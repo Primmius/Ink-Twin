@@ -57,8 +57,27 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
   const [editableOutput, setEditableOutput] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const isApiKeyProblem = (err: any) => {
+    if (!err) return false;
+    const msg = typeof err === 'string' ? err : err?.message || JSON.stringify(err) || '';
+    const lower = msg.toLowerCase();
+    return (
+      lower.includes("you don't have the api key set up yet") ||
+      lower.includes("api key not valid") ||
+      lower.includes("api_key_invalid") ||
+      lower.includes("invalid api key") ||
+      lower.includes("api key not found") ||
+      lower.includes("api key missing") ||
+      lower.includes("invalid_argument") ||
+      lower.includes("unauthenticated") ||
+      lower.includes("permission_denied") ||
+      lower.includes("400") ||
+      lower.includes("403")
+    );
+  };
+
   const handleHumanize = async () => {
-    if (!apiKey || !apiKey.trim()) {
+    if (!apiKey || !apiKey.trim() || apiKey.trim().length < 8) {
       setError("You don't have the API key set up yet. Please set up the API key.");
       onOpenSettings();
       return;
@@ -74,7 +93,12 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
       setView('humanized');
     } catch (err: any) {
       console.error('Humanizer failed', err);
-      setError(err?.message || "Humanizer failed");
+      if (isApiKeyProblem(err)) {
+        setError("You don't have the API key set up yet. Please set up the API key.");
+        onOpenSettings();
+      } else {
+        setError(err?.message || "Humanizer failed. Please try again.");
+      }
     } finally {
       setIsProcessing(false);
     }
