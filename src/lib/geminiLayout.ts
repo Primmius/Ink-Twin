@@ -7,10 +7,13 @@ import { GoogleGenAI, Type } from "@google/genai";
  */
 
 export async function smartTextFitting(
-  text: string, 
+  text: string,
   config: { width: number; height: number; fontSize: number; lineHeight: number; leftMargin: number; topMargin: number },
   apiKey: string
 ): Promise<string[]> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `Given a page of ${config.width}x${config.height} pixels, font size ${config.fontSize}px, line height ${config.lineHeight}px, left margin ${config.leftMargin}px, top margin ${config.topMargin}px — calculate exactly how many characters and lines fit per page and split this text into pages accordingly. 

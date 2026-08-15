@@ -4,19 +4,32 @@ import { ChevronRight, Moon, Sun } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
 import { cn } from '../lib/utils';
+import { AppPhase } from '../types';
 
 interface LandingPageProps {
   onSaveKey: (key: string) => void;
+  onExplore?: (phase?: AppPhase) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
 }
 
-const features = [
+const features: Array<{
+  emoji: string;
+  title: string;
+  desc: string;
+  tag: string;
+  phase: AppPhase;
+  accentShadow: string;
+  question: string;
+  answer: string;
+  benefits: string[];
+}> = [
   {
     emoji: '✏️',
     title: 'Create My Font',
     desc: 'Upload a photo of your handwriting. Get a real .ttf font file.',
     tag: 'MODULE_01 // CREATIVE',
+    phase: 'font-creation',
     accentShadow: 'hover:shadow-[7px_7px_0px_#00FF00]',
     question: 'How does the InkTwin handwriting font creator work?',
     answer: 'InkTwin converts photographs of natural handwriting into fully functional, high-fidelity downloadable TTF font files using state-of-the-art vector trace algorithms.',
@@ -27,6 +40,7 @@ const features = [
     title: 'Write with My Handwriting',
     desc: 'Type anything. Download it looking handwritten on real paper.',
     tag: 'MODULE_02 // UTILITY',
+    phase: 'text-writer',
     accentShadow: 'hover:shadow-[7px_7px_0px_#FFD700]',
     question: 'How does the InkTwin text-to-handwriting generator work?',
     answer: 'InkTwin renders typed inputs as natural handwritten documents on lined paper using custom handwriting fonts with advanced line-height variance and ink-bleed simulation.',
@@ -37,6 +51,7 @@ const features = [
     title: 'AI Study Assistant',
     desc: 'Upload any homework question. AI solves it in your handwriting.',
     tag: 'MODULE_03 // ACADEMIC',
+    phase: 'homework-solver',
     accentShadow: 'hover:shadow-[7px_7px_0px_#FF4B5C]',
     question: 'How does the InkTwin AI homework study assistant function?',
     answer: 'InkTwin integrates with the advanced Gemini API to process and solve academic questions, rendering answers in your unique handwriting style.',
@@ -47,6 +62,7 @@ const features = [
     title: 'Find My Font',
     desc: 'Upload any handwriting photo. We find your closest free font match.',
     tag: 'MODULE_04 // SEARCH',
+    phase: 'find-font',
     accentShadow: 'hover:shadow-[7px_7px_0px_#3B82F6]',
     question: 'How does the InkTwin handwriting font matcher work?',
     answer: 'InkTwin matches uploaded handwriting photos with the closest free handwriting font alternatives in our extensive database.',
@@ -58,7 +74,7 @@ const card = {
   base: "p-6 border-2 hover:-translate-x-1 hover:-translate-y-1 transition-all duration-200 cursor-default",
 };
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onToggleTheme }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, theme, onToggleTheme }) => {
   const [keyInput, setKeyInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -175,15 +191,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onTo
 
           {/* Features Bento Grid */}
           <section className="space-y-3" aria-labelledby="features-heading">
-            <h3 id="features-heading" className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
-              [STUDENT_TOOLKIT] WHAT_YOU_CAN_DO
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 id="features-heading" className="font-mono text-[10px] uppercase opacity-60 tracking-widest">
+                [STUDENT_TOOLKIT] WHAT_YOU_CAN_DO
+              </h3>
+              {onExplore && (
+                <button
+                  onClick={() => onExplore('font-creation')}
+                  className="font-mono text-xs font-bold text-neon-green hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  Explore App First <ChevronRight size={14} />
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {features.map((f, idx) => (
                 <article
                   key={f.title}
+                  onClick={() => onExplore?.(f.phase)}
                   className={cn(
-                    card.base,
+                    "p-6 border-2 hover:-translate-x-1 hover:-translate-y-1 transition-all duration-200",
+                    onExplore ? "cursor-pointer group" : "cursor-default",
                     f.accentShadow,
                     idx === 0 && "md:col-span-2",
                     idx === 3 && "md:col-span-2",
@@ -201,7 +229,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onTo
                     <ul>{f.benefits.map((b, i) => <li key={i}>{b}</li>)}</ul>
                   </div>
                   <div className="flex justify-between items-start mb-4">
-                    <div className="text-4xl">{f.emoji}</div>
+                    <div className="text-4xl group-hover:scale-110 transition-transform">{f.emoji}</div>
                     <span
                       className="font-mono text-[9px] uppercase tracking-wider opacity-50 px-2 py-0.5 border rounded"
                       style={{ borderColor: 'var(--border-primary)' }}
@@ -209,7 +237,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onTo
                       {f.tag}
                     </span>
                   </div>
-                  <h4 className="font-display uppercase text-lg mb-2 tracking-tight">{f.title}</h4>
+                  <h4 className="font-display uppercase text-lg mb-2 tracking-tight flex items-center justify-between">
+                    <span>{f.title}</span>
+                    {onExplore && <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />}
+                  </h4>
                   <p className="font-mono text-xs leading-snug" style={{ opacity: 0.72 }}>{f.desc}</p>
                 </article>
               ))}
@@ -332,6 +363,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onTo
               >
                 Start Using InkTwin <ChevronRight size={18} />
               </button>
+              {onExplore && (
+                <button
+                  type="button"
+                  onClick={() => onExplore('font-creation')}
+                  className="w-full brutal-btn text-sm flex items-center justify-center gap-2 bg-white text-brutal-black hover:bg-neon-green"
+                  style={{
+                    borderColor: 'var(--border-primary)',
+                    boxShadow: '2px 2px 0px var(--shadow-color)',
+                  }}
+                >
+                  Explore App Without API Key →
+                </button>
+              )}
               <p className="font-mono text-[10px] opacity-60 text-center uppercase">
                 Your key is stored only in your browser. Never sent to our servers. 🔒
               </p>

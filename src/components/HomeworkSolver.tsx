@@ -45,6 +45,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const [history, setHistory] = useState<HomeworkResult[]>([]);
   const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url' | 'camera'>('upload');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'detected' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
 
   // Loading messages rotation
   useEffect(() => {
@@ -121,7 +122,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   };
 
   const handleSolve = async () => {
-    if (!apiKey) {
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
       onOpenSettings();
       return;
     }
@@ -131,28 +133,37 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
     if (url) finalInput.sourceUrl = url;
 
     setIsProcessing(true);
+    setError(null);
     try {
       const res = await solveHomework(finalInput, answerMode, apiKey);
       setResult(res);
       setEditableAnswer(res.answer);
       saveHistory(res);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Solver failed", err);
+      setError(err?.message || "Solver failed");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleFollowUp = async () => {
-    if (!followUp || !result || !apiKey) return;
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
+      onOpenSettings();
+      return;
+    }
+    if (!followUp || !result) return;
     setIsProcessing(true);
+    setError(null);
     try {
       const res = await solveHomework(input, answerMode, apiKey, followUp, result.answer);
       setResult(res);
       setEditableAnswer(res.answer);
       setFollowUp('');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Follow-up failed", err);
+      setError(err?.message || "Follow-up failed");
     } finally {
       setIsProcessing(false);
     }
@@ -301,7 +312,14 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           </div>
         </div>
 
-        <button 
+        {error && (
+          <div className="p-3 bg-red-50 border-2 border-error-red text-error-red text-xs font-mono flex items-start justify-between gap-2">
+            <span>⚠️ {error}</span>
+            <button onClick={() => setError(null)} className="font-bold underline text-[10px] uppercase shrink-0">Dismiss</button>
+          </div>
+        )}
+
+        <button
           onClick={handleSolve}
           disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
           className={cn(

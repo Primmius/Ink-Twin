@@ -140,8 +140,8 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
   }, [step, analysis]);
 
   const startDiscovery = async (imgData: string) => {
-    if (!apiKey) {
-      setError("Please set your Gemini API Key in settings first.");
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
       return;
     }
 
@@ -290,8 +290,8 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                 <div className="p-6 bg-error-red border-4 border-brutal-black brutal-shadow flex items-center gap-4 text-white font-mono text-sm uppercase">
                   <AlertCircle size={24} />
                   <div>
-                    <p className="font-bold">Encryption Error</p>
-                    <p className="opacity-80">{error}</p>
+                    <p className="font-bold">API Key Notice</p>
+                    <p className="opacity-90">{error}</p>
                   </div>
                 </div>
               )}

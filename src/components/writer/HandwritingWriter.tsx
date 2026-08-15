@@ -874,8 +874,8 @@ Document to format:
 ${documentText}`;
 
     try {
-      if (!apiKey) {
-        throw new Error("API key not found");
+      if (!apiKey || !apiKey.trim()) {
+        throw new Error("You don't have the API key set up yet. Please set up the API key.");
       }
       if (!documentText || documentText.trim() === "") {
         throw new Error("Document is empty");

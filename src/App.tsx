@@ -49,6 +49,7 @@ export default function App() {
   const [apiKey, setApiKey] = useState<string>(
     localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || process.env.GEMINI_API_KEY || ''
   );
+  const [hasEnteredApp, setHasEnteredApp] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
@@ -279,7 +280,9 @@ export default function App() {
   }, [step]);
 
   const startAnalysis = async () => {
-    if (!apiKey) {
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
+      setToast("You don't have the API key set up yet. Please set up the API key.");
       setIsSettingsOpen(true);
       return;
     }
@@ -372,9 +375,11 @@ export default function App() {
   };
 
   const handleReanalyzeChar = async (index: number) => {
-    if (!apiKey) {
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
+      setToast("You don't have the API key set up yet. Please set up the API key.");
       setIsSettingsOpen(true);
-      throw new Error("Please add your Gemini API key first.");
+      throw new Error("You don't have the API key set up yet. Please set up the API key.");
     }
 
     const charToReanalyze = detectedChars[index].char;
@@ -442,8 +447,18 @@ export default function App() {
     a.click();
   };
 
-  if (!apiKey) {
-    return <LandingPage onSaveKey={saveApiKey} theme={theme} onToggleTheme={toggleTheme} />;
+  if (!apiKey && !hasEnteredApp) {
+    return (
+      <LandingPage
+        onSaveKey={saveApiKey}
+        onExplore={(p) => {
+          setHasEnteredApp(true);
+          if (p) setPhase(p);
+        }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
+    );
   }
 
   return (

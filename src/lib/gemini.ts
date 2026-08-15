@@ -2,6 +2,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
 
 export async function analyzeHandwriting(imageData: string, apiKey: string): Promise<DetectedCharacter[]> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
   
   // Remove data:image/...;base64, prefix and detect real MIME type
@@ -82,6 +85,9 @@ Return JSON only, no explanation, no markdown.`;
 }
 
 export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
   const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
   const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
@@ -140,6 +146,9 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
 }
 
 export async function analyzeHandwritingForFontMatch(imageData: string, apiKey: string): Promise<any> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.split(',')[1];
   

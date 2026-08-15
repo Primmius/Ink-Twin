@@ -55,22 +55,26 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
   const [copied, setCopied] = useState(false);
   const [view, setView] = useState<'humanized' | 'compare'>('humanized');
   const [editableOutput, setEditableOutput] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleHumanize = async () => {
-    if (!apiKey) {
+    if (!apiKey || !apiKey.trim()) {
+      setError("You don't have the API key set up yet. Please set up the API key.");
       onOpenSettings();
       return;
     }
     if (!inputText.trim()) return;
 
     setIsProcessing(true);
+    setError(null);
     try {
       const res = await humanizeText(inputText.trim(), style, apiKey);
       setResult(res);
       setEditableOutput(res.humanized);
       setView('humanized');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Humanizer failed', err);
+      setError(err?.message || "Humanizer failed");
     } finally {
       setIsProcessing(false);
     }
@@ -180,6 +184,13 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
             ))}
           </div>
         </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border-2 border-error-red text-error-red text-xs font-mono flex items-start justify-between gap-2">
+            <span>⚠️ {error}</span>
+            <button onClick={() => setError(null)} className="font-bold underline text-[10px] uppercase shrink-0">Dismiss</button>
+          </div>
+        )}
 
         {/* Humanize button */}
         <button

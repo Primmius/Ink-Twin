@@ -45,12 +45,15 @@ Match the student's language exactly.
 `;
 
 export async function solveHomework(
-  input: HomeworkInput, 
-  mode: AnswerMode, 
+  input: HomeworkInput,
+  mode: AnswerMode,
   apiKey: string,
   followUp?: string,
   previousAnswer?: string
 ): Promise<HomeworkResult> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
 
   const modeInstructions = {

@@ -45,6 +45,9 @@ export async function humanizeText(
   style: HumanizeStyle,
   apiKey: string
 ): Promise<HumanizeResult> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("You don't have the API key set up yet. Please set up the API key.");
+  }
   const ai = new GoogleGenAI({ apiKey });
 
   const prompt = `${STYLE_PROMPTS[style]}
