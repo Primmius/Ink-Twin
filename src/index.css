@@ -26,7 +26,7 @@
   --warning-yellow: #FFD700;
   --error-red: #FF4B2B;
   
-  /* Semantic Variables for Theming - Light Mode */
+  /* Semantic Variables for Theming - Light Mode (Swiss Print Substrate) */
   --bg-primary: var(--gallery-white);
   --text-primary: var(--brutal-black);
   --border-primary: var(--brutal-black);
@@ -34,16 +34,10 @@
   --bg-card: var(--gallery-white);
   --shadow-color: var(--brutal-black);
   --accent-color: var(--neon-green);
-  
-  /* Mobile Viewport Insets */
-  --sat: env(safe-area-inset-top, 0px);
-  --sab: env(safe-area-inset-bottom, 0px);
-  --sal: env(safe-area-inset-left, 0px);
-  --sar: env(safe-area-inset-right, 0px);
 }
 
 body.dark {
-  /* Semantic Variables for Theming - Dark Mode */
+  /* Semantic Variables for Theming - Dark Mode (Carbon Substrate) */
   --bg-primary: #121212;
   --text-primary: #eeeeee;
   --border-primary: #333333;
@@ -54,24 +48,17 @@ body.dark {
   --neon-green: #00FF00;
 }
 
-html, body {
-  min-height: 100%;
-  min-height: 100dvh;
-  -webkit-text-size-adjust: 100%;
-  touch-action: manipulation;
-}
-
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-body);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   overflow-x: hidden;
   
   /* Engineering Blueprint Grid Background Overlay */
   background-image: 
     radial-gradient(var(--border-primary) 1.2px, transparent 1.2px);
-  background-size: 28px 28px;
+  background-size: 32px 32px;
   background-position: center;
   position: relative;
 }
@@ -91,29 +78,23 @@ body.dark::before {
 
 /* Scrollbar Customization */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: var(--bg-secondary);
+  border-left: 2px solid var(--border-primary);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-primary);
-  border-radius: 3px;
+  border: 2px solid var(--bg-secondary);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--warning-yellow);
-}
-
-.no-scrollbar::-webkit-scrollbar { 
-  display: none; 
-}
-.no-scrollbar { 
-  -ms-overflow-style: none; 
-  scrollbar-width: none; 
 }
 
 /* Base Overrides for Dark Mode components */
@@ -137,7 +118,7 @@ body.dark .bg-neutral-200 {
   color: var(--text-primary) !important;
 }
 
-/* Borders in dark mode */
+/* Borders: make brutal-black borders visible in dark mode */
 body.dark .border-brutal-black {
   border-color: var(--border-primary) !important;
 }
@@ -147,6 +128,11 @@ body.dark .border-l,
 body.dark .border-r,
 body.dark .border {
   border-color: var(--border-primary);
+}
+
+/* Ring in dark mode */
+body.dark .ring-2 {
+  --tw-ring-color: var(--neon-green);
 }
 
 /* Text that should flip with theme */
@@ -173,89 +159,70 @@ body.dark select {
   border-color: var(--border-primary) !important;
 }
 
+/* Nav tab — base hover/active pop (desktop) */
+.nav-tab {
+  transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform, box-shadow;
+}
+.nav-tab:not(.bg-neon-green):not(.bg-warning-yellow):hover {
+  background-color: var(--warning-yellow) !important;
+  color: var(--brutal-black) !important;
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0px var(--shadow-color);
+  border-color: var(--brutal-black) !important;
+}
+.nav-tab:not(.bg-neon-green):not(.bg-warning-yellow):active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--shadow-color);
+}
+
+/* Nav tab dark mode */
+body.dark .nav-tab:not(.bg-neon-green):not(.bg-warning-yellow) {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-primary) !important;
+}
+
+/* Page style thumbnail labels in dark mode */
+body.dark .page-style-label {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
 /* Input elements glow and focus effects */
 input, textarea, select {
   font-family: var(--font-mono);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--warning-yellow) !important;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25) !important;
+  transform: translateY(-1px);
 }
 
-/* Custom Touch-Friendly Range Slider */
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 8px;
-  background: #e5e5e5;
-  border: 1.5px solid var(--border-primary);
-  border-radius: 4px;
-  outline: none;
-  margin: 10px 0;
-}
-
-body.dark input[type="range"] {
-  background: #2a2a2a;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 26px;
-  height: 26px;
-  background: var(--neon-green);
-  border: 2px solid var(--brutal-black);
-  box-shadow: 2px 2px 0px var(--shadow-color);
-  cursor: pointer;
-  border-radius: 4px;
-  transition: transform 0.1s ease;
-}
-
-input[type="range"]::-webkit-slider-thumb:active {
-  transform: scale(1.15);
-  background: var(--warning-yellow);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 26px;
-  height: 26px;
-  background: var(--neon-green);
-  border: 2px solid var(--brutal-black);
-  box-shadow: 2px 2px 0px var(--shadow-color);
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-/* Utility Definitions */
+/* Utility Definitions with High-End Polish */
 @utility brutal-border {
   border: 2px solid var(--border-primary);
 }
 
 @utility brutal-shadow {
-  box-shadow: 4px 4px 0px var(--shadow-color);
-}
-
-@utility brutal-shadow-sm {
-  box-shadow: 2px 2px 0px var(--shadow-color);
+  box-shadow: 5px 5px 0px var(--shadow-color);
 }
 
 @utility brutal-btn {
-  @apply px-4 py-2.5 sm:px-6 sm:py-3 font-display uppercase tracking-wider font-bold border-2 border-[var(--border-primary)] bg-[var(--bg-card)] cursor-pointer select-none inline-flex items-center justify-center gap-2;
+  @apply px-6 py-3 font-display uppercase tracking-wider font-bold border-2 border-[var(--border-primary)] bg-[var(--bg-card)] cursor-pointer select-none inline-flex items-center justify-center gap-2;
   color: var(--text-primary);
   border-radius: 4px;
   box-shadow: 3px 3px 0px var(--shadow-color);
-  transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   will-change: transform, box-shadow;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
 
   &:hover {
-    transform: translate(-2px, -2px);
-    box-shadow: 5px 5px 0px var(--shadow-color);
-    background-color: var(--warning-yellow);
+    transform: translate(-3px, -3px);
+    box-shadow: 7px 7px 0px var(--shadow-color);
+    background-color: var(--warning-yellow); /* Polished: Hover turns into glorious original bright yellow */
     color: var(--brutal-black);
     border-color: var(--brutal-black);
   }
@@ -267,7 +234,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @utility brutal-btn-primary {
-  @apply bg-warning-yellow text-brutal-black;
+  @apply bg-warning-yellow; /* Direct brand emphasis on yellow */
+  color: var(--brutal-black);
   
   &:hover {
     background-color: #FFEA00;
@@ -275,16 +243,16 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @utility brutal-card {
-  @apply border-2 border-[var(--border-primary)] p-4 sm:p-6;
+  @apply border-2 border-[var(--border-primary)] p-6;
   background-color: var(--bg-card);
   color: var(--text-primary);
   border-radius: 4px;
   box-shadow: 4px 4px 0px var(--shadow-color);
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
 
   &:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 6px 6px 0px var(--shadow-color);
+    box-shadow: 7px 7px 0px var(--shadow-color);
   }
 }
 
@@ -302,6 +270,7 @@ input[type="range"]::-moz-range-thumb {
   border-color: var(--border-primary);
 }
 
+/* Explicit Original Bright Yellow (#FFD700) Styling & Custom Overrides */
 .bg-warning-yellow {
   background-color: var(--warning-yellow) !important;
   color: var(--brutal-black) !important;
@@ -315,61 +284,199 @@ input[type="range"]::-moz-range-thumb {
   color: var(--warning-yellow) !important;
 }
 
-/* Notebook Ruled Paper */
+.brutal-btn.bg-warning-yellow {
+  background-color: var(--warning-yellow) !important;
+  color: var(--brutal-black) !important;
+  border-color: var(--border-primary) !important;
+  
+  &:hover {
+    background-color: #FFEA00 !important;
+    color: var(--brutal-black) !important;
+    border-color: var(--brutal-black) !important;
+    box-shadow: 7px 7px 0px var(--shadow-color) !important;
+  }
+}
+
+/* 📚 High-End Student Theme Enhancements */
+
+/* Physical Notebook Lined Paper Substrate */
 .student-notebook-ruled {
   background-color: #FAF9F6 !important;
   background-image: 
-    linear-gradient(90deg, transparent 44px, rgba(255, 75, 92, 0.3) 44px, rgba(255, 75, 92, 0.3) 46px, transparent 46px),
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.3) 59px, rgba(255, 75, 92, 0.3) 61px, transparent 61px),
     linear-gradient(rgba(171, 206, 215, 0.3) 1px, transparent 1px) !important;
   background-size: 100% 100%, 100% 24px !important;
   border: 2px solid var(--border-primary);
-  box-shadow: 3px 3px 0px var(--shadow-color);
+  box-shadow: 4px 4px 0px var(--shadow-color);
   color: #1A1A24 !important;
-  padding-left: 54px !important;
-  padding-right: 16px !important;
-  padding-top: 18px !important;
+  padding-left: 72px !important;
+  padding-right: 24px !important;
+  padding-top: 24px !important;
   line-height: 24px !important;
 }
 
 body.dark .student-notebook-ruled {
   background-color: #17181F !important;
   background-image: 
-    linear-gradient(90deg, transparent 44px, rgba(255, 75, 92, 0.2) 44px, rgba(255, 75, 92, 0.2) 46px, transparent 46px),
+    linear-gradient(90deg, transparent 59px, rgba(255, 75, 92, 0.2) 59px, rgba(255, 75, 92, 0.2) 61px, transparent 61px),
     linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
   color: #FAF9F6 !important;
 }
 
-/* Mobile Safe Areas and Bottom Sheet */
-.mobile-safe-bottom {
-  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+/* Student Neon Highlighter Marker Accents */
+.highlighter-yellow {
+  background-color: rgba(255, 215, 0, 0.2) !important;
+  border-bottom: 2px solid var(--warning-yellow);
 }
 
-.mobile-bottom-dock {
-  padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+.highlighter-pink {
+  background-color: rgba(255, 46, 147, 0.15) !important;
+  border-bottom: 2px solid #FF2E93;
 }
 
-/* Mobile Touch Tap Targets */
+.highlighter-blue {
+  background-color: rgba(0, 229, 255, 0.15) !important;
+  border-bottom: 2px solid #00E5FF;
+}
+
+/* Technical Blueprint Corner Crosshair Overlays */
+.tech-crosshair-container {
+  position: relative;
+}
+
+.tech-crosshair-container::before, 
+.tech-crosshair-container::after {
+  content: "+";
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: bold;
+  opacity: 0.25;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.tech-crosshair-container::before {
+  top: 4px;
+  left: 6px;
+}
+
+.tech-crosshair-container::after {
+  bottom: 4px;
+  right: 6px;
+}
+
+/* Scanline Matrix and Pulse Effects */
+@keyframes scanning {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.matrix-scanner {
+  position: relative;
+  overflow: hidden;
+}
+
+.matrix-scanner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to bottom, rgba(255,215,0,0.5), rgba(255,215,0,0));
+  animation: scanning 2s linear infinite;
+  pointer-events: none;
+}
+
+/* Staggered Animations */
+.animate-fade-up {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeUp 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+@keyframes fadeUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Global Mobile Rules Overhauled for Students */
 @media (max-width: 768px) {
   body {
-    background-size: 20px 20px;
+    overflow-x: hidden;
+    background-size: 24px 24px;
   }
 
   button, 
   .brutal-btn,
-  [role="button"],
-  input, 
-  select {
-    touch-action: manipulation;
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
   }
 
-  /* Prevent zoom on text fields on iOS */
-  input[type="text"],
-  input[type="password"],
-  input[type="url"],
-  input[type="search"],
-  textarea,
+  input, 
+  textarea, 
   select {
     font-size: 16px !important;
+  }
+
+  .brutal-card {
+    padding: 18px;
+  }
+
+  .brutal-border {
+    border-width: 2px;
+  }
+
+  /* Full width modals on mobile */
+  .modal-content {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 16px;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  /* Force single column on mobile and remove rogue splits */
+  .flex-col-mobile-force {
+    flex-direction: column !important;
+  }
+  
+  /* Ensure main wrapper and inner sections are 100% width */
+  aside, section, header, footer {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex-basis: 100% !important;
+    border-right-width: 0 !important;
+    border-left-width: 0 !important;
+  }
+
+  header {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  /* Overhauled Mobile Tabs layout */
+  .nav-tab {
+    font-size: 11px !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 2px 2px 0px var(--shadow-color) !important;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border-color: var(--border-primary) !important;
+    height: 42px !important;
+  }
+  
+  .nav-tab.bg-neon-green {
+    background-color: var(--warning-yellow) !important;
+    color: var(--brutal-black) !important;
+    box-shadow: 4px 4px 0px var(--shadow-color) !important;
+    transform: translateY(-2px) !important;
   }
 }

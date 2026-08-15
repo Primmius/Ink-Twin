@@ -22,14 +22,7 @@ import {
   Trash2,
   Sparkles,
   GraduationCap,
-  Coffee,
-  Home,
-  PenTool,
-  Search,
-  Wand2,
-  Sliders,
-  HelpCircle,
-  Check
+  Coffee
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
@@ -90,7 +83,6 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
   const [pendingFontToName, setPendingFontToName] = useState<{ name: string; url: string; profile: any; fontFamily: string } | null>(null);
   const [humanizerPrefill, setHumanizerPrefill] = useState<string | null>(null);
-  const [showOptionsAccordion, setShowOptionsAccordion] = useState(false);
   
   // App State
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -252,6 +244,14 @@ export default function App() {
     setSavedFonts(prev => prev.map(f => f.id === id ? { ...f, name: newName } : f));
   };
 
+  const handleEditFont = (font: SavedFont) => {
+    // This is tricky because we don't store the original detectedChars/paths
+    // For now, we'll just load the font into the writer
+    setFontUrl(font.url);
+    setFontConfig(prev => ({ ...prev, name: font.name }));
+    setPhase('text-writer');
+  };
+
   const handleGoHome = () => {
     setPhase('home');
     setStep(1);
@@ -352,7 +352,7 @@ export default function App() {
         throw new Error("No characters were detected. Please ensure your handwriting is clear and the image is well-lit.");
       }
       
-      // Merge results
+      // Merge results (if multiple pages detected same char, take highest confidence)
       const merged = CHARACTERS_TO_DETECT.map(targetChar => {
         const found = allDetected.filter(d => d.char === targetChar)
           .sort((a, b) => b.confidence - a.confidence)[0];
@@ -404,6 +404,7 @@ export default function App() {
         
         count++;
         setProcessingProgress(Math.round((count / total) * 100));
+        // Small delay to allow UI to breathe
         await new Promise(r => setTimeout(r, 10));
       }
 
@@ -475,6 +476,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       setFontUrl(url);
 
+      // Register font under a stable name so renaming doesn't break the preview
       const fontFace = new FontFace('inktwin-preview', buffer);
       await fontFace.load();
       document.fonts.add(fontFace);
@@ -504,626 +506,729 @@ export default function App() {
     );
   }
 
-  // Navigation Items
-  const navTabs: Array<{ id: AppPhase; label: string; icon: React.ReactNode; short: string }> = [
-    { id: 'home', label: 'Home', icon: <Home size={18} />, short: 'Home' },
-    { id: 'font-creation', label: 'Create Font', icon: <PenTool size={18} />, short: 'Create' },
-    { id: 'text-writer', label: 'Handwriting Writer', icon: <TypeIcon size={18} />, short: 'Writer' },
-    { id: 'homework-solver', label: 'AI Study Assistant', icon: <GraduationCap size={18} />, short: 'Solver' },
-    { id: 'find-font', label: 'Find My Font', icon: <Search size={18} />, short: 'Find' },
-    { id: 'ai-humanizer', label: 'AI Humanizer', icon: <Wand2 size={18} />, short: 'Humanizer' },
-  ];
-
-  const stepsList = [
-    { id: 1, label: "Template", short: "01" },
-    { id: 2, label: "Upload", short: "02" },
-    { id: 3, label: "Detect", short: "03" },
-    { id: 4, label: "Process", short: "04" },
-    { id: 5, label: "Vector", short: "05" },
-    { id: 6, label: "Preview", short: "06" }
-  ];
-
   return (
-    <div 
-      className="min-h-[100dvh] font-body flex flex-col border-0 md:border-[8px] selection:bg-neon-green selection:text-brutal-black pb-20 md:pb-0" 
-      style={{ 
-        backgroundColor: 'var(--bg-primary)', 
-        color: 'var(--text-primary)', 
-        borderColor: 'var(--border-primary)' 
-      }}
-    >
-      {/* Sleek Adaptive Header */}
-      <header className="sticky top-0 z-40 border-b-2 bg-[var(--bg-primary)] px-3 py-2.5 sm:px-6 sm:py-4 flex flex-col gap-2.5" style={{ borderColor: 'var(--border-primary)' }}>
-        <div className="flex items-center justify-between gap-2">
-          {/* Brand Logo & Back to Home */}
-          <div className="flex items-center gap-2 sm:gap-3">
+    <div className="min-h-screen font-body flex flex-col border-[8px] selection:bg-neon-green selection:text-brutal-black" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}>
+      {/* Header */}
+      <header className="border-b-2 p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 z-40 header-mobile-refine" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
+        <div className="flex flex-col gap-4 w-full md:w-auto">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleGoHome}
-              className="flex items-center gap-2 sm:gap-3 text-left bg-transparent border-0 p-0 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-green rounded transition-transform active:scale-95"
+              className="flex items-center gap-3 text-left bg-transparent border-0 p-0 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-green rounded transition-transform active:scale-95"
               title="Go to Home"
               aria-label="Go to InkTwin Home"
             >
-              <Logo size={isMobile ? 28 : 38} showText={false} className="group-hover:scale-105 transition-transform shrink-0" />
-              <div className="flex flex-col">
-                <h1 className="text-xl sm:text-3xl font-display uppercase tracking-tighter leading-none flex items-baseline gap-1.5">
-                  Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
-                </h1>
-              </div>
+              <Logo size={isMobile ? 32 : 44} showText={false} className="group-hover:scale-105 transition-transform" />
+              <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title flex items-baseline gap-2 group-hover:opacity-90 transition-opacity">
+                Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+              </h1>
             </button>
             <a
               href="https://primuez.in"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-[9px] lowercase opacity-50 hover:text-warning-yellow hover:opacity-100 transition-all hidden sm:inline"
+              className="font-mono text-xs lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all self-end md:self-baseline pb-1"
             >
               by primuez.in
             </a>
           </div>
+          
+          {/* Phase Navigation */}
+          <div className="flex gap-2 p-1 overflow-x-auto no-scrollbar scroll-smooth -webkit-overflow-scrolling-touch relative nav-container max-w-full">
+            <style>{`
+              .no-scrollbar::-webkit-scrollbar { display: none; }
+              .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-          {/* Header Action Tools */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* Quick API Key Status Pill on Mobile & Desktop */}
+              /* Desktop nav: wrap gracefully */
+              @media (min-width: 769px) {
+                .nav-container {
+                  flex-wrap: wrap;
+                  gap: 6px !important;
+                  padding: 0 !important;
+                }
+                .nav-tab {
+                  font-size: 12px !important;
+                  padding: 8px 14px !important;
+                  height: auto !important;
+                  min-height: 40px;
+                }
+              }
+              
+              @media (max-width: 768px) {
+                .header-mobile-refine {
+                  padding: 12px 16px !important;
+                  overflow: visible !important;
+                }
+                .app-title {
+                  font-size: clamp(1.1rem, 4.5vw, 1.8rem) !important;
+                }
+                .nav-container {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  overflow-x: auto !important;
+                  overflow-y: hidden !important;
+                  -webkit-overflow-scrolling: touch !important;
+                  scrollbar-width: none !important;
+                  gap: 6px !important;
+                  padding: 0 16px 4px !important;
+                  margin-left: -16px;
+                  margin-right: -16px;
+                  width: calc(100% + 32px) !important;
+                }
+                .nav-container::-webkit-scrollbar { display: none; }
+                .nav-tab {
+                  flex-shrink: 0 !important;
+                  min-width: 110px !important;
+                  max-width: 160px !important;
+                  font-size: 10px !important;
+                  padding: 7px 10px !important;
+                  height: 44px !important;
+                  text-align: center;
+                  white-space: nowrap;
+                  line-height: 1.2;
+                }
+                .step-indicator-container {
+                  display: flex !important;
+                  overflow-x: auto !important;
+                  scrollbar-width: none !important;
+                  gap: 6px !important;
+                  padding: 8px 16px !important;
+                  margin-left: -16px;
+                  margin-right: -16px;
+                  width: calc(100% + 32px) !important;
+                  -webkit-overflow-scrolling: touch !important;
+                }
+                .step-indicator-container::-webkit-scrollbar { display: none; }
+                .step-btn {
+                  flex-shrink: 0 !important;
+                  min-width: 44px !important;
+                }
+              }
+            `}</style>
             <button
-              onClick={() => promptApiKey(undefined, false)}
+              onClick={handleGoHome}
               className={cn(
-                "px-2.5 py-1.5 sm:px-3 sm:py-2 border-2 border-brutal-black font-mono text-[10px] sm:text-xs font-bold uppercase transition-all flex items-center gap-1.5",
-                apiKey 
-                  ? "bg-white text-brutal-black hover:bg-neon-green" 
-                  : "bg-warning-yellow text-brutal-black animate-pulse"
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'home' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
               )}
-              title={apiKey ? "Gemini API Key Active" : "Click to Set API Key"}
             >
-              <span className={cn("w-2 h-2 rounded-full", apiKey ? "bg-green-500 animate-pulse" : "bg-error-red")} />
-              <span className="hidden sm:inline">{apiKey ? "API Connected" : "Set API Key"}</span>
-              <span className="sm:hidden">{apiKey ? "Key OK" : "No Key"}</span>
+              🏠 Home
             </button>
-
-            {/* Theme Toggle */}
-            <button 
-              onClick={toggleTheme}
-              className="p-1.5 sm:p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors bg-white text-brutal-black dark:bg-brutal-black dark:text-white"
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-              aria-label="Toggle Theme"
-            >
-              {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
-            </button>
-
-            {/* Support Coffee Button */}
             <button
-              onClick={() => {
-                document.getElementById('support-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              }}
-              title="Support InkTwin"
-              aria-label="Support InkTwin"
-              className="p-1.5 sm:p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors bg-white text-brutal-black"
+              onClick={() => setPhase('font-creation')}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'font-creation' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
             >
-              <Coffee size={17} />
+              ✏️ Create My Font
+            </button>
+            <button
+              onClick={() => setPhase('text-writer')}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'text-writer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
+            >
+              📝 Write with My Handwriting
+            </button>
+            <button
+              onClick={() => setPhase('homework-solver')}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'homework-solver' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
+            >
+              🎓 AI Study Assistant
+            </button>
+            <button
+              onClick={() => setPhase('find-font')}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'find-font' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
+            >
+              🔍 Find My Font
+            </button>
+            <button
+              onClick={() => setPhase('ai-humanizer')}
+              className={cn(
+                "px-4 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-sm nav-tab whitespace-nowrap",
+                phase === 'ai-humanizer' ? "bg-neon-green text-brutal-black brutal-shadow" : "bg-[var(--bg-card)] text-[var(--text-primary)]"
+              )}
+            >
+              ✨ AI Humanizer
             </button>
           </div>
         </div>
-
-        {/* Desktop Navigation Tabs (Hidden on small mobile screen, handled by bottom bar + swipe pills) */}
-        <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar pt-1">
-          {navTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => tab.id === 'home' ? handleGoHome() : setPhase(tab.id)}
-              className={cn(
-                "px-3.5 py-2 border-2 border-[var(--border-primary)] font-display uppercase text-xs transition-all whitespace-nowrap flex items-center gap-2",
-                phase === tab.id 
-                  ? "bg-neon-green text-brutal-black brutal-shadow-sm font-bold -translate-y-0.5" 
-                  : "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-warning-yellow hover:text-brutal-black"
-              )}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Mobile Horizontal Fast Switcher */}
-        <div className="flex md:hidden items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 -mx-1 px-1">
-          {navTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => tab.id === 'home' ? handleGoHome() : setPhase(tab.id)}
-              className={cn(
-                "px-2.5 py-1.5 border border-brutal-black font-mono uppercase text-[11px] font-bold shrink-0 transition-all flex items-center gap-1.5 rounded-sm",
-                phase === tab.id 
-                  ? "bg-neon-green text-brutal-black brutal-shadow-sm" 
-                  : "bg-white dark:bg-neutral-800 text-brutal-black dark:text-white"
-              )}
-            >
-              <span className="scale-90">{tab.icon}</span>
-              <span>{tab.short}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Step Indicator when in Phase 1 (Create Font) */}
+        
         {phase === 'font-creation' && (
-          <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar pt-1.5 border-t border-brutal-black/20">
-            {stepsList.map((s) => (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 step-indicator-container">
+            {[
+              { id: 1, label: "01 TEMPLATE", short: "01" },
+              { id: 2, label: "02 UPLOAD", short: "02" },
+              { id: 3, label: "03 DETECT", short: "03" },
+              { id: 4, label: "04 PROCESS", short: "04" },
+              { id: 5, label: "05 VECTOR", short: "05" },
+              { id: 6, label: "06 PREVIEW", short: "06" }
+            ].map((s) => (
               <div 
                 key={s.id}
-                onClick={() => {
-                  if (s.id <= step || (step === 1 && s.id === 2 && uploadedImages.length > 0)) {
-                    setStep(s.id as AppStep);
-                  }
-                }}
                 className={cn(
-                  "font-mono text-[10px] sm:text-xs font-bold px-2 py-1 border transition-all flex-1 text-center truncate flex items-center justify-center gap-1 cursor-pointer",
-                  step === s.id 
-                    ? "bg-brutal-black text-white border-brutal-black" 
-                    : step > s.id 
-                    ? "bg-neon-green/30 text-brutal-black border-neon-green" 
-                    : "opacity-40 bg-white dark:bg-neutral-800 border-neutral-300"
+                  "font-mono text-[11px] font-bold px-3 py-1 border border-brutal-black transition-all flex-shrink-0 min-h-[44px] flex items-center justify-center min-w-[44px] step-btn",
+                  step === s.id ? "bg-brutal-black text-white opacity-100" : "opacity-30 bg-white"
                 )}
               >
-                <span className="shrink-0">{s.short}</span>
-                <span className="hidden sm:inline truncate">{s.label}</span>
+                <span className="hidden sm:inline">{s.label}</span>
+                <span className="sm:hidden">{s.short}</span>
               </div>
             ))}
           </div>
         )}
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors bg-white text-brutal-black dark:bg-brutal-black dark:text-white"
+            title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          </button>
+          <button
+            onClick={() => promptApiKey(undefined, false)}
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+            title="API Key Settings"
+          >
+            <Settings size={20} />
+          </button>
+          <button
+            onClick={() => {
+              document.getElementById('support-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}
+            title="Support InkTwin"
+            className="p-2 border-2 border-brutal-black hover:bg-neon-green transition-colors"
+          >
+            <Coffee size={20} />
+          </button>
+        </div>
       </header>
 
-      {/* Main App Workspace */}
-      <div className="flex-grow flex flex-col md:flex-row overflow-x-hidden">
+      <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
         {phase === 'font-creation' ? (
           <>
-            {/* Desktop-only status sidebar */}
-            <aside className="hidden md:flex w-[260px] border-r-2 border-brutal-black p-6 flex-col gap-6 bg-white shrink-0 overflow-y-auto">
-              <div className="space-y-3">
-                <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
-                <div className="space-y-2 font-mono text-xs">
-                  <div className="flex justify-between py-1 border-b border-neutral-100">
-                    <span>Active Step:</span>
-                    <span className="font-bold">0{step} / 06</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-neutral-100">
-                    <span>API Service:</span>
-                    <span className={cn("font-bold", apiKey ? "text-green-600" : "text-red-600")}>
-                      {apiKey ? "READY" : "MISSING"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-neutral-100">
-                    <span>Scanned Pages:</span>
-                    <span className="font-bold">{uploadedImages.length}</span>
-                  </div>
-                </div>
+            {/* Sidebar */}
+            <aside className="w-full md:w-[280px] border-b-2 md:border-b-0 md:border-r-2 border-brutal-black p-6 flex flex-col gap-8 bg-white overflow-y-auto">
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">System Status</h3>
+            <div className="space-y-2 font-mono text-sm">
+              <div className="flex justify-between">
+                <span>Step:</span>
+                <span className="font-bold">0{step}</span>
               </div>
-
-              <div className="space-y-2 bg-neutral-50 p-4 border border-brutal-black/20">
-                <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Step Guidance</h3>
-                <p className="text-xs leading-relaxed opacity-80">
-                  {step === 1 && "Upload your handwritten grid or filled template photo."}
-                  {step === 2 && "Review scanned images before running the AI extraction engine."}
-                  {step === 3 && "Review detected characters and bounding boxes. Tap to edit or draw missing ones."}
-                  {step === 4 && "Vectorizing strokes into mathematical curves..."}
-                  {step === 5 && "Review vectorized paths before final TTF font compilation."}
-                  {step === 6 && "Test your font in the preview canvas and export as .ttf file!"}
-                </p>
+              <div className="flex justify-between">
+                <span>API:</span>
+                <span className={cn("font-bold", apiKey ? "text-green-600" : "text-red-600")}>
+                  {apiKey ? "CONNECTED" : "MISSING"}
+                </span>
               </div>
+              <div className="flex justify-between">
+                <span>Pages:</span>
+                <span className="font-bold">{uploadedImages.length}</span>
+              </div>
+            </div>
+          </div>
 
-              <div className="mt-auto pt-4 space-y-2">
-                {step === 3 && (
-                  <button 
-                    onClick={startAnalysis}
-                    disabled={isAnalyzing}
-                    className="w-full brutal-btn flex items-center justify-center gap-2 bg-warning-yellow text-xs py-2"
-                  >
-                    <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={14} />
-                    Re-analyze All
-                  </button>
-                )}
-                {step > 1 && (
-                  <button 
-                    onClick={() => setStep((prev) => (prev - 1) as AppStep)}
-                    className="w-full brutal-btn text-xs py-2"
-                  >
-                    ← Back
-                  </button>
-                )}
-                <button
-                  onClick={() => promptApiKey(undefined, false)}
-                  className="w-full brutal-btn text-xs py-2"
+          <div className="space-y-4">
+            <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60">Instructions</h3>
+            <p className="text-xs leading-relaxed">
+              {step === 1 && "Start by downloading the template and filling it with your unique handwriting style."}
+              {step === 2 && "Upload your completed template pages. Ensure the lighting is even and the text is clear."}
+              {step === 3 && "Review the detected characters. Gemini has identified the bounding boxes for each glyph."}
+              {step === 5 && "The characters have been vectorized. Review the paths before generating the final font file."}
+              {step === 6 && "Your font is ready! Test it in the preview area and download the .ttf file."}
+            </p>
+          </div>
+
+          <div className="mt-auto pt-6">
+            {step === 3 && (
+              <button 
+                onClick={startAnalysis}
+                disabled={isAnalyzing}
+                className="w-full brutal-btn mb-3 flex items-center justify-center gap-2 bg-warning-yellow"
+              >
+                <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={16} />
+                Re-analyze All
+              </button>
+            )}
+            {step > 1 && (
+              <button 
+                onClick={() => setStep((prev) => (prev - 1) as AppStep)}
+                className="w-full brutal-btn mb-3"
+              >
+                ← Back
+              </button>
+            )}
+            <button
+              onClick={() => promptApiKey(undefined, false)}
+              className="w-full brutal-btn text-xs"
+            >
+              Update API Key
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content Area */}
+        <section className="flex-grow p-6 bg-neutral-100 overflow-y-auto">
+          <div className="max-w-4xl mx-auto">
+            <AnimatePresence mode="wait">
+              {/* Step 1: Welcome & Template */}
+              {step === 1 && (
+                <motion.div 
+                  key="step1"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.05 }}
+                  className="space-y-8"
                 >
-                  Manage API Key
-                </button>
-              </div>
-            </aside>
+                  <div className="space-y-4">
+                    <h2 className="text-4xl sm:text-6xl font-display uppercase leading-none tracking-tighter break-words">Handwriting to Digital Font.</h2>
+                    <p className="text-base sm:text-xl font-mono opacity-70">
+                      [VERSION_1.0] AI-POWERED VECTORIZATION ENGINE
+                    </p>
+                  </div>
 
-            {/* Main Content Area */}
-            <section className="flex-grow p-3 sm:p-6 bg-neutral-100 overflow-y-auto">
-              <div className="max-w-4xl mx-auto space-y-6">
-                <AnimatePresence mode="wait">
-                  {/* Step 1: Welcome & Upload Options */}
-                  {step === 1 && (
-                    <motion.div 
-                      key="step1"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="space-y-4 sm:space-y-6"
-                    >
-                      {/* Hero Banner */}
-                      <div className="space-y-1 sm:space-y-2">
-                        <span className="font-mono text-[10px] font-bold uppercase opacity-60 tracking-widest">[PHASE_01] FONT_CREATION</span>
-                        <h2 className="text-3xl sm:text-5xl font-display uppercase leading-none tracking-tighter">
-                          Handwriting to Font.
-                        </h2>
-                        <p className="text-xs sm:text-base font-mono opacity-70">
-                          Turn your real handwriting into a functional .ttf font file using AI.
+                  {/* Beginner-friendly explainer */}
+                  <div className="brutal-card brutal-shadow bg-neon-green/10 border-neon-green">
+                    <div className="flex items-start gap-3 mb-5">
+                      <span className="text-2xl">👋</span>
+                      <div>
+                        <h3 className="text-lg sm:text-xl font-display uppercase">New here? Here's everything you can do.</h3>
+                        <p className="font-mono text-xs opacity-70 mt-1">
+                          InkTwin has 5 tools — start with whichever fits you best.
                         </p>
                       </div>
+                    </div>
 
-                      {/* Primary Mobile Action Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6">
-                        {/* 1. Camera Capture */}
-                        <div className="brutal-card brutal-shadow bg-neon-green/10 border-2 border-brutal-black p-4 sm:p-6 flex flex-col justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-neon-green text-brutal-black border-2 border-brutal-black flex items-center justify-center shrink-0">
-                              <Camera size={22} />
-                            </div>
-                            <div>
-                              <h3 className="font-display uppercase text-lg sm:text-xl leading-tight">01. Take Photo</h3>
-                              <p className="font-mono text-[11px] opacity-70 leading-snug">Instant capture via phone camera</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setIsCameraOpen(true)}
-                            className="w-full brutal-btn bg-neon-green text-brutal-black flex items-center justify-center gap-2 py-3"
-                          >
-                            <Camera size={18} />
-                            <span>Capture with Camera</span>
-                          </button>
+                    {/* Feature overview cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>✏️</span> Create My Font
                         </div>
-
-                        {/* 2. Upload Image or PDF */}
-                        <div className="brutal-card brutal-shadow bg-white p-4 sm:p-6 flex flex-col justify-between gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-warning-yellow text-brutal-black border-2 border-brutal-black flex items-center justify-center shrink-0">
-                              <Upload size={22} />
-                            </div>
-                            <div>
-                              <h3 className="font-display uppercase text-lg sm:text-xl leading-tight">02. Upload Image / PDF</h3>
-                              <p className="font-mono text-[11px] opacity-70 leading-snug">From photo gallery or files</p>
-                            </div>
-                          </div>
-                          <label className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 py-3 cursor-pointer">
-                            <Upload size={18} />
-                            <span>Select Photo / PDF</span>
-                            <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
-                          </label>
-                        </div>
-                      </div>
-
-                      {/* Template Download & Guide Accordion */}
-                      <div className="brutal-card p-4 sm:p-6 bg-white space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brutal-black/20 pb-3">
-                          <div>
-                            <h4 className="font-display uppercase text-sm sm:text-base font-bold flex items-center gap-2">
-                              <span>📄</span> Printable A4 Template (Optional)
-                            </h4>
-                            <p className="font-mono text-[11px] opacity-60 mt-0.5">
-                              Pre-drawn letter boxes for optimal AI recognition.
-                            </p>
-                          </div>
-                          <button 
-                            onClick={handleDownloadTemplate}
-                            className="brutal-btn text-xs py-2 px-4 flex items-center justify-center gap-2 shrink-0 bg-white"
-                          >
-                            <Download size={15} />
-                            Download PDF Template
-                          </button>
-                        </div>
-
-                        {/* Quick options explainer */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-xs pt-1">
-                          <div className="p-2.5 bg-neutral-50 border border-brutal-black/20 rounded">
-                            <span className="font-bold text-[10px] text-neon-green uppercase block">Option A</span>
-                            <span className="text-[11px] leading-snug">Print template, write characters in boxes with black pen, snap photo.</span>
-                          </div>
-                          <div className="p-2.5 bg-neutral-50 border border-brutal-black/20 rounded">
-                            <span className="font-bold text-[10px] text-warning-yellow uppercase block">Option B (No Printer)</span>
-                            <span className="text-[11px] leading-snug">Draw a simple 4×5 grid on plain paper and write letters clearly.</span>
-                          </div>
-                          <div className="p-2.5 bg-neutral-50 border border-brutal-black/20 rounded">
-                            <span className="font-bold text-[10px] text-blue-500 uppercase block">Option C (Quick Match)</span>
-                            <span className="text-[11px] leading-snug">
-                              Skip font build! Use{' '}
-                              <button onClick={() => setPhase('find-font')} className="underline font-bold">
-                                🔍 Find My Font
-                              </button>{' '}
-                              to match in 10s.
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 2: Review Uploaded Pages */}
-                  {step === 2 && (
-                    <motion.div 
-                      key="step2"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-brutal-black pb-3">
-                        <div>
-                          <h2 className="text-2xl sm:text-3xl font-display uppercase">Review Uploads</h2>
-                          <p className="font-mono text-xs opacity-60">Check lighting and clarity of scanned pages ({uploadedImages.length} ready)</p>
-                        </div>
-                        <button 
-                          onClick={startAnalysis}
-                          disabled={isAnalyzing || uploadedImages.length === 0}
-                          className="brutal-btn brutal-btn-primary flex items-center justify-center gap-2 py-3 px-6 text-sm"
-                        >
-                          {isAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : "Start AI Analysis →"}
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Turn your real handwriting into a downloadable .ttf font file using AI.</p>
+                        <button onClick={() => setPhase('font-creation')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Start here →
                         </button>
                       </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>📝</span> Write with My Handwriting
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Type any text and render it in your handwriting font on a realistic page.</p>
+                        <button onClick={() => setPhase('text-writer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Open writer →
+                        </button>
+                      </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1">
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>🎓</span> AI Study Assistant
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Upload homework questions (photo, PDF, or text) and get AI-solved answers ready to write out.</p>
+                        <button onClick={() => setPhase('homework-solver')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Solve homework →
+                        </button>
+                      </div>
+                      <div className="bg-white border-2 border-brutal-black p-3 space-y-1 relative">
+                        <div className="absolute top-2 right-2 bg-neon-green px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase">NEW</div>
+                        <div className="font-display uppercase text-xs font-bold flex items-center gap-2">
+                          <span>✨</span> AI Humanizer
+                        </div>
+                        <p className="font-mono text-[10px] opacity-60 leading-snug">Paste any AI-generated text and rewrite it to sound like a real student wrote it — 5 styles.</p>
+                        <button onClick={() => setPhase('ai-humanizer')} className="font-mono text-[10px] font-bold text-neon-green underline hover:opacity-70 transition-opacity">
+                          Humanize text →
+                        </button>
+                      </div>
+                    </div>
 
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
-                        {uploadedImages.map((img, i) => (
-                          <div key={i} className="aspect-[3/4] brutal-border bg-white p-1.5 relative group brutal-shadow-sm">
-                            <img src={img} loading="lazy" className="w-full h-full object-cover" alt={`Page ${i+1}`} />
-                            <button 
-                              onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
-                              className="absolute top-2 right-2 p-2 bg-error-red text-white border-2 border-brutal-black shadow active:scale-95"
-                              title="Delete Page"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                        <label className="aspect-[3/4] brutal-border border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neon-green/10 transition-colors p-4 text-center">
-                          <Upload size={26} className="opacity-40" />
-                          <span className="font-mono text-xs font-bold uppercase">+ Add Another Page</span>
+                    {/* Font creation options */}
+                    <div className="border-t-2 border-brutal-black pt-4 space-y-3 font-mono text-xs sm:text-sm">
+                      <p className="font-bold text-[10px] uppercase tracking-widest opacity-50">To create your font, pick one of these:</p>
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION A</span>
+                        <span>
+                          <span className="font-bold">Easy:</span> Tap <span className="font-bold">Download PDF</span> below, print it, fill every box with a black pen, then snap a photo and upload.
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION B</span>
+                        <span>
+                          <span className="font-bold">No printer?</span> Draw a grid — <span className="font-bold">4 columns × 5 rows</span> of equal-sized boxes. Write the label (A, B, C…) top-left and the character inside each box. Use black or dark-blue pen.
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className="font-bold text-brutal-black whitespace-nowrap">OPTION C</span>
+                        <span>
+                          <span className="font-bold">Just want letters:</span> Write <span className="font-bold">A–Z</span>, <span className="font-bold">a–z</span> and <span className="font-bold">0–9</span> clearly on any paper, then upload.
+                        </span>
+                      </div>
+                      <div className="flex gap-3 pt-3 border-t-2 border-brutal-black">
+                        <span className="font-bold whitespace-nowrap">⏰ NO TIME?</span>
+                        <span>
+                          Skip font creation — head to{' '}
+                          <button
+                            onClick={() => setPhase('find-font')}
+                            className="underline font-bold hover:text-brutal-black"
+                          >
+                            🔍 Find My Font
+                          </button>
+                          {' '}and upload any handwriting sample. We'll match it to the closest font.
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-8 mt-8">
+                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
+                        <Download size={24} />
+                      </div>
+                      <h3 className="text-2xl font-display uppercase mb-4">01. Download</h3>
+                      <p className="font-mono text-sm mb-8 opacity-70">
+                        Optional — grab the A4 template if you'd like printed boxes to write in. Skip if you're using your own paper.
+                      </p>
+                      <button 
+                        onClick={handleDownloadTemplate}
+                        className="w-full brutal-btn brutal-btn-primary"
+                      >
+                        Download PDF
+                      </button>
+                    </div>
+
+                    <div className="brutal-card brutal-shadow hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all">
+                      <div className="w-12 h-12 bg-brutal-black text-white flex items-center justify-center mb-6">
+                        <Upload size={24} />
+                      </div>
+                      <h3 className="text-2xl font-display uppercase mb-4">02. Upload</h3>
+                      <p className="font-mono text-sm mb-8 opacity-70">
+                        Photograph or scan your filled template, your own grid, or your A–Z & 0–9 page. Multiple photos OK.
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <label className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 cursor-pointer">
+                          <Upload size={18} />
+                          Upload Photo or PDF
                           <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
                         </label>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 3: Detected Glyphs */}
-                  {step === 3 && (
-                    <motion.div 
-                      key="step3"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-brutal-black pb-3">
-                        <div>
-                          <h2 className="text-2xl sm:text-3xl font-display uppercase">Detected Characters</h2>
-                          <p className="font-mono text-xs opacity-60">Tap any character box to draw or adjust</p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={startAnalysis}
-                            disabled={isAnalyzing}
-                            className="brutal-btn flex items-center gap-1.5 text-xs py-2 px-3"
-                          >
-                            <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={14} />
-                            Re-analyze
-                          </button>
-                          <button 
-                            onClick={() => setStep(4)}
-                            className="brutal-btn brutal-btn-primary text-xs py-2 px-4"
-                          >
-                            Vectorize →
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Responsive Glyph Grid */}
-                      <div className="bg-white brutal-border p-3 sm:p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 brutal-shadow">
-                        {detectedChars.map((char, i) => (
-                          <div 
-                            key={i} 
-                            onClick={() => setEditingCharIndex(i)}
-                            className={cn(
-                              "aspect-square border-2 relative overflow-hidden flex items-center justify-center cursor-pointer active:scale-95 transition-all",
-                              char.confidence > 0.8 ? "border-neon-green bg-neon-green/5" :
-                              char.confidence > 0.5 ? "border-warning-yellow bg-warning-yellow/5" :
-                              char.confidence > 0 ? "border-error-red bg-error-red/5" : "border-neutral-200 border-dashed"
-                            )}
-                          >
-                            <span className="absolute top-0.5 left-1 font-mono text-[9px] font-bold opacity-50">{char.char}</span>
-                            {char.imageData ? (
-                              <img src={char.imageData} loading="lazy" className="w-full h-full object-contain p-1.5" alt={char.char} />
-                            ) : (
-                              <span className="font-mono text-[10px] opacity-30">Tap to draw</span>
-                            )}
-                            
-                            {char.confidence > 0 && (
-                              <div className={cn(
-                                "absolute bottom-0 right-0 px-1 font-mono text-[8px] font-bold text-white",
-                                char.confidence > 0.8 ? "bg-neon-green text-brutal-black" :
-                                char.confidence > 0.5 ? "bg-warning-yellow text-brutal-black" : "bg-error-red"
-                              )}>
-                                {char.confidence.toFixed(2)}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 4: Processing State */}
-                  {step === 4 && (
-                    <motion.div 
-                      key="step4"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="flex flex-col items-center justify-center py-16 sm:py-24 space-y-6 text-center"
-                    >
-                      <div className="relative">
-                        <RefreshCw size={64} className="text-brutal-black animate-spin" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-sm font-display font-bold">{processingProgress}%</div>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <h2 className="text-2xl sm:text-3xl font-display uppercase">Vectorizing Characters...</h2>
-                        <p className="font-mono text-xs opacity-60">GLYPH: {processingChar || 'INITIALIZING'}</p>
-                      </div>
-                      <div className="w-64 h-3.5 brutal-border bg-white overflow-hidden rounded">
-                        <div 
-                          className="h-full bg-neon-green transition-all duration-300" 
-                          style={{ width: `${processingProgress}%` }}
-                        />
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 5: Vector Review */}
-                  {step === 5 && (
-                    <motion.div 
-                      key="step5"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b-2 border-brutal-black pb-3">
-                        <div>
-                          <h2 className="text-2xl sm:text-3xl font-display uppercase">Vector Paths</h2>
-                          <p className="font-mono text-xs opacity-60">Mathematical contours extracted from your handwriting ink</p>
-                        </div>
                         <button 
-                          onClick={generateFont}
-                          className="brutal-btn brutal-btn-primary py-2.5 px-6 text-sm"
+                          onClick={() => setIsCameraOpen(true)}
+                          className="w-full brutal-btn flex items-center justify-center gap-2"
                         >
-                          Compile Font →
+                          <Camera size={18} />
+                          Capture with Camera
                         </button>
                       </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
-                      <div className="bg-white brutal-border p-3 sm:p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 sm:gap-3 brutal-shadow">
-                        {detectedChars.map((char, i) => (
-                          <div 
-                            key={i} 
-                            className={cn(
-                              "aspect-square border-2 relative flex items-center justify-center p-1.5",
-                              char.svgPath ? "border-neon-green bg-white" : "border-neutral-200 border-dashed bg-neutral-50"
-                            )}
-                          >
-                            <span className="absolute top-0.5 left-1 font-mono text-[8px] font-bold opacity-30">{char.char}</span>
-                            
-                            {char.svgPath ? (
-                              <svg viewBox="0 0 500 500" className="w-full h-full fill-brutal-black">
-                                <path d={char.svgPath} fillRule="evenodd" />
-                              </svg>
-                            ) : char.imageData ? (
-                              <div className="flex flex-col items-center gap-0.5 opacity-40">
-                                <AlertCircle size={10} />
-                                <span className="font-mono text-[7px]">DRAW</span>
-                              </div>
-                            ) : (
-                              <span className="font-mono text-[7px] opacity-20">EMPTY</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Step 6: Preview & Download */}
-                  {step === 6 && (
-                    <motion.div 
-                      key="step6"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-6"
+              {/* Step 2: Review Uploads */}
+              {step === 2 && (
+                <motion.div 
+                  key="step2"
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <h2 className="text-3xl font-display uppercase">Review Uploads</h2>
+                    <button 
+                      onClick={startAnalysis}
+                      disabled={isAnalyzing}
+                      className="brutal-btn brutal-btn-primary flex items-center gap-2"
                     >
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Font Settings Card */}
-                        <div className="brutal-card brutal-shadow space-y-5 lg:col-span-1">
-                          <h3 className="font-display uppercase text-xl border-b pb-2">Font Export</h3>
-                          
-                          <div className="space-y-4">
-                            <div className="space-y-1">
-                              <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Name</label>
-                              <input 
-                                type="text" 
-                                value={fontConfig.name}
-                                onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
-                                className="w-full px-3 py-2 brutal-border font-mono text-sm outline-none"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="flex justify-between font-mono text-[10px] font-bold uppercase opacity-60">
-                                <span>Letter Spacing</span>
-                                <span>{fontConfig.letterSpacing}px</span>
-                              </label>
-                              <input 
-                                type="range" min="-50" max="100" 
-                                value={fontConfig.letterSpacing}
-                                onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
-                                className="w-full"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="flex justify-between font-mono text-[10px] font-bold uppercase opacity-60">
-                                <span>Preview Size</span>
-                                <span>{fontConfig.fontSize}px</span>
-                              </label>
-                              <input 
-                                type="range" min="16" max="96" 
-                                value={fontConfig.fontSize}
-                                onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
-                                className="w-full"
-                              />
-                            </div>
-                          </div>
+                      {isAnalyzing ? <RefreshCw className="animate-spin" size={18} /> : "Start AI Analysis →"}
+                    </button>
+                  </div>
 
-                          <div className="flex flex-col gap-2 pt-2">
-                            <button 
-                              onClick={async () => {
-                                await handleSaveFont();
-                                setPhase('text-writer');
-                              }}
-                              className="w-full brutal-btn bg-neon-green flex items-center justify-center gap-2 py-3 text-sm"
-                            >
-                              <Sparkles size={18} />
-                              Use in Handwriting Writer
-                            </button>
-                            <button 
-                              onClick={downloadFont}
-                              className="w-full brutal-btn brutal-btn-primary flex items-center justify-center gap-2 py-3 text-sm"
-                            >
-                              <Download size={18} />
-                              Download .TTF Font File
-                            </button>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+                    {uploadedImages.map((img, i) => (
+                      <div key={i} className="aspect-[3/4] brutal-border bg-white p-2 relative group brutal-shadow">
+                        <img src={img} width={300} height={400} loading="lazy" className="w-full h-full object-cover" alt={`Page ${i+1}`} />
+                        <button 
+                          onClick={() => setUploadedImages(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute top-4 right-4 p-2 bg-error-red text-white border-2 border-brutal-black opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="aspect-[3/4] brutal-border border-dashed flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-neon-green/10 transition-colors">
+                      <Upload size={32} className="opacity-30" />
+                      <span className="font-mono text-xs font-bold uppercase">Add Photo/PDF</span>
+                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
+                    </label>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 3: Detection Results */}
+              {step === 3 && (
+                <motion.div 
+                  key="step3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <h2 className="text-3xl font-display uppercase">Detected Glyphs</h2>
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={startAnalysis}
+                        disabled={isAnalyzing}
+                        className="brutal-btn flex items-center gap-2"
+                      >
+                        <RefreshCw className={cn(isAnalyzing && "animate-spin")} size={18} />
+                        Re-analyze
+                      </button>
+                      <button 
+                        onClick={() => setStep(4)}
+                        className="brutal-btn brutal-btn-primary"
+                      >
+                        Process & Vectorize →
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                    {detectedChars.map((char, i) => (
+                      <div 
+                        key={i} 
+                        onClick={() => setEditingCharIndex(i)}
+                        className={cn(
+                          "aspect-square border-2 relative group overflow-hidden flex items-center justify-center cursor-pointer hover:scale-105 transition-transform",
+                          char.confidence > 0.8 ? "border-neon-green bg-neon-green/5" :
+                          char.confidence > 0.5 ? "border-warning-yellow bg-warning-yellow/5" :
+                          char.confidence > 0 ? "border-error-red bg-error-red/5" : "border-neutral-200 border-dashed"
+                        )}
+                      >
+                        <span className="absolute top-1 left-1 font-mono text-[9px] font-bold opacity-40">{char.char}</span>
+                        {char.imageData ? (
+                          <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain p-2" alt={char.char} />
+                        ) : (
+                          <AlertCircle size={16} className="opacity-20" />
+                        )}
+                        
+                        {char.confidence > 0 && (
+                          <div className={cn(
+                            "absolute bottom-0 right-0 px-1 font-mono text-[8px] font-bold text-white",
+                            char.confidence > 0.8 ? "bg-neon-green text-brutal-black" :
+                            char.confidence > 0.5 ? "bg-warning-yellow text-brutal-black" : "bg-error-red"
+                          )}>
+                            {char.confidence.toFixed(2)}
                           </div>
+                        )}
+                        <div className="absolute inset-0 bg-brutal-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <RefreshCw size={16} className="text-white" />
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
-                        {/* Live Typing Sandbox */}
-                        <div className="lg:col-span-2 space-y-2">
-                          <h3 className="font-display uppercase text-lg">Interactive Live Preview</h3>
-                          <div className="brutal-card brutal-shadow min-h-[340px] flex flex-col p-4">
-                            <textarea 
-                              className="flex-grow w-full min-h-[280px] bg-transparent outline-none resize-none leading-relaxed font-mono text-base"
-                              placeholder="Type something here to test your handwriting font..."
-                              style={{ 
-                                fontFamily: 'inktwin-preview',
-                                fontSize: `${fontConfig.fontSize}px`,
-                                letterSpacing: `${fontConfig.letterSpacing / 10}px`
-                              }}
-                              defaultValue="The quick brown fox jumps over the lazy dog. 0123456789 !?@#"
+              {/* Step 4: Processing */}
+              {step === 4 && (
+                <motion.div 
+                  key="step4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center justify-center py-32 space-y-8 min-h-[400px]"
+                >
+                  <div className="relative">
+                    <RefreshCw size={80} className="text-brutal-black animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-xl font-display text-brutal-black">{processingProgress}%</div>
+                    </div>
+                  </div>
+                  <div className="text-center space-y-4">
+                    <div className="space-y-1">
+                      <h2 className="text-4xl font-display uppercase text-brutal-black">Vectorizing...</h2>
+                      <p className="font-mono text-sm opacity-60 text-brutal-black">CHARACTER: {processingChar || 'INITIALIZING'}</p>
+                    </div>
+                    <div className="w-64 h-4 brutal-border bg-white overflow-hidden">
+                      <div 
+                        className="h-full bg-neon-green transition-all duration-300" 
+                        style={{ width: `${processingProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 5: Vector Review */}
+              {step === 5 && (
+                <motion.div 
+                  key="step5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="flex items-center justify-between border-b-2 border-brutal-black pb-4">
+                    <div className="space-y-1">
+                      <h2 className="text-3xl font-display uppercase">Vector Paths</h2>
+                      <p className="font-mono text-[10px] opacity-60 uppercase">Review the mathematical paths generated from your ink.</p>
+                    </div>
+                    <button 
+                      onClick={generateFont}
+                      className="brutal-btn brutal-btn-primary"
+                    >
+                      Assemble Font →
+                    </button>
+                  </div>
+
+                  <div className="bg-white brutal-border p-6 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3 brutal-shadow">
+                    {detectedChars.map((char, i) => (
+                      <div 
+                        key={i} 
+                        className={cn(
+                          "aspect-square border-2 relative group flex items-center justify-center p-2",
+                          char.svgPath ? "border-neon-green bg-white" : "border-neutral-200 border-dashed bg-neutral-50"
+                        )}
+                      >
+                        <span className="absolute top-1 left-1 font-mono text-[8px] font-bold opacity-30">{char.char}</span>
+                        
+                        {char.svgPath ? (
+                          <svg viewBox="0 0 500 500" className="w-full h-full fill-brutal-black">
+                            <path d={char.svgPath} fillRule="evenodd" />
+                          </svg>
+                        ) : char.imageData ? (
+                          <div className="flex flex-col items-center gap-1 opacity-40">
+                            <AlertCircle size={12} />
+                            <span className="font-mono text-[8px]">FAILED</span>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-[8px] opacity-20">EMPTY</span>
+                        )}
+
+                        {/* Hover to see original */}
+                        {char.imageData && (
+                          <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2">
+                            <img src={char.imageData} width={64} height={64} loading="lazy" className="w-full h-full object-contain opacity-40" alt="Original" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="bg-brutal-black text-white font-mono text-[8px] px-1">ORIGINAL</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Step 6: Preview & Download */}
+              {step === 6 && (
+                <motion.div 
+                  key="step6"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="space-y-8"
+                >
+                  <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-1 space-y-6">
+                      <div className="brutal-card brutal-shadow space-y-6">
+                        <h3 className="font-display uppercase text-xl">Font Config</h3>
+                        <div className="space-y-4">
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Font Name</label>
+                            <input 
+                              type="text" 
+                              value={fontConfig.name}
+                              onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
+                              className="w-full px-4 py-2 brutal-border font-mono outline-none focus:bg-neon-green/10"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Letter Spacing</label>
+                            <input 
+                              type="range" min="-50" max="100" 
+                              value={fontConfig.letterSpacing}
+                              onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
+                              className="w-full accent-brutal-black"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="font-mono text-[10px] font-bold uppercase opacity-60">Preview Size</label>
+                            <input 
+                              type="range" min="12" max="120" 
+                              value={fontConfig.fontSize}
+                              onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
+                              className="w-full accent-brutal-black"
                             />
                           </div>
                         </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={downloadFont}
+                            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2"
+                          >
+                            <Download size={20} />
+                            Download .TTF
+                          </button>
+                          <button 
+                            onClick={handleSaveFont}
+                            className="brutal-btn bg-neon-green flex items-center justify-center p-2"
+                            title="Save to Library"
+                          >
+                            <CheckCircle2 size={20} />
+                          </button>
+                        </div>
+                        <button 
+                          onClick={async () => {
+                            await handleSaveFont();
+                            setPhase('text-writer');
+                          }}
+                          className="w-full brutal-btn bg-warning-yellow flex items-center justify-center gap-2"
+                        >
+                          <Sparkles size={20} />
+                          Use this Handwriting
+                        </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </section>
+
+                      <div className="p-6 brutal-border bg-neon-green/5 space-y-4">
+                        <h4 className="font-display uppercase text-sm flex items-center gap-2">
+                          <AlertCircle size={16} />
+                          Installation
+                        </h4>
+                        <div className="font-mono text-[11px] space-y-2 leading-relaxed">
+                          <p>WIN: Right-click &gt; Install</p>
+                          <p>MAC: Double-click &gt; Install</p>
+                          <p>IOS: Use iFont app</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2 space-y-4">
+                      <h3 className="font-display uppercase text-xl">Live Preview</h3>
+                      <div className="brutal-card brutal-shadow min-h-[500px] flex flex-col">
+                        <textarea 
+                          className="flex-grow w-full bg-transparent outline-none resize-none leading-relaxed font-mono p-4"
+                          placeholder="Type to test your font..."
+                          style={{ 
+                            fontFamily: 'inktwin-preview',
+                            fontSize: `${fontConfig.fontSize}px`,
+                            letterSpacing: `${fontConfig.letterSpacing / 10}px`
+                          }}
+                          defaultValue="THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG. 0123456789 !?@#"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
           </>
         ) : phase === 'text-writer' ? (
           <HandwritingWriter 
@@ -1199,41 +1304,35 @@ export default function App() {
       </div>
 
       {/* Support Section */}
-      <div className="px-4 py-4 sm:px-6 sm:py-6 border-t-2 border-brutal-black bg-[var(--bg-secondary)]">
+      <div className="px-6 py-6 border-t-2 border-brutal-black bg-[var(--bg-secondary)]">
         <div className="max-w-2xl mx-auto">
           <SupportCard id="support-card" />
         </div>
       </div>
 
-      {/* Mobile Sticky Bottom Navigation Dock (PWA / Native Feel) */}
-      <nav 
-        aria-label="Mobile Navigation"
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white dark:bg-neutral-900 border-t-2 border-brutal-black mobile-bottom-dock flex items-center justify-around px-1 py-1"
-        style={{ borderColor: 'var(--border-primary)' }}
-      >
-        {navTabs.map((tab) => {
-          const isActive = phase === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => tab.id === 'home' ? handleGoHome() : setPhase(tab.id)}
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 py-1 px-0.5 min-h-[48px] rounded transition-all touch-manipulation",
-                isActive 
-                  ? "bg-neon-green text-brutal-black font-bold shadow-sm" 
-                  : "text-neutral-600 dark:text-neutral-300 hover:text-black active:scale-95"
-              )}
-            >
-              <span className={cn("transition-transform", isActive && "scale-110")}>
-                {tab.icon}
-              </span>
-              <span className="text-[9px] font-mono uppercase tracking-tight mt-0.5 truncate max-w-[56px]">
-                {tab.short}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Footer */}
+      <footer className="border-t-2 border-brutal-black p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-white">
+        <div className="flex gap-6">
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-neon-green brutal-border" /> HIGH (0.8+)
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-warning-yellow brutal-border" /> MED (0.5-0.8)
+          </div>
+          <div className="flex items-center gap-2 font-mono text-[10px] font-bold">
+            <div className="w-3 h-3 bg-error-red brutal-border" /> LOW (&lt;0.5)
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-[10px] opacity-40">
+            A <a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="underline hover:text-[var(--neon-green)] transition-all">Primuez.in</a> Project
+          </span>
+          <span className="font-mono text-[10px] opacity-40">|</span>
+          <span className="font-mono text-[10px] opacity-40">INKTWIN_ENGINE_STABLE_V1.0</span>
+          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
+        </div>
+      </footer>
 
       {/* API Key Modal */}
       <ApiKeyModal
@@ -1252,18 +1351,18 @@ export default function App() {
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-16 sm:bottom-12 left-4 right-4 sm:left-12 sm:right-auto z-50 bg-error-red text-white p-4 border-2 sm:border-4 border-brutal-black brutal-shadow flex items-center gap-3 max-w-md"
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-12 left-12 z-50 bg-error-red text-white px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 max-w-md"
           >
-            <AlertCircle size={20} className="shrink-0" />
-            <div className="flex flex-col text-xs font-mono">
-              <span className="font-display uppercase font-bold">Alert</span>
-              <span>{error}</span>
+            <AlertCircle size={24} className="shrink-0" />
+            <div className="flex flex-col">
+              <span className="font-display uppercase text-xs">Notice</span>
+              <span className="font-mono text-xs">{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="ml-auto p-1 font-bold">
-              ✕
+            <button onClick={() => setError(null)} className="ml-auto hover:rotate-180 transition-transform shrink-0 p-1" title="Dismiss">
+              <RefreshCw size={16} />
             </button>
           </motion.div>
         )}
@@ -1271,31 +1370,31 @@ export default function App() {
 
       {/* Find My Font — Name Your Font Modal */}
       {pendingFontToName && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-brutal-black/70 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-neutral-900 border-4 border-brutal-black p-6 sm:p-8 w-full max-w-md shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-            <h3 className="font-display uppercase text-xl sm:text-2xl mb-1">Name Your Font</h3>
-            <p className="font-mono text-xs opacity-60 mb-4">Save this font into your library.</p>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-brutal-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white border-4 border-brutal-black p-8 w-full max-w-md shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+            <h3 className="font-display uppercase text-2xl mb-1">Name Your Font</h3>
+            <p className="font-mono text-xs opacity-50 mb-6">Give it a name before saving to your library.</p>
             <input
               type="text"
               value={pendingFontToName.name}
               onChange={(e) => setPendingFontToName(prev => prev ? { ...prev, name: e.target.value } : prev)}
-              className="w-full px-3 py-2.5 brutal-border font-mono text-base outline-none mb-4"
+              className="w-full px-4 py-3 brutal-border font-mono text-lg outline-none focus:bg-neon-green/10 mb-6"
               autoFocus
               onKeyDown={(e) => { if (e.key === 'Enter') savePendingFont(); if (e.key === 'Escape') setPendingFontToName(null); }}
             />
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => setPendingFontToName(null)}
-                className="flex-1 brutal-btn text-xs py-2.5"
+                className="flex-1 brutal-btn brutal-btn-secondary"
               >
                 Cancel
               </button>
               <button
                 onClick={savePendingFont}
-                className="flex-1 brutal-btn bg-neon-green text-brutal-black flex items-center justify-center gap-1 text-xs py-2.5"
+                className="flex-1 brutal-btn bg-neon-green flex items-center justify-center gap-2"
               >
-                <CheckCircle2 size={16} />
-                Save &amp; Use
+                <CheckCircle2 size={18} />
+                Save & Use
               </button>
             </div>
           </div>
@@ -1306,12 +1405,12 @@ export default function App() {
       <AnimatePresence>
         {toast && (
           <motion.div 
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            className="fixed bottom-16 sm:bottom-12 right-4 sm:right-12 z-[100] bg-neon-green text-brutal-black px-4 py-3 border-2 sm:border-4 border-brutal-black brutal-shadow flex items-center gap-2.5 font-display uppercase text-xs sm:text-sm font-bold"
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-12 right-12 z-[100] bg-neon-green text-brutal-black px-6 py-4 border-4 border-brutal-black brutal-shadow flex items-center gap-4 font-display uppercase text-sm"
           >
-            <CheckCircle2 size={18} />
+            <CheckCircle2 size={24} />
             {toast}
           </motion.div>
         )}
@@ -1341,7 +1440,7 @@ export default function App() {
               next[editingCharIndex] = {
                 ...next[editingCharIndex],
                 imageData: normalized,
-                confidence: 1.0
+                confidence: 1.0 // Manual edit is high confidence
               };
               return next;
             });
