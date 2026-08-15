@@ -136,7 +136,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           <h2 className="text-xl font-display uppercase">Humanize Text</h2>
           <button
             onClick={handlePaste}
-            className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white hover:bg-warning-yellow transition-colors font-mono text-[10px] uppercase font-bold"
+            className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors font-mono text-[10px] uppercase font-bold"
           >
             <ClipboardPaste size={12} />
             Paste
@@ -154,7 +154,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           {/* Desktop-only paste button inside textarea */}
           <button
             onClick={handlePaste}
-            className="hidden lg:flex absolute bottom-3 right-3 p-1.5 brutal-border bg-white hover:bg-warning-yellow transition-colors"
+            className="hidden lg:flex absolute bottom-3 right-3 p-1.5 brutal-border bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors"
             title="Paste from clipboard"
           >
             <ClipboardPaste size={13} />
@@ -175,11 +175,11 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 onClick={() => setStyle(s)}
                 className={cn(
                   'flex-shrink-0 px-3 py-2 brutal-border text-left transition-all flex items-center gap-1.5',
-                  style === s ? 'bg-warning-yellow brutal-shadow' : 'theme-card bg-white'
+                  style === s ? 'bg-warning-yellow brutal-shadow text-neutral-950' : 'theme-card bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800'
                 )}
               >
                 <span className="text-sm">{STYLE_EMOJI[s]}</span>
-                <span className="font-display uppercase text-[10px] font-bold text-text-primary whitespace-nowrap">
+                <span className={cn("font-display uppercase text-[10px] font-bold whitespace-nowrap", style === s ? "text-neutral-950" : "text-neutral-900 dark:text-neutral-100")}>
                   {STYLE_LABELS[s]}
                 </span>
               </button>
@@ -194,14 +194,14 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
                 onClick={() => setStyle(s)}
                 className={cn(
                   'p-3 brutal-border text-left transition-all',
-                  style === s ? 'bg-warning-yellow brutal-shadow' : 'theme-card hover:bg-neutral-50'
+                  style === s ? 'bg-warning-yellow brutal-shadow' : 'theme-card hover:bg-neutral-50 dark:hover:bg-neutral-800/60'
                 )}
               >
-                <div className="font-display uppercase text-xs font-bold text-text-primary flex items-center gap-2">
+                <div className={cn("font-display uppercase text-xs font-bold flex items-center gap-2", style === s ? "text-neutral-950" : "text-neutral-900 dark:text-neutral-100")}>
                   <span>{STYLE_EMOJI[s]}</span>
                   {STYLE_LABELS[s]}
                 </div>
-                <div className="text-[9px] font-mono opacity-50 uppercase text-text-primary mt-0.5">
+                <div className={cn("text-[9px] font-mono uppercase mt-0.5", style === s ? "text-neutral-950/70" : "text-neutral-500 dark:text-neutral-400")}>
                   {STYLE_DESCS[s]}
                 </div>
               </button>
@@ -210,7 +210,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border-2 border-error-red text-error-red text-xs font-mono flex items-start justify-between gap-2">
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 border-2 border-error-red text-error-red text-xs font-mono flex items-start justify-between gap-2">
             <span>⚠️ {error}</span>
             <button onClick={() => setError(null)} className="font-bold underline text-[10px] uppercase shrink-0">Dismiss</button>
           </div>
@@ -221,16 +221,16 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           onClick={handleHumanize}
           disabled={isProcessing || !inputText.trim()}
           className={cn(
-            'w-full brutal-btn bg-brutal-black text-white hover:bg-warning-yellow hover:text-brutal-black transition-all flex items-center justify-center gap-2 group lg:mt-auto py-3 md:py-4',
+            'w-full brutal-btn bg-neutral-900 dark:bg-neutral-800 text-white border-2 border-neutral-900 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-all flex items-center justify-center gap-2 group lg:mt-auto py-3 md:py-4',
             'disabled:opacity-50 disabled:grayscale'
           )}
         >
           {isProcessing ? (
-            <RefreshCw size={18} className="animate-spin" />
+            <RefreshCw size={18} className="animate-spin text-warning-yellow" />
           ) : (
             <Wand2 size={18} className="group-hover:scale-110 transition-transform" />
           )}
-          <span className="font-display uppercase text-sm">
+          <span className="font-display uppercase text-sm font-bold">
             {isProcessing ? 'Humanizing...' : 'Humanize Text'}
           </span>
         </button>
@@ -380,13 +380,13 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
           <button
             onClick={() => onSendToWriter(editableOutput)}
             disabled={!editableOutput}
-            className="w-full brutal-btn bg-warning-yellow flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
+            className="w-full brutal-btn bg-warning-yellow text-neutral-950 border-2 border-neutral-950 flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale hover:bg-[#FFE600] transition-colors"
           >
             <div className="flex items-center justify-between w-full">
-              <span className="font-display uppercase text-sm">Send to Writer</span>
-              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+              <span className="font-display uppercase text-sm font-bold text-neutral-950">Send to Writer</span>
+              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform text-neutral-950" />
             </div>
-            <span className="text-[9px] font-mono opacity-50 uppercase text-left">
+            <span className="text-[9px] font-mono text-neutral-900/75 uppercase text-left">
               Render in your handwriting font
             </span>
           </button>
@@ -396,7 +396,7 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
             <button
               onClick={handleCopy}
               disabled={!editableOutput}
-              className="brutal-btn flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-mono uppercase bg-theme-bg text-text-primary disabled:opacity-50 border-theme-border py-2.5"
+              className="brutal-btn flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-mono uppercase bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 border-2 border-neutral-300 dark:border-neutral-700 py-2.5"
             >
               {copied ? <CheckCircle2 size={14} className="text-warning-yellow" /> : <Copy size={14} />}
               {copied ? 'Copied!' : 'Copy'}
@@ -404,9 +404,9 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
             <button
               onClick={handleHumanize}
               disabled={isProcessing || !inputText.trim()}
-              className="brutal-btn flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-mono uppercase bg-theme-bg text-text-primary disabled:opacity-50 border-theme-border py-2.5"
+              className="brutal-btn flex items-center justify-center gap-1.5 text-[10px] md:text-xs font-mono uppercase bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-50 border-2 border-neutral-300 dark:border-neutral-700 py-2.5"
             >
-              <RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={isProcessing ? 'animate-spin text-warning-yellow' : ''} />
               Regenerate
             </button>
           </div>
