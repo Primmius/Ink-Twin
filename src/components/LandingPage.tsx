@@ -12,8 +12,7 @@ import {
   CheckCircle2, 
   ArrowRight,
   ShieldCheck,
-  Zap,
-  BookOpen
+  Zap
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
@@ -117,7 +116,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="min-h-screen font-body flex flex-col selection:bg-neon-green selection:text-neutral-950 pb-20 md:pb-0"
+      className="min-h-screen font-body flex flex-col selection:bg-warning-yellow selection:text-neutral-950 pb-20 md:pb-0"
       style={{
         backgroundColor: 'var(--bg-primary)',
         color: 'var(--text-primary)',
@@ -143,7 +142,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
             <Logo size={36} showText={false} className="group-hover:scale-105 transition-transform" />
             <div>
               <h1 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-1">
-                Ink<span className="text-neon-green dark:text-neon-green">Twin</span>
+                Ink<span className="text-warning-yellow">Twin</span>
               </h1>
               <span className="text-[10px] font-mono text-neutral-500 block leading-tight">
                 by primuez.in
@@ -164,7 +163,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
           {onExplore && (
             <button
               onClick={() => onExplore('font-creation')}
-              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
             >
               <span>Get Started</span>
               <ChevronRight size={16} />
@@ -178,15 +177,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
 
           {/* Hero Section */}
           <section className="space-y-4 text-center sm:text-left" aria-labelledby="hero-title">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-green/15 text-neutral-900 dark:text-neon-green border border-neon-green/30 text-xs font-mono font-semibold">
-              <Sparkles size={14} className="animate-spin text-neon-green" style={{ animationDuration: '4s' }} />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-warning-yellow/20 text-neutral-950 dark:text-yellow-300 border border-warning-yellow/40 text-xs font-mono font-semibold">
+              <Sparkles size={14} className="text-warning-yellow" />
               <span>Mobile-First Handwriting AI Studio</span>
             </div>
 
             <h2 id="hero-title" className="font-display font-extrabold uppercase tracking-tight text-3xl sm:text-5xl md:text-6xl leading-[1.05]">
               Your handwriting.
               <br />
-              <span className="text-neon-green">Digitally Yours.</span>
+              <span className="text-warning-yellow">Digitally Yours.</span>
             </h2>
 
             <p className="text-sm sm:text-base md:text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl leading-relaxed">
@@ -197,7 +196,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
             <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start pt-2">
               <button
                 onClick={() => onExplore?.('font-creation')}
-                className="px-5 py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-sm uppercase tracking-wider flex items-center gap-2 shadow-md active:scale-95 transition-all"
+                className="px-5 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-sm uppercase tracking-wider flex items-center gap-2 shadow-md active:scale-95 transition-all"
               >
                 <PenTool size={18} />
                 <span>Create My Font</span>
@@ -216,13 +215,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
             {/* Trust Badges */}
             <div className="flex flex-wrap gap-3 pt-3 justify-center sm:justify-start text-xs font-mono text-neutral-500 dark:text-neutral-400">
               <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 size={14} className="text-neon-green" /> Free Forever
+                <CheckCircle2 size={14} className="text-warning-yellow" /> Free Forever
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck size={14} className="text-neon-green" /> Local &amp; Private
+                <ShieldCheck size={14} className="text-warning-yellow" /> Local &amp; Private
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Zap size={14} className="text-neon-green" /> Instant TTF Export
+                <Zap size={14} className="text-warning-yellow" /> Instant TTF Export
               </span>
             </div>
           </section>
@@ -254,7 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                     onClick={() => setDemoInk(ink.color)}
                     className={cn(
                       "w-6 h-6 rounded-full border-2 transition-transform active:scale-90",
-                      demoInk === ink.color ? "border-neon-green scale-110 shadow-sm" : "border-transparent"
+                      demoInk === ink.color ? "border-warning-yellow scale-110 shadow-sm" : "border-transparent"
                     )}
                     style={{ backgroundColor: ink.color }}
                     title={ink.name}
@@ -263,19 +262,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               </div>
             </div>
 
-            {/* Ruled Paper Simulation Box */}
+            {/* Ruled Paper Simulation Box - Always Authentic White/Cream Paper */}
             <div 
-              className="my-4 p-5 sm:p-6 rounded-xl border border-neutral-200 dark:border-neutral-700/80 min-h-[140px] flex flex-col justify-center relative overflow-hidden"
+              className="my-4 p-5 sm:p-6 rounded-xl border border-neutral-300 shadow-sm min-h-[140px] flex flex-col justify-center relative overflow-hidden handwriting-paper-surface"
               style={{
-                backgroundColor: theme === 'dark' ? '#14151B' : '#FAF9F6',
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 27px, ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(59,130,246,0.15)'} 28px)`,
+                backgroundColor: '#FAF9F6',
+                backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(59,130,246,0.18) 28px)',
                 backgroundSize: '100% 28px',
+                color: '#141414'
               }}
             >
               {/* Margin line */}
               <div 
                 className="absolute top-0 bottom-0 left-6 sm:left-10 w-[2px] pointer-events-none"
-                style={{ backgroundColor: theme === 'dark' ? 'rgba(239,68,68,0.3)' : 'rgba(239,68,68,0.4)' }}
+                style={{ backgroundColor: 'rgba(239,68,68,0.45)' }}
               />
 
               <p 
@@ -297,7 +297,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 value={demoText}
                 onChange={(e) => setDemoText(e.target.value)}
                 placeholder="Type anything to see it handwritten..."
-                className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-medium focus:ring-2 focus:ring-neon-green outline-none"
+                className="w-full px-4 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-medium focus:ring-2 focus:ring-warning-yellow outline-none"
               />
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -330,7 +330,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               {onExplore && (
                 <button
                   onClick={() => onExplore('font-creation')}
-                  className="text-xs font-mono font-bold text-neon-green hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-xs font-mono font-bold text-warning-yellow hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   Explore All <ChevronRight size={14} />
                 </button>
@@ -358,7 +358,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
 
                     <div>
                       <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-xl bg-neon-green/15 text-neutral-950 dark:text-neon-green flex items-center justify-center group-hover:scale-105 transition-transform">
+                        <div className="w-12 h-12 rounded-xl bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow flex items-center justify-center group-hover:scale-105 transition-transform">
                           <IconComponent size={24} />
                         </div>
                         <span className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
@@ -366,7 +366,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                         </span>
                       </div>
 
-                      <h4 className="font-display font-bold text-lg text-neutral-900 dark:text-white mb-2 group-hover:text-neon-green transition-colors flex items-center justify-between">
+                      <h4 className="font-display font-bold text-lg text-neutral-900 dark:text-white mb-2 group-hover:text-warning-yellow transition-colors flex items-center justify-between">
                         <span>{f.title}</span>
                         <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                       </h4>
@@ -377,7 +377,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
 
                     <div className="mt-5 pt-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
                       <span className="text-[10px] font-mono text-neutral-400">{f.tag}</span>
-                      <span className="text-xs font-mono font-semibold text-neon-green flex items-center gap-1">
+                      <span className="text-xs font-mono font-semibold text-warning-yellow flex items-center gap-1">
                         Launch <ChevronRight size={14} />
                       </span>
                     </div>
@@ -400,7 +400,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/60 space-y-2">
-                <div className="w-8 h-8 rounded-lg bg-neon-green text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
+                <div className="w-8 h-8 rounded-lg bg-warning-yellow text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
                   1
                 </div>
                 <h4 className="font-display font-bold text-sm text-neutral-900 dark:text-white">
@@ -412,7 +412,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               </div>
 
               <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/60 space-y-2">
-                <div className="w-8 h-8 rounded-lg bg-neon-green text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
+                <div className="w-8 h-8 rounded-lg bg-warning-yellow text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
                   2
                 </div>
                 <h4 className="font-display font-bold text-sm text-neutral-900 dark:text-white">
@@ -424,7 +424,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               </div>
 
               <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 border border-neutral-200 dark:border-neutral-700/60 space-y-2">
-                <div className="w-8 h-8 rounded-lg bg-neon-green text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
+                <div className="w-8 h-8 rounded-lg bg-warning-yellow text-neutral-950 font-display font-bold flex items-center justify-center text-sm">
                   3
                 </div>
                 <h4 className="font-display font-bold text-sm text-neutral-900 dark:text-white">
@@ -456,7 +456,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
 
             <ol className="space-y-2.5 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300">
               <li className="flex gap-2.5 items-start">
-                <span className="w-6 h-6 rounded-md bg-neon-green text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
+                <span className="w-6 h-6 rounded-md bg-warning-yellow text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
                   1
                 </span>
                 <span>
@@ -465,7 +465,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                     href="https://aistudio.google.com/app/apikey"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-bold text-neon-green underline decoration-2 underline-offset-2 inline-flex items-center gap-0.5"
+                    className="font-bold text-warning-yellow underline decoration-2 underline-offset-2 inline-flex items-center gap-0.5"
                   >
                     Google AI Studio <ChevronRight size={14} />
                   </a>{' '}
@@ -473,7 +473,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 </span>
               </li>
               <li className="flex gap-2.5 items-start">
-                <span className="w-6 h-6 rounded-md bg-neon-green text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
+                <span className="w-6 h-6 rounded-md bg-warning-yellow text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
                   2
                 </span>
                 <span>Paste your key below (stored securely only on your device).</span>
@@ -487,13 +487,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 onChange={(e) => setKeyInput(e.target.value)}
                 placeholder="AIzaSy..."
                 autoComplete="new-password"
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-mono focus:ring-2 focus:ring-neon-green outline-none"
+                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-mono focus:ring-2 focus:ring-warning-yellow outline-none"
               />
 
               <button
                 type="submit"
                 disabled={!keyInput.trim()}
-                className="w-full py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 <span>Save Key &amp; Start</span>
                 <ChevronRight size={18} />
@@ -521,7 +521,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
               "Built by a student who suffered a hand injury and got an F for typed assignments. Built 100% free so no student or creator ever faces that frustration again."
             </p>
             <p className="text-xs font-mono font-semibold text-neutral-500 text-right">
-              — Rahul (<a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="text-neon-green hover:underline">primuez.in</a>)
+              — Rahul (<a href="https://primuez.in" target="_blank" rel="noopener noreferrer" className="text-warning-yellow hover:underline">primuez.in</a>)
             </p>
           </article>
 
@@ -544,7 +544,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
             href="https://primuez.in"
             target="_blank"
             rel="noopener noreferrer"
-            className="font-bold text-neutral-900 dark:text-white hover:text-neon-green transition-colors"
+            className="font-bold text-neutral-900 dark:text-white hover:text-warning-yellow transition-colors"
           >
             Primuez.in
           </a>{' '}
@@ -552,7 +552,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
         </span>
         <div className="flex items-center gap-2 font-mono text-[11px]">
           <span>Free Forever</span>
-          <div className="w-2 h-2 bg-neon-green rounded-full animate-pulse" />
+          <div className="w-2 h-2 bg-warning-yellow rounded-full animate-pulse" />
         </div>
       </footer>
     </motion.div>

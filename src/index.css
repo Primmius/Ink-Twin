@@ -8,11 +8,14 @@
   --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
-  --color-neon-green: #00FF66;
-  --color-ink-green: #00E55B;
+  --color-warning-yellow: #FFD700;
+  --color-brand-yellow: #FFD700;
+  --color-lemon-yellow: #FFE600;
+  --color-dark-yellow: #CCA000;
+  --color-neon-green: #FFD700; /* Remapped to brand yellow */
+  --color-ink-green: #FFD700;  /* Remapped to brand yellow */
   --color-brutal-black: #0A0A0C;
   --color-gallery-white: #FFFFFF;
-  --color-warning-yellow: #FFD700;
   --color-error-red: #FF453A;
 
   --color-text-primary: var(--text-primary);
@@ -21,11 +24,14 @@
 }
 
 :root {
-  --neon-green: #00FF66;
-  --ink-green: #00E55B;
+  --warning-yellow: #FFD700;
+  --brand-yellow: #FFD700;
+  --lemon-yellow: #FFE600;
+  --dark-yellow: #CCA000;
+  --neon-green: #FFD700; /* Remapped to brand yellow */
+  --ink-green: #FFD700;  /* Remapped to brand yellow */
   --brutal-black: #0A0A0C;
   --gallery-white: #FFFFFF;
-  --warning-yellow: #FFD700;
   --error-red: #FF453A;
   
   /* Semantic Variables for Theming - Light Mode (Swiss Studio Paper Substrate) */
@@ -35,7 +41,7 @@
   --bg-secondary: #EEF2F6;
   --bg-card: #FFFFFF;
   --shadow-color: rgba(15, 23, 42, 0.95);
-  --accent-color: #00E55B;
+  --accent-color: #FFD700;
   --surface-elevated: #FFFFFF;
 }
 
@@ -48,8 +54,12 @@ body.dark {
   --bg-card: #16181F;
   --shadow-color: rgba(0, 0, 0, 0.85);
   --warning-yellow: #FFD700;
-  --neon-green: #00FF66;
-  --accent-color: #00FF66;
+  --brand-yellow: #FFD700;
+  --lemon-yellow: #FFE600;
+  --dark-yellow: #CCA000;
+  --neon-green: #FFD700; /* Remapped to brand yellow */
+  --ink-green: #FFD700;  /* Remapped to brand yellow */
+  --accent-color: #FFD700;
   --surface-elevated: #1F232C;
 }
 
@@ -97,30 +107,22 @@ body {
   background: var(--warning-yellow);
 }
 
-/* Base Overrides for Dark Mode components */
-body.dark aside,
+/* Base Overrides for Dark Mode components (App Chrome Only) */
+body.dark aside:not(.handwriting-paper-surface),
 body.dark header,
 body.dark footer {
-  background-color: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
-body.dark section {
-  background-color: inherit !important;
-  color: var(--text-primary) !important;
-}
-
-body.dark .bg-white,
-body.dark .bg-neutral-100,
-body.dark .bg-neutral-50,
-body.dark .bg-neutral-200 {
-  background-color: var(--bg-card) !important;
-  color: var(--text-primary) !important;
+body.dark section:not(.handwriting-paper-surface) {
+  background-color: inherit;
+  color: var(--text-primary);
 }
 
 /* Borders in dark mode */
 body.dark .border-brutal-black {
-  border-color: var(--border-primary) !important;
+  border-color: var(--border-primary);
 }
 body.dark .border-b,
 body.dark .border-t,
@@ -133,23 +135,39 @@ body.dark .border {
 /* Text in dark mode */
 body.dark .text-brutal-black,
 body.dark .text-black {
-  color: var(--text-primary) !important;
+  color: var(--text-primary);
 }
 body.dark .text-neutral-500,
 body.dark .text-neutral-600,
 body.dark .text-neutral-700,
 body.dark .text-gray-500,
 body.dark .text-gray-600 {
-  color: rgba(243, 244, 246, 0.65) !important;
+  color: rgba(243, 244, 246, 0.65);
 }
 
 /* Inputs / selects in dark mode */
-body.dark input:not([type="range"]),
-body.dark textarea,
-body.dark select {
-  background-color: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-primary) !important;
+body.dark input:not([type="range"]):not(.paper-input),
+body.dark textarea:not(.paper-textarea),
+body.dark select:not(.paper-select) {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+/* ========================================================= */
+/* CRITICAL: Physical Paper Canvas Color Preservation Rules   */
+/* Physical paper (white, lined, legal pad, kraft, etc.)     */
+/* MUST ALWAYS retain authentic physical colors in dark mode! */
+/* ========================================================= */
+.handwriting-paper-surface,
+.handwriting-paper-surface canvas {
+  /* Prevent dark mode from inverting or darkening the physical paper */
+  color-scheme: light !important;
+}
+
+.handwriting-paper-surface .paper-textarea {
+  background-color: transparent !important;
+  color: transparent !important;
 }
 
 /* Navigation Tabs */
@@ -166,8 +184,8 @@ input, textarea, select {
 
 input:focus, textarea:focus, select:focus {
   outline: none;
-  border-color: var(--neon-green) !important;
-  box-shadow: 0 0 0 3px rgba(0, 255, 102, 0.2) !important;
+  border-color: var(--warning-yellow) !important;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.25) !important;
 }
 
 /* High-Craft Utilities */
@@ -202,11 +220,11 @@ input:focus, textarea:focus, select:focus {
 }
 
 @utility brutal-btn-primary {
-  @apply bg-neon-green text-neutral-950;
+  @apply bg-warning-yellow text-neutral-950;
   border-color: var(--border-primary);
 
   &:hover {
-    background-color: #33FF85;
+    background-color: #FFE600;
     color: #0A0A0C;
   }
 }
@@ -222,29 +240,35 @@ input:focus, textarea:focus, select:focus {
 
 @utility theme-bg {
   background-color: var(--bg-primary);
-  color: var(--text-primary) !important;
+  color: var(--text-primary);
 }
 
 @utility theme-card {
   background-color: var(--bg-card);
-  color: var(--text-primary) !important;
+  color: var(--text-primary);
 }
 
 @utility theme-border {
   border-color: var(--border-primary);
 }
 
-/* Explicit Original Bright Yellow (#FFD700) Styling */
-.bg-warning-yellow {
+/* Explicit Bright Yellow (#FFD700 / #FFE600) Styling */
+.bg-warning-yellow,
+.bg-brand-yellow,
+.bg-neon-green {
   background-color: var(--warning-yellow) !important;
   color: #0A0A0C !important;
 }
 
-.border-warning-yellow {
+.border-warning-yellow,
+.border-brand-yellow,
+.border-neon-green {
   border-color: var(--warning-yellow) !important;
 }
 
-.text-warning-yellow {
+.text-warning-yellow,
+.text-brand-yellow,
+.text-neon-green {
   color: var(--warning-yellow) !important;
 }
 

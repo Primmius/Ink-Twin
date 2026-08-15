@@ -4,17 +4,16 @@
 
 ## Visual World & Metaphor
 
-**"Swiss Technical Ink Lab"** — A fusion of clean, high-precision Swiss typographic clarity and tactile, organic ink craft. The digital environment feels like a modern studio tool: crisp micro-borders, tactile card surfaces, high-contrast typography, and vibrant electric-ink accent strokes that celebrate the human quality of handwriting.
+**"Swiss Technical Ink Lab"** — A fusion of clean, high-precision Swiss typographic clarity and tactile, organic ink craft. The digital environment feels like a modern studio tool: crisp micro-borders, tactile card surfaces, high-contrast typography, and vibrant golden/lemon yellow accent strokes that celebrate the human quality of handwriting.
 
 ## Color Palette
 
 ### Primary & Brand
-- **Accent Ink Green**: `#00E55B` (Light mode text/accents), `#00FF66` (Dark mode vibrant ink pop)
-- **Ink Green Deep**: `#008F37` (Accessible high-contrast text on bright backgrounds)
-- **Accent Warning Yellow**: `#FFC700`
-- **Accent Coral Red**: `#FF453A`
-- **Accent Studio Blue**: `#2563EB`
-- **Accent Purple**: `#9333EA`
+- **Brand Golden / Lemon Yellow**: `#FFD700` (Primary active state, highlights, badges, buttons)
+- **Lemon Yellow Bright**: `#FFE600` (Hover & active feedback)
+- **Dark Yellow / Amber**: `#CCA000` (Borders, high-contrast accents)
+- **Accent Coral Red**: `#FF453A` (Errors, delete actions)
+- **Accent Studio Blue**: `#2563EB` (Information badges, ruled ink lines)
 
 ### Dark Mode (Studio Carbon)
 - Background Base: `#0B0C0E`
@@ -38,6 +37,10 @@
 - Text Secondary: `#4B5563`
 - Text Muted: `#6B7280`
 
+### 📜 Physical Paper Canvas Preservation Rule
+- In **both Light and Dark modes**, document paper surfaces (`black-lined`, `blue-lined`, `white`, `legal-pad`, `kraft`, etc.) **always preserve their authentic physical paper colors and textures** (e.g. crisp `#FFFFFF` or `#FAF9F6` for ruled papers, yellow `#FEFBD8` for legal pads).
+- Dark mode applies exclusively to app chrome, header, footers, toolbars, and sheets, leaving the document paper clean and realistic for export and review.
+
 ## Typography
 
 - **Display**: `'Space Grotesk'`, system sans-serif (`font-display`) — tight tracking (`-0.03em`), confident weight (600–700).
@@ -47,22 +50,22 @@
 ## Mobile-First UI & Touch Architecture
 
 1. **Bottom Navigation & App Shell**:
-   - Fixed, blur-backed bottom navigation dock with clear active indicators, badges, and 48px minimum touch targets.
-   - Quick floating action button (FAB) for the primary conversion goal: "Create Font" / "New Document".
+   - Fixed bottom navigation dock with clear active indicators, badges, and 48px minimum touch targets.
+   - 1-tap switching between Home, Create Font, Studio Writer, AI Solver, and Find Font.
    - Safe-area inset support (`pb-safe`, `pt-safe`).
 
 2. **Mobile Bottom Sheets & Floating Toolbars**:
-   - Complex formatting tools (paper style, ink color, letter spacing, font picker) slide up in ergonomic thumb-zone bottom sheets instead of crowding mobile viewports.
-   - Segmented pill switchers for switching between Document Settings, AI Tools, and Export options.
+   - Complex formatting tools (paper style, ink color, letter spacing, font picker) slide up in ergonomic thumb-zone bottom sheets (`h-[45vh] max-h-[380px]`).
+   - **Non-blurring overlay**: Backdrop stays clear and non-blurred so the user has an unobstructed view of the physical document paper while switching ink colors and styles.
 
 3. **Handwriting Canvas Scaling**:
    - A4 document canvas fluidly scales to match mobile device width (`viewportWidth - 32px`) while maintaining pristine vector export resolution.
+   - **Default Paper**: Set to authentic Black Lined (`black-lined`) notebook paper.
    - Interactive zoom & fit controls (`Fit Screen`, `100%`, `Zoom In/Out`).
-   - Touch-friendly page carousel with swipeable thumbnail switcher and page counter.
 
 4. **Character Grid & Drawing Pad**:
    - Responsive character grid for reviewing detected glyphs.
-   - Built-in full-screen touch drawing pad so mobile users can draw or correct missing characters with finger or stylus directly on device.
+   - Built-in full-screen touch drawing pad so mobile users can draw or correct missing characters with finger or stylus directly on device with typographic guidelines.
 
 5. **Motion & Feedback**:
    - Snappy spring transitions (`stiffness: 400, damping: 30`) using `motion/react`.

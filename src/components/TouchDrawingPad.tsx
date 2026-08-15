@@ -143,7 +143,7 @@ export const TouchDrawingPad: React.FC<TouchDrawingPadProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-neon-green/20 border border-neon-green flex items-center justify-center font-display text-xl font-bold text-neutral-900 dark:text-white">
+            <div className="w-10 h-10 rounded-xl bg-warning-yellow/20 border border-warning-yellow flex items-center justify-center font-display text-xl font-bold text-neutral-900 dark:text-white">
               {char}
             </div>
             <div>
@@ -236,7 +236,7 @@ export const TouchDrawingPad: React.FC<TouchDrawingPadProps> = ({
                   className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center transition-all",
                     strokeWidth === w && !isEraser
-                      ? "ring-2 ring-neon-green bg-neutral-200 dark:bg-neutral-700"
+                      ? "ring-2 ring-warning-yellow bg-neutral-200 dark:bg-neutral-700"
                       : "hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   )}
                 >
@@ -272,7 +272,7 @@ export const TouchDrawingPad: React.FC<TouchDrawingPadProps> = ({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 px-5 py-2.5 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 px-5 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 disabled:opacity-50"
           >
             {isSaving ? (
               <span>Saving...</span>

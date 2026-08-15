@@ -35,11 +35,12 @@ Smartphone browsers (Safari iOS, Chrome Mobile, Android WebViews, iPadOS/Tablets
 
 - Name: **InkTwin** (HandFont)
 - Tagline: "Your Handwriting, Digitally Yours"
-- Tone: High-craft, Swiss-inspired precision with modern creative energy (electric ink green accents `#00FF66` / `#00E55B`, crisp deep blacks `#0A0A0C`, tactile neutral stone/graphite surfaces `#121316` and `#F7F7F8`, smooth typography with Space Grotesk display, Plus Jakarta Sans body, JetBrains Mono data metrics).
+- Tone: High-craft, Swiss-inspired precision with modern creative energy (vibrant golden/lemon yellow accents `#FFD700` / `#FFE600`, crisp deep blacks `#0A0A0C`, tactile neutral stone/graphite surfaces `#121316` and `#F7F7F8`, smooth typography with Space Grotesk display, Plus Jakarta Sans body, JetBrains Mono data metrics).
+- Default Paper: Authentic black lined notebook paper (`black-lined`), maintaining physical white substrate color in both light and dark modes.
 
 ## Product Principles
 
 1. **Mobile-First Ergonomics**: Every primary action must be easily reachable with one thumb; zero horizontal layout overflow; no tiny un-tappable controls.
-2. **Instant Visual Feedback**: Every parameter change (ink color, slant, spacing, randomness) updates the document canvas immediately without lag.
-3. **Graceful Privacy & Fallbacks**: Full client-side vectorization and font synthesis works offline; clear BYOK setup for Gemini multimodal features with inline fallback tools (manual touch drawing pad for missing characters).
-4. **Authentic Natural Output**: Handwriting simulation embraces organic irregularity, baseline variance, and subtle ink bleed for human-grade realism.
+2. **Instant Visual Feedback & Live View**: Every parameter change (ink color, paper style, slant, spacing, randomness) updates the document canvas immediately without backdrop blur or obstruction.
+3. **Authentic Physical Paper Fidelity**: Physical document paper (black-lined, blue-lined, kraft, legal pad) preserves its true physical paper background in dark mode, ensuring dark mode styles only the software studio chrome.
+4. **Graceful Privacy & Fallbacks**: Full client-side vectorization and font synthesis works offline; clear BYOK setup for Gemini multimodal features with inline fallback tools (manual touch drawing pad for missing characters).

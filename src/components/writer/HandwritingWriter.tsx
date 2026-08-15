@@ -159,7 +159,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     inkVariation: false,
     inkVariationIntensity: 0.3,
     effect: "normal",
-    pageStyle: "white"
+    pageStyle: "black-lined"
   });
 
   const [mobileScale, setMobileScale] = useState(1);
@@ -2081,7 +2081,7 @@ ${documentText}`;
         {/* Mobile Bottom Navigation & Drawer */}
         {isMobile && (
           <>
-            {/* Drawer Overlay */}
+            {/* Drawer Overlay (Clear, non-blurring to keep live paper view completely visible) */}
             <AnimatePresence>
               {activeMobileDrawer && (
                 <motion.div 
@@ -2089,7 +2089,7 @@ ${documentText}`;
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={() => setActiveMobileDrawer(null)}
-                  className="fixed inset-0 bg-brutal-black/40 backdrop-blur-sm z-[80]"
+                  className="fixed inset-0 bg-black/5 z-[80]"
                 />
               )}
             </AnimatePresence>
@@ -2108,12 +2108,12 @@ ${documentText}`;
                   onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
                   className={cn(
                     "flex flex-col items-center gap-1 flex-1 py-1 transition-all active:scale-95",
-                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white" : "text-neutral-500"
+                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white font-bold" : "text-neutral-500"
                   )}
                 >
                   <div className={cn(
                     "p-2 rounded-xl transition-all",
-                    activeMobileDrawer === tab.id ? "bg-neon-green text-neutral-950 shadow-sm" : ""
+                    activeMobileDrawer === tab.id ? "bg-warning-yellow text-neutral-950 shadow-sm" : ""
                   )}>
                     {tab.icon}
                   </div>
@@ -2122,7 +2122,7 @@ ${documentText}`;
               ))}
             </div>
 
-            {/* Bottom Drawer */}
+            {/* Bottom Drawer (Compact height so paper is always visible) */}
             <AnimatePresence>
               {activeMobileDrawer && (
                 <motion.div
@@ -2130,7 +2130,7 @@ ${documentText}`;
                   animate={{ y: 0 }}
                   exit={{ y: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="fixed bottom-[74px] left-0 right-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 z-[90] h-[55vh] flex flex-col shadow-2xl rounded-t-2xl overflow-hidden"
+                  className="fixed bottom-[74px] left-0 right-0 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 z-[90] h-[45vh] max-h-[380px] flex flex-col shadow-2xl rounded-t-2xl overflow-hidden"
                 >
                   {/* Drag Indicator / Close Handle */}
                   <div 

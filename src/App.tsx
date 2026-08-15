@@ -527,7 +527,7 @@ export default function App() {
 
   return (
     <div 
-      className="min-h-screen font-body flex flex-col selection:bg-neon-green selection:text-neutral-950 pb-20 md:pb-0" 
+      className="min-h-screen font-body flex flex-col selection:bg-warning-yellow selection:text-neutral-950 pb-20 md:pb-0" 
       style={{ 
         backgroundColor: 'var(--bg-primary)', 
         color: 'var(--text-primary)' 
@@ -548,7 +548,7 @@ export default function App() {
             <Logo size={32} showText={false} className="group-hover:scale-105 transition-transform" />
             <div>
               <h1 className="text-lg sm:text-xl font-display font-bold uppercase tracking-tight leading-none flex items-baseline gap-1">
-                Ink<span className="text-neon-green">Twin</span>
+                Ink<span className="text-warning-yellow">Twin</span>
               </h1>
             </div>
           </button>
@@ -571,7 +571,7 @@ export default function App() {
               className={cn(
                 "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
                 phase === 'font-creation' 
-                  ? "bg-neon-green text-neutral-950 shadow-sm" 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
@@ -582,7 +582,7 @@ export default function App() {
               className={cn(
                 "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
                 phase === 'text-writer' 
-                  ? "bg-neon-green text-neutral-950 shadow-sm" 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
@@ -593,7 +593,7 @@ export default function App() {
               className={cn(
                 "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
                 phase === 'homework-solver' 
-                  ? "bg-neon-green text-neutral-950 shadow-sm" 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
@@ -604,7 +604,7 @@ export default function App() {
               className={cn(
                 "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
                 phase === 'find-font' 
-                  ? "bg-neon-green text-neutral-950 shadow-sm" 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
@@ -615,7 +615,7 @@ export default function App() {
               className={cn(
                 "px-3 py-1.5 rounded-lg font-display text-xs font-bold uppercase tracking-wider transition-all",
                 phase === 'ai-humanizer' 
-                  ? "bg-neon-green text-neutral-950 shadow-sm" 
+                  ? "bg-warning-yellow text-neutral-950 shadow-sm" 
                   : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
               )}
             >
@@ -680,7 +680,7 @@ export default function App() {
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase text-neon-green">
+                      <span className="text-[10px] font-mono font-bold uppercase text-warning-yellow">
                         Step 0{step} / 06
                       </span>
                       <span className="text-[11px] font-mono text-neutral-400">·</span>
@@ -705,7 +705,7 @@ export default function App() {
                       className={cn(
                         "w-6 h-6 rounded-full text-[10px] font-mono font-bold flex items-center justify-center transition-all",
                         step === s 
-                          ? "bg-neon-green text-neutral-950 font-bold shadow-sm" 
+                          ? "bg-warning-yellow text-neutral-950 font-bold shadow-sm" 
                           : s < step 
                             ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
                             : "bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 opacity-40"
@@ -733,7 +733,7 @@ export default function App() {
                       className="space-y-6"
                     >
                       <div className="space-y-2 text-center sm:text-left">
-                        <span className="text-xs font-mono uppercase text-neon-green font-bold tracking-wider">
+                        <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
                           Module 01 // TrueType Synthesis
                         </span>
                         <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
@@ -749,7 +749,7 @@ export default function App() {
                         {/* Option 1: Mobile Camera */}
                         <div className="p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm hover:border-neutral-900 dark:hover:border-neutral-600 transition-all flex flex-col justify-between">
                           <div className="space-y-2">
-                            <div className="w-12 h-12 rounded-xl bg-neon-green/15 text-neutral-950 dark:text-neon-green flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl bg-warning-yellow/20 text-neutral-950 dark:text-warning-yellow flex items-center justify-center">
                               <Camera size={24} />
                             </div>
                             <h3 className="font-display font-bold text-lg text-neutral-900 dark:text-white">
@@ -761,7 +761,7 @@ export default function App() {
                           </div>
                           <button
                             onClick={() => setIsCameraOpen(true)}
-                            className="w-full py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+                            className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
                           >
                             <Camera size={16} />
                             Open Camera Shutter
@@ -771,7 +771,7 @@ export default function App() {
                         {/* Option 2: Upload Photo / PDF */}
                         <div className="p-5 rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm hover:border-neutral-900 dark:hover:border-neutral-600 transition-all flex flex-col justify-between">
                           <div className="space-y-2">
-                            <div className="w-12 h-12 rounded-xl bg-neon-green/15 text-neutral-950 dark:text-neon-green flex items-center justify-center">
+                            <div className="w-12 h-12 rounded-xl bg-warning-yellow/20 text-neutral-950 dark:text-warning-yellow flex items-center justify-center">
                               <Upload size={24} />
                             </div>
                             <h3 className="font-display font-bold text-lg text-neutral-900 dark:text-white">
@@ -866,7 +866,7 @@ export default function App() {
                         <button 
                           onClick={startAnalysis}
                           disabled={isAnalyzing || uploadedImages.length === 0}
-                          className="px-6 py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
+                          className="px-6 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-50 transition-all"
                         >
                           {isAnalyzing ? (
                             <>
@@ -935,7 +935,7 @@ export default function App() {
                             <h2 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
                               Character Review
                             </h2>
-                            <span className="px-2.5 py-0.5 rounded-full bg-neon-green/20 text-neutral-950 dark:text-neon-green font-mono text-xs font-bold">
+                            <span className="px-2.5 py-0.5 rounded-full bg-warning-yellow/20 text-neutral-950 dark:text-yellow-300 font-mono text-xs font-bold">
                               {detectedCount} / {detectedChars.length} Detected
                             </span>
                           </div>
@@ -956,7 +956,7 @@ export default function App() {
                           </button>
                           <button 
                             onClick={() => setStep(4)}
-                            className="px-5 py-2.5 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                            className="px-5 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                           >
                             <span>Vectorize &amp; Continue</span>
                             <ChevronRight size={16} />
@@ -1023,7 +1023,7 @@ export default function App() {
                                   ? "border-emerald-500 bg-emerald-500/5 hover:border-emerald-600" 
                                   : char.confidence > 0.4 
                                     ? "border-amber-500 bg-amber-500/5 hover:border-amber-600" 
-                                    : "border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/30 hover:border-neon-green"
+                                    : "border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/30 hover:border-warning-yellow"
                               )}
                               title={hasData ? `Edit '${char.char}'` : `Draw '${char.char}' on screen`}
                             >
@@ -1039,7 +1039,7 @@ export default function App() {
                                   alt={char.char} 
                                 />
                               ) : (
-                                <div className="flex flex-col items-center justify-center opacity-40 group-hover:opacity-100 group-hover:text-neon-green transition-all">
+                                <div className="flex flex-col items-center justify-center opacity-40 group-hover:opacity-100 group-hover:text-warning-yellow transition-all">
                                   <PenTool size={16} />
                                   <span className="text-[8px] font-mono mt-0.5">DRAW</span>
                                 </div>
@@ -1069,7 +1069,7 @@ export default function App() {
                       className="flex flex-col items-center justify-center py-20 sm:py-28 space-y-6 text-center"
                     >
                       <div className="relative">
-                        <div className="w-24 h-24 rounded-full border-4 border-neutral-200 dark:border-neutral-800 border-t-neon-green animate-spin" />
+                        <div className="w-24 h-24 rounded-full border-4 border-neutral-200 dark:border-neutral-800 border-t-warning-yellow animate-spin" />
                         <div className="absolute inset-0 flex items-center justify-center font-display font-bold text-xl text-neutral-900 dark:text-white">
                           {processingProgress}%
                         </div>
@@ -1080,13 +1080,13 @@ export default function App() {
                           Tracing Vector Paths...
                         </h2>
                         <p className="font-mono text-xs text-neutral-500 uppercase">
-                          CURRENT GLYPH: <span className="font-bold text-neon-green">{processingChar || 'INITIALIZING'}</span>
+                          CURRENT GLYPH: <span className="font-bold text-warning-yellow">{processingChar || 'INITIALIZING'}</span>
                         </p>
                       </div>
 
                       <div className="w-full max-w-xs h-3 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-neon-green transition-all duration-200 rounded-full" 
+                          className="h-full bg-warning-yellow transition-all duration-200 rounded-full" 
                           style={{ width: `${processingProgress}%` }}
                         />
                       </div>
@@ -1113,7 +1113,7 @@ export default function App() {
 
                         <button 
                           onClick={generateFont}
-                          className="px-6 py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
+                          className="px-6 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all"
                         >
                           <Check size={16} />
                           <span>Assemble TrueType Font →</span>
@@ -1179,7 +1179,7 @@ export default function App() {
                                   type="text" 
                                   value={fontConfig.name}
                                   onChange={(e) => setFontConfig({...fontConfig, name: e.target.value})}
-                                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-medium focus:ring-2 focus:ring-neon-green outline-none"
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-medium focus:ring-2 focus:ring-warning-yellow outline-none"
                                 />
                               </div>
 
@@ -1192,7 +1192,7 @@ export default function App() {
                                   type="range" min="-30" max="80" 
                                   value={fontConfig.letterSpacing}
                                   onChange={(e) => setFontConfig({...fontConfig, letterSpacing: parseInt(e.target.value)})}
-                                  className="w-full accent-neon-green"
+                                  className="w-full accent-warning-yellow"
                                 />
                               </div>
 
@@ -1205,7 +1205,7 @@ export default function App() {
                                   type="range" min="16" max="96" 
                                   value={fontConfig.fontSize}
                                   onChange={(e) => setFontConfig({...fontConfig, fontSize: parseInt(e.target.value)})}
-                                  className="w-full accent-neon-green"
+                                  className="w-full accent-warning-yellow"
                                 />
                               </div>
                             </div>
@@ -1214,7 +1214,7 @@ export default function App() {
                             <div className="space-y-2.5 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                               <button 
                                 onClick={downloadFont}
-                                className="w-full py-3 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
+                                className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-transform"
                               >
                                 <Download size={16} />
                                 Download .TTF Font File
@@ -1244,7 +1244,7 @@ export default function App() {
                           {/* Quick Mobile Installation Guide */}
                           <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900/50 space-y-2 text-xs text-neutral-600 dark:text-neutral-400">
                             <div className="font-display font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
-                              <Info size={14} className="text-neon-green" />
+                              <Info size={14} className="text-warning-yellow" />
                               <span>How to install .ttf on mobile</span>
                             </div>
                             <p className="text-[11px] leading-relaxed">
@@ -1376,7 +1376,7 @@ export default function App() {
           className={cn(
             "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
             phase === 'home' 
-              ? "text-neon-green font-bold" 
+              ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
@@ -1389,11 +1389,11 @@ export default function App() {
           className={cn(
             "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
             phase === 'font-creation' 
-              ? "text-neon-green font-bold" 
+              ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <PenTool size={19} className={phase === 'font-creation' ? "text-neon-green" : ""} />
+          <PenTool size={19} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
           <span className="text-[10px] font-display uppercase tracking-tight">Create Font</span>
         </button>
 
@@ -1402,11 +1402,11 @@ export default function App() {
           className={cn(
             "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
             phase === 'text-writer' 
-              ? "text-neon-green font-bold" 
+              ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <FileText size={19} className={phase === 'text-writer' ? "text-neon-green" : ""} />
+          <FileText size={19} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
           <span className="text-[10px] font-display uppercase tracking-tight">Studio</span>
         </button>
 
@@ -1415,11 +1415,11 @@ export default function App() {
           className={cn(
             "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
             phase === 'homework-solver' 
-              ? "text-neon-green font-bold" 
+              ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <GraduationCap size={19} className={phase === 'homework-solver' ? "text-neon-green" : ""} />
+          <GraduationCap size={19} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
           <span className="text-[10px] font-display uppercase tracking-tight">AI Solver</span>
         </button>
 
@@ -1428,11 +1428,11 @@ export default function App() {
           className={cn(
             "flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-xl transition-all active:scale-90",
             phase === 'find-font' 
-              ? "text-neon-green font-bold" 
+              ? "text-warning-yellow font-bold" 
               : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <Search size={19} className={phase === 'find-font' ? "text-neon-green" : ""} />
+          <Search size={19} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
           <span className="text-[10px] font-display uppercase tracking-tight">Find Font</span>
         </button>
       </nav>
@@ -1488,7 +1488,7 @@ export default function App() {
               type="text"
               value={pendingFontToName.name}
               onChange={(e) => setPendingFontToName(prev => prev ? { ...prev, name: e.target.value } : prev)}
-              className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 font-display font-bold text-base outline-none focus:ring-2 focus:ring-neon-green"
+              className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 font-display font-bold text-base outline-none focus:ring-2 focus:ring-warning-yellow"
               autoFocus
               onKeyDown={(e) => { if (e.key === 'Enter') savePendingFont(); if (e.key === 'Escape') setPendingFontToName(null); }}
             />
@@ -1502,7 +1502,7 @@ export default function App() {
               </button>
               <button
                 onClick={savePendingFont}
-                className="flex-1 py-2.5 rounded-xl bg-neon-green hover:bg-neon-green/90 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+                className="flex-1 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-transform"
               >
                 <CheckCircle2 size={16} />
                 Save &amp; Use in Studio
@@ -1519,7 +1519,7 @@ export default function App() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
-            className="fixed bottom-24 right-4 sm:right-6 z-[100] bg-neon-green text-neutral-950 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-display font-bold uppercase text-xs tracking-wider"
+            className="fixed bottom-24 right-4 sm:right-6 z-[100] bg-warning-yellow text-neutral-950 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 font-display font-bold uppercase text-xs tracking-wider"
           >
             <CheckCircle2 size={18} />
             <span>{toast}</span>
