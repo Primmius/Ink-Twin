@@ -1,17 +1,30 @@
-# Notice
+# Legal Notice & IP Exclusions
 
-Copyright (c) 2026 Rahul Kasturiya.
+**InkTwin — AI-Powered Handwriting-to-Font Digitization & Document Studio**  
+Copyright (c) 2026 Rahul Kasturiya. All Rights Reserved.
 
-This repository contains the source code for Ink-Twin.
+---
 
-The source code itself is subject to the `LICENSE.txt` file.
+## 1. Scope of Open Source License
+The software source code contained in this repository is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](./LICENSE).
 
-**Explicit Exclusions:**
-This license only covers the software code. It strictly excludes:
-- All logos, icons, and the "Ink-Twin" product name (e.g., in `public/`)
-- All screenshots, demo data, handwriting samples, evaluation datasets, and marketing assets (specifically all contents in `attached_assets/`)
-- All model prompts, execution traces, or configuration notes
+---
 
-These assets are not licensed for reuse, distribution, or reproduction under any circumstances, unless explicitly stated otherwise in writing.
+## 2. Explicit Exclusions from the Open Source License
+The AGPL-3.0 license applies **strictly to the executable software engine and interface code**. The following assets are expressly excluded from the grant of public license and remain the exclusive intellectual property of the author:
 
-No trademark or brand rights are granted. See `TRADEMARKS.md` for details.
+1. **Brand Identity & Logos**:
+   * All logos, icons, wordmarks, and trademarked designs in `public/` and `src/components/Logo.tsx`. (See [`TRADEMARKS.md`](./TRADEMARKS.md)).
+2. **Sample Datasets & Evaluation Assets**:
+   * All sample handwriting scans, test document templates, character training images, and marketing graphics in `attached_assets/` or other media directories.
+3. **Proprietary Prompt Architectures & Evaluation Traces**:
+   * Specialized AI prompt engineering strategies, training prompts, benchmark datasets, and internal system documentation (including `AI_RULES.md`).
+
+---
+
+## 3. Commercial Licensing & Dual-Licensing Inquiries
+If your organization requires a proprietary commercial license that exempts you from the reciprocal copyleft requirements of AGPL-3.0, or if you wish to license the official brand and datasets, please reach out directly:
+
+* **Author & Maintainer**: Rahul Kasturiya
+* **Official Website**: [inktwin.primuez.com](https://inktwin.primuez.com)
+* **Email**: [contact@primuez.com](mailto:contact@primuez.com)
