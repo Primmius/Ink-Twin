@@ -285,7 +285,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
 
               <div className="brutal-card brutal-shadow bg-white p-12 text-center space-y-8">
                 <div className="flex flex-col items-center gap-6">
-                  <div className="w-24 h-24 bg-neon-green border-4 border-brutal-black rounded-full flex items-center justify-center brutal-shadow">
+                  <div className="w-24 h-24 bg-warning-yellow border-4 border-brutal-black rounded-full flex items-center justify-center brutal-shadow">
                     <Search size={48} className="text-brutal-black" />
                   </div>
                   <div className="space-y-2">
@@ -295,7 +295,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                 </div>
 
                 <div className="flex flex-col items-center gap-4">
-                  <label className="brutal-btn bg-neon-green w-full max-w-sm flex items-center justify-center gap-3 cursor-pointer py-6 text-xl">
+                  <label className="brutal-btn bg-warning-yellow w-full max-w-sm flex items-center justify-center gap-3 cursor-pointer py-6 text-xl">
                     <Upload size={24} />
                     <span>Select Local Photo</span>
                     <input type="file" className="hidden" accept="image/*,application/pdf" onChange={handleFileUpload} />
@@ -358,7 +358,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               {/* Primary Match - Hero Card */}
               <div className="space-y-4">
                 <h2 className="text-sm font-mono uppercase font-black tracking-[0.2em] opacity-40">Your Absolute Best Match</h2>
-                <div className="brutal-card brutal-shadow bg-neon-green border-2 border-brutal-black overflow-hidden">
+                <div className="brutal-card brutal-shadow bg-warning-yellow border-2 border-brutal-black overflow-hidden">
                   <div className="p-4 bg-brutal-black/5 border-b-2 border-brutal-black flex justify-between items-center">
                     <span className="font-mono text-[9px] uppercase font-bold">Preview rendered in: {analysis.fontFamily}</span>
                     {!loadedFonts.has(analysis.fontFamily) && <span className="font-mono text-[9px] uppercase font-bold text-error-red">Preview unavailable</span>}
@@ -435,7 +435,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                                 onClick={() => setStyleFilter(s as any)}
                                 className={cn(
                                   "px-3 py-1 font-mono text-[10px] uppercase font-bold transition-all",
-                                  styleFilter === s ? "bg-neon-green" : "hover:bg-neutral-100"
+                                  styleFilter === s ? "bg-warning-yellow" : "hover:bg-neutral-100"
                                 )}
                               >
                                 {s}
@@ -452,7 +452,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                                 onClick={() => setWeightFilter(w as any)}
                                 className={cn(
                                   "px-3 py-1 font-mono text-[10px] uppercase font-bold transition-all",
-                                  weightFilter === w ? "bg-neon-green" : "hover:bg-neutral-100"
+                                  weightFilter === w ? "bg-warning-yellow" : "hover:bg-neutral-100"
                                 )}
                               >
                                 {w}
@@ -470,7 +470,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                         placeholder="Search alternative fonts by name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-6 py-4 brutal-border font-mono text-sm outline-none focus:bg-neon-green/5 transition-colors"
+                        className="w-full pl-12 pr-6 py-4 brutal-border font-mono text-sm outline-none focus:bg-warning-yellow/5 transition-colors"
                       />
                    </div>
                  </div>
@@ -482,7 +482,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.05 }}
-                        className="brutal-card bg-white brutal-shadow-small flex flex-col hover:border-neon-green transition-colors group overflow-hidden"
+                        className="brutal-card bg-white brutal-shadow-small flex flex-col hover:border-warning-yellow transition-colors group overflow-hidden"
                       >
                         <div className="p-2 bg-brutal-black/5 border-b border-brutal-black text-[8px] font-mono uppercase font-bold flex justify-between items-center">
                           <span className="truncate">Preview in: {font.name}</span>
@@ -507,7 +507,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                           </div>
                           <button 
                             onClick={() => loadFont(font.name, analysis)}
-                            className="w-full py-3 font-mono text-[11px] uppercase font-bold bg-neutral-900 text-white hover:bg-neon-green hover:text-brutal-black transition-colors mt-auto"
+                            className="w-full py-3 font-mono text-[11px] uppercase font-bold bg-neutral-900 text-white hover:bg-warning-yellow hover:text-brutal-black transition-colors mt-auto"
                           >
                             Switch to this
                           </button>

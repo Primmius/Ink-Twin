@@ -498,12 +498,12 @@ export default function App() {
   };
 
   const stepNames: Record<AppStep, string> = {
-    1: "Template & Prep",
-    2: "Review Scans",
-    3: "Detected Glyphs",
-    4: "Vectorizing",
-    5: "Adjust & Refine",
-    6: "Test & Export"
+    1: "Template & Upload",
+    2: "Review Uploaded Scans",
+    3: "Character Extraction",
+    4: "Vectorizing Paths",
+    5: "Fine-tune Glyphs",
+    6: "Test & Export Font"
   };
 
   const filteredChars = detectedChars.filter(c => {
@@ -665,34 +665,31 @@ export default function App() {
       <div className="flex-grow flex flex-col overflow-x-hidden">
         {phase === 'font-creation' ? (
           <div className="flex-grow flex flex-col">
-            {/* Mobile Step Header */}
-            <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-3 sticky top-[57px] sm:top-[65px] z-20">
+            {/* Step Navigation Sub-Header */}
+            <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 py-2.5 z-20 shadow-xs">
               <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
                   {step > 1 && (
                     <button
                       onClick={() => setStep((prev) => (prev - 1) as AppStep)}
                       className="p-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-95 transition-all"
                       title="Previous step"
                     >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={16} />
                     </button>
                   )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold uppercase text-warning-yellow">
-                        Step 0{step} / 06
-                      </span>
-                      <span className="text-[11px] font-mono text-neutral-400">·</span>
-                      <h2 className="font-display font-bold text-sm text-neutral-900 dark:text-white">
-                        {stepNames[step]}
-                      </h2>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono font-bold uppercase text-warning-yellow bg-warning-yellow/10 px-2 py-0.5 rounded border border-warning-yellow/30">
+                      Step 0{step} / 06
+                    </span>
+                    <span className="font-display font-bold text-xs sm:text-sm text-neutral-900 dark:text-white">
+                      {stepNames[step]}
+                    </span>
                   </div>
                 </div>
 
                 {/* Step indicator pills */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   {[1, 2, 3, 4, 5, 6].map((s) => (
                     <button
                       key={s}
@@ -703,13 +700,14 @@ export default function App() {
                         }
                       }}
                       className={cn(
-                        "w-6 h-6 rounded-full text-[10px] font-mono font-bold flex items-center justify-center transition-all",
+                        "w-6 h-6 sm:w-7 sm:h-7 rounded-lg text-[10px] sm:text-xs font-mono font-bold flex items-center justify-center transition-all",
                         step === s 
-                          ? "bg-warning-yellow text-neutral-950 font-bold shadow-sm" 
+                          ? "bg-warning-yellow text-black font-bold shadow-sm ring-2 ring-warning-yellow/50" 
                           : s < step 
-                            ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
-                            : "bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 opacity-40"
+                            ? "bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-300 dark:hover:bg-neutral-700" 
+                            : "bg-neutral-100 dark:bg-neutral-800/40 text-neutral-400 opacity-40 cursor-not-allowed"
                       )}
+                      title={`Step ${s}: ${stepNames[s as AppStep]}`}
                     >
                       {s}
                     </button>
@@ -732,9 +730,9 @@ export default function App() {
                       exit={{ opacity: 0, y: -15 }}
                       className="space-y-6"
                     >
-                      <div className="space-y-2 text-center sm:text-left">
+                      <div className="space-y-2 text-center sm:text-left pb-2 border-b border-neutral-200 dark:border-neutral-800">
                         <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
-                          Module 01 // TrueType Synthesis
+                          Step 01 // Template & Upload
                         </span>
                         <h2 className="text-2xl sm:text-4xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
                           Turn Handwriting into a Font
@@ -855,10 +853,13 @@ export default function App() {
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
                         <div>
-                          <h2 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 02 // Review Uploads
+                          </span>
+                          <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
                             Review Uploaded Scans
                           </h2>
-                          <p className="text-xs text-neutral-500">
+                          <p className="text-xs text-neutral-500 mt-0.5">
                             {uploadedImages.length} page{uploadedImages.length !== 1 ? 's' : ''} ready for AI analysis
                           </p>
                         </div>
@@ -931,9 +932,12 @@ export default function App() {
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
                         <div>
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 03 // Character Extraction
+                          </span>
                           <div className="flex items-center gap-2">
-                            <h2 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
-                              Character Review
+                            <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                              Character Review &amp; Tuning
                             </h2>
                             <span className="px-2.5 py-0.5 rounded-full bg-warning-yellow/20 text-neutral-950 dark:text-yellow-300 font-mono text-xs font-bold">
                               {detectedCount} / {detectedChars.length} Detected
@@ -1049,7 +1053,7 @@ export default function App() {
                                 <div className={cn(
                                   "absolute bottom-1 right-1 px-1 rounded text-[8px] font-mono font-bold text-white",
                                   char.confidence > 0.8 ? "bg-emerald-500" : "bg-amber-500"
-                                )}>
+                                  )}>
                                   {Math.round(char.confidence * 100)}%
                                 </div>
                               )}
@@ -1076,8 +1080,11 @@ export default function App() {
                       </div>
 
                       <div className="space-y-2">
+                        <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                          Step 04 // Vectorization
+                        </span>
                         <h2 className="text-2xl sm:text-3xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
-                          Tracing Vector Paths...
+                          Vectorizing Glyph Paths...
                         </h2>
                         <p className="font-mono text-xs text-neutral-500 uppercase">
                           CURRENT GLYPH: <span className="font-bold text-warning-yellow">{processingChar || 'INITIALIZING'}</span>
@@ -1103,8 +1110,11 @@ export default function App() {
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200 dark:border-neutral-800">
                         <div>
-                          <h2 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white">
-                            Vector Path Inspection
+                          <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                            Step 05 // Bezier Inspection
+                          </span>
+                          <h2 className="text-xl sm:text-3xl font-display font-extrabold uppercase tracking-tight text-neutral-900 dark:text-white">
+                            Fine-tune Vector Glyphs
                           </h2>
                           <p className="text-xs text-neutral-500 mt-0.5">
                             Mathematical bezier curves converted for font compilation
@@ -1166,8 +1176,11 @@ export default function App() {
                         {/* Font Configuration Panel */}
                         <div className="space-y-4">
                           <div className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm">
+                            <span className="text-xs font-mono uppercase text-warning-yellow font-bold tracking-wider">
+                              Step 06 // Font Assembly
+                            </span>
                             <h3 className="font-display font-bold text-base text-neutral-900 dark:text-white uppercase">
-                              Font Details
+                              Font Details &amp; Metadata
                             </h3>
 
                             <div className="space-y-3">
@@ -1280,7 +1293,7 @@ export default function App() {
 
                             <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between text-xs font-mono text-neutral-500">
                               <span>Font: {fontConfig.name}</span>
-                              <span className="text-neon-green font-bold">Vectorized .TTF Ready</span>
+                              <span className="text-warning-yellow font-bold">Vectorized .TTF Ready</span>
                             </div>
                           </div>
                         </div>

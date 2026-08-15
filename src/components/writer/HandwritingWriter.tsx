@@ -203,7 +203,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
             key={font.id}
             className={cn(
               "group brutal-border p-2 flex flex-col gap-2 transition-colors",
-              isActive ? "bg-neon-green/10 border-neon-green" : "bg-white"
+              isActive ? "bg-warning-yellow/10 border-warning-yellow" : "bg-white"
             )}
           >
             <div className="flex items-center justify-between">
@@ -241,7 +241,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               }}
               className={cn(
                 "w-full py-1 font-mono text-[8px] uppercase font-bold brutal-border h-11 sm:h-auto",
-                isActive ? "bg-neon-green" : "bg-white hover:bg-neutral-50"
+                isActive ? "bg-warning-yellow" : "bg-white hover:bg-neutral-50"
               )}
             >
               {isActive ? "Active" : "Use Font"}
@@ -315,7 +315,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                 onClick={() => updateSetting('pageStyle', bg)}
                 className={cn(
                   "flex flex-col border-2 border-brutal-black hover:scale-105 transition-transform overflow-hidden",
-                  settings.pageStyle === bg ? "ring-2 ring-neon-green" : "opacity-80 hover:opacity-100"
+                  settings.pageStyle === bg ? "ring-2 ring-warning-yellow" : "opacity-80 hover:opacity-100"
                 )}
               >
                 {/* Thumbnail — A4 proportioned */}
@@ -528,7 +528,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               type="checkbox" 
               checked={settings.naturalRandomness}
               onChange={(e) => updateSetting('naturalRandomness', e.target.checked)}
-              className="w-6 h-6 accent-neon-green"
+              className="w-6 h-6 accent-warning-yellow"
             />
           </label>
           <label className="flex items-center justify-between cursor-pointer min-h-[44px]">
@@ -537,7 +537,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               type="checkbox" 
               checked={settings.inkVariation}
               onChange={(e) => updateSetting('inkVariation', e.target.checked)}
-              className="w-6 h-6 accent-neon-green"
+              className="w-6 h-6 accent-warning-yellow"
             />
           </label>
         </div>
@@ -555,7 +555,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               className={cn(
                 "px-2 py-3 border-2 border-[var(--border-primary)] text-[10px] font-bold uppercase min-h-[44px] transition-all duration-150 cursor-pointer",
                 settings.effect === eff
-                  ? "bg-neon-green text-brutal-black shadow-[2px_2px_0px_var(--shadow-color)]"
+                  ? "bg-warning-yellow text-brutal-black shadow-[2px_2px_0px_var(--shadow-color)]"
                   : "bg-[var(--bg-card)] text-[var(--text-primary)] hover:bg-[var(--warning-yellow)] hover:text-brutal-black hover:border-brutal-black hover:-translate-x-[2px] hover:-translate-y-[2px] hover:shadow-[3px_3px_0px_var(--shadow-color)] active:translate-x-px active:translate-y-px active:shadow-[1px_1px_0px_var(--shadow-color)]"
               )}
             >
@@ -592,7 +592,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                 addElement('emoji', emoji);
                 if (isMobile) setActiveMobileDrawer(null);
               }}
-              className="aspect-square brutal-border hover:bg-neon-green/10 transition-colors text-lg flex items-center justify-center min-h-[44px]"
+              className="aspect-square brutal-border hover:bg-warning-yellow/10 transition-colors text-lg flex items-center justify-center min-h-[44px]"
             >
               {emoji}
             </button>
@@ -1463,29 +1463,30 @@ ${documentText}`;
   };
 
   return (
-    <div className="flex flex-col h-full bg-neutral-100">
+    <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-950">
       {/* Top Toolbar */}
       {/* Header / Toolbar */}
       <div className={cn(
-        "bg-white border-b-2 border-brutal-black p-4 z-30 transition-all",
-        isMobile ? "flex flex-col gap-4" : "flex items-center justify-between"
+        "bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-3 sm:p-4 z-30 transition-all shadow-sm",
+        isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"
       )}>
-        <div className={cn("flex flex-wrap items-center gap-4", isMobile && "justify-center w-full")}>
+        <div className={cn("flex flex-wrap items-center gap-3", isMobile && "justify-center w-full")}>
           <button 
             onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
             className="brutal-btn p-2 min-h-[44px] min-w-[44px]"
+            title={mode === 'default' ? "Collapse sidebars" : "Expand sidebars"}
           >
-            {mode === 'default' ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            {mode === 'default' ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
           </button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10" />}
+          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700" />}
           
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-neon-green flex items-center justify-center gap-2 px-4 h-11 hover:bg-neon-green/90 transition-colors"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-4 h-11 transition-colors"
             >
-              <Sparkles size={18} />
-              <span className="font-display uppercase text-sm">✨ AI Edit</span>
+              <Sparkles size={17} />
+              <span className="font-display uppercase text-xs font-bold">✨ AI Edit</span>
             </button>
           </div>
           
@@ -1497,9 +1498,9 @@ ${documentText}`;
                 setIsAIEditPanelOpen(true);
                 setShowReflowPrompt(false);
               }}
-              className="brutal-btn bg-warning-yellow flex items-center justify-center gap-2 px-4 border-dashed h-11"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-4 border-dashed h-11"
             >
-              <RefreshCw size={16} />
+              <RefreshCw size={15} />
               <span className="font-mono text-[10px] font-bold uppercase">Smart reflow available?</span>
             </motion.button>
           )}
@@ -1509,7 +1510,7 @@ ${documentText}`;
           <button 
             onClick={undo} 
             disabled={historyIndex <= 0}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
             title="Undo"
           >
             <Undo2 size={18} />
@@ -1517,28 +1518,57 @@ ${documentText}`;
           <button 
             onClick={redo} 
             disabled={historyIndex >= history.length - 1}
-            className="brutal-btn p-2 disabled:opacity-20 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
             title="Redo"
           >
             <Redo2 size={18} />
           </button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
-          <span className="font-mono text-xs font-bold mr-4">PAGE {currentPageIndex + 1} OF {pages.length}</span>
-          <button onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronLeft size={20} /></button>
-          <button onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"><ChevronRight size={20} /></button>
-          {!isMobile && <div className="h-8 w-[2px] bg-brutal-black/10 mx-2" />}
-          <button onClick={addPage} className="brutal-btn p-2 bg-neon-green min-h-[44px] min-w-[44px] flex items-center justify-center"><Plus size={20} /></button>
-          <button onClick={() => removePage(currentPageIndex)} className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center"><Trash2 size={20} /></button>
+          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
+          <span className="font-mono text-xs font-bold px-2 text-neutral-800 dark:text-neutral-200">
+            PAGE {currentPageIndex + 1} OF {pages.length}
+          </span>
+          <button 
+            onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} 
+            disabled={currentPageIndex === 0}
+            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            title="Previous page"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button 
+            onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} 
+            disabled={currentPageIndex >= pages.length - 1}
+            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            title="Next page"
+          >
+            <ChevronRight size={18} />
+          </button>
+          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
+          <button 
+            onClick={addPage} 
+            className="brutal-btn p-2 bg-warning-yellow hover:bg-amber-300 text-black min-h-[44px] min-w-[44px] flex items-center justify-center"
+            title="Add new page"
+          >
+            <Plus size={18} />
+          </button>
+          <button 
+            onClick={() => removePage(currentPageIndex)} 
+            disabled={pages.length <= 1}
+            className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            title="Delete current page"
+          >
+            <Trash2 size={18} />
+          </button>
         </div>
 
         <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button onClick={downloadPDF} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
-            <Download size={18} />
-            <span className="font-display uppercase text-sm">PDF</span>
+          <button onClick={downloadPDF} className="brutal-btn bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center gap-2 px-4 h-11 shadow-sm">
+            <Download size={17} />
+            <span className="font-display uppercase text-xs font-bold">PDF</span>
           </button>
-          <button onClick={downloadAllAsZip} className="brutal-btn bg-brutal-black text-white flex items-center justify-center gap-2 px-4 h-11">
-            <Download size={18} />
-            <span className="font-display uppercase text-sm">ZIP</span>
+          <button onClick={downloadAllAsZip} className="brutal-btn bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center gap-2 px-4 h-11 shadow-sm">
+            <Download size={17} />
+            <span className="font-display uppercase text-xs font-bold">ZIP</span>
           </button>
         </div>
       </div>
@@ -1580,7 +1610,7 @@ ${documentText}`;
       >
         {/* Left Sidebar: Controls (Desktop Only) */}
         {!isMobile && mode === 'default' && (
-          <aside className="w-80 bg-white border-r-2 border-brutal-black overflow-y-auto p-6 space-y-8">
+          <aside className="w-80 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 overflow-y-auto p-6 space-y-8">
             {renderFontLibrary()}
             {renderPageStyle()}
             {renderTypography()}
@@ -1601,9 +1631,9 @@ ${documentText}`;
           </aside>
         )}
 
-        {/* Center: Canvas Area */}
+        {/* Center: Canvas Area Workbench */}
         <main className={cn(
-          "flex-grow flex flex-col items-center bg-neutral-200 overflow-x-hidden",
+          "flex-grow flex flex-col items-center bg-neutral-200 dark:bg-[#0c0d11] overflow-x-hidden",
           isMobile ? "gap-6 p-4 overflow-y-auto" : "gap-12 p-12 overflow-auto"
         )}>
           {/* Canvas Wrapper for Scaling */}
@@ -1618,12 +1648,13 @@ ${documentText}`;
             } : { width: '595px', height: '842px' }}
           >
             <div
-              className="relative group shadow-xl"
+              className="relative group shadow-2xl bg-white rounded-sm overflow-hidden"
               style={{
                 width: '595px',
                 height: '842px',
                 transform: isMobile ? `scale(${mobileScale})` : undefined,
-                transformOrigin: 'top left'
+                transformOrigin: 'top left',
+                backgroundColor: '#FFFFFF',
               }}
               ref={containerRef}
               onClick={(e) => {
@@ -1653,10 +1684,10 @@ ${documentText}`;
                 {snapGuides && (
                   <div className="absolute inset-0 pointer-events-none z-40">
                     {snapGuides.x !== undefined && (
-                      <div className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-neon-green bg-neon-green/20" style={{ left: snapGuides.x }} />
+                      <div className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-warning-yellow bg-warning-yellow/20" style={{ left: snapGuides.x }} />
                     )}
                     {snapGuides.y !== undefined && (
-                      <div className="absolute left-0 right-0 h-[1px] border-t border-dashed border-neon-green bg-neon-green/20" style={{ top: snapGuides.y }} />
+                      <div className="absolute left-0 right-0 h-[1px] border-t border-dashed border-warning-yellow bg-warning-yellow/20" style={{ top: snapGuides.y }} />
                     )}
                   </div>
                 )}
@@ -1691,7 +1722,7 @@ ${documentText}`;
                           setInputText(pastedText);
                         }
                       }}
-                      className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-brutal-black resize-none outline-none border-none font-mono selection:bg-neon-green/30"
+                      className="paper-textarea absolute inset-0 w-full h-full !bg-transparent !text-transparent caret-neutral-900 resize-none outline-none border-none font-mono selection:bg-warning-yellow/30 pointer-events-auto"
                       style={{
                         paddingTop: `${settings.topMargin}px`,
                         paddingLeft: `${settings.leftMargin}px`,
@@ -1700,6 +1731,8 @@ ${documentText}`;
                         lineHeight: `${settings.lineHeight}px`,
                         zIndex: 10,
                         fontFamily: effectiveFontName,
+                        backgroundColor: 'transparent',
+                        color: 'transparent',
                       }}
                       spellCheck={false}
                       placeholder="Start writing directly on the page..."
@@ -1772,7 +1805,7 @@ ${documentText}`;
                         {isSelected ? (
                           <>
                             {/* Selection border */}
-                            <div className="absolute inset-[-3px] border-2 border-neon-green bg-neon-green/5 pointer-events-none" />
+                            <div className="absolute inset-[-3px] border-2 border-warning-yellow bg-warning-yellow/5 pointer-events-none" />
 
                             {/* Corner resize handles */}
                             {[
@@ -1784,7 +1817,7 @@ ${documentText}`;
                               <div
                                 key={corner}
                                 data-handle="resize"
-                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-neon-green rounded-sm ${cursor} z-50 shadow`}
+                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-warning-yellow rounded-sm ${cursor} z-50 shadow`}
                                 onPointerDown={(e) => { e.stopPropagation(); onResizeStart(e, corner); }}
                               />
                             ))}
@@ -1810,8 +1843,8 @@ ${documentText}`;
                                 window.addEventListener('pointerup', onUp);
                               }}
                             >
-                              <div className="w-[1px] h-6 bg-neon-green" />
-                              <div className="w-6 h-6 bg-neon-green rounded-full flex items-center justify-center border-2 border-white shadow-md hover:scale-125 transition-transform">
+                              <div className="w-[1px] h-6 bg-warning-yellow" />
+                              <div className="w-6 h-6 bg-warning-yellow rounded-full flex items-center justify-center border-2 border-white shadow-md hover:scale-125 transition-transform">
                                 <RotateCcw size={12} className="text-white pointer-events-none" />
                               </div>
                             </div>
@@ -1821,7 +1854,7 @@ ${documentText}`;
                               <button
                                 data-handle="toolbar"
                                 onClick={(e) => { e.stopPropagation(); updateElement(el.id, { layer: el.layer === 'above' ? 'below' : 'above' }); }}
-                                className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-neon-green text-black" : "hover:bg-white/10 text-white")}
+                                className={cn("p-1.5 rounded-full transition-colors", el.layer === 'above' ? "bg-warning-yellow text-black" : "hover:bg-white/10 text-white")}
                                 title="Toggle Layer"
                               >
                                 <Layers size={14} />
@@ -1844,7 +1877,7 @@ ${documentText}`;
                             </div>
                           </>
                         ) : (
-                          <div className="absolute inset-0 border border-transparent hover:border-neon-green/30 pointer-events-none" />
+                          <div className="absolute inset-0 border border-transparent hover:border-warning-yellow/30 pointer-events-none" />
                         )}
                       </div>
                     );
@@ -1866,7 +1899,7 @@ ${documentText}`;
                     setInputText(val);
                     renderPage(settings, val);
                   }}
-                  className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-neon-green/20"
+                  className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-warning-yellow/20"
                   placeholder="Start typing your handwritten masterpiece..."
                 />
               </div>
@@ -1884,7 +1917,7 @@ ${documentText}`;
                   setInputText(val);
                   renderPage(settings, val);
                 }}
-                className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-neon-green/20"
+                className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-warning-yellow/20"
                 placeholder="Start typing your handwritten masterpiece..."
               />
             </div>
@@ -1914,7 +1947,7 @@ ${documentText}`;
                 {/* Panel Header */}
                 <div className="p-6 border-b-2 border-brutal-black flex items-center justify-between bg-neutral-50">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="text-neon-green" size={24} />
+                    <Sparkles className="text-warning-yellow" size={24} />
                     <h2 className="font-display text-lg uppercase tracking-tight">AI Smart Editor</h2>
                   </div>
                   <button 
@@ -1945,7 +1978,7 @@ ${documentText}`;
                         <button 
                           key={preset}
                           onClick={() => setAiUserInstruction(preset)}
-                          className="px-3 py-1.5 bg-neutral-100 border-2 border-brutal-black text-[10px] font-bold uppercase hover:bg-neon-green hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
+                          className="px-3 py-1.5 bg-neutral-100 border-2 border-brutal-black text-[10px] font-bold uppercase hover:bg-warning-yellow hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
                         >
                           {preset}
                         </button>
@@ -1963,7 +1996,7 @@ ${documentText}`;
                         value={aiUserInstruction}
                         onChange={(e) => setAiUserInstruction(e.target.value)}
                         placeholder="Tell AI what to do with your document...&#10;Example: Make questions black ink and answers blue ink, add proper spacing between sections, format headings larger"
-                        className="w-full h-40 brutal-border p-4 font-mono text-xs resize-none bg-neutral-50 focus:bg-white focus:ring-4 focus:ring-neon-green/10 transition-all outline-none"
+                        className="w-full h-40 brutal-border p-4 font-mono text-xs resize-none bg-neutral-50 focus:bg-white focus:ring-4 focus:ring-warning-yellow/10 transition-all outline-none"
                       />
                       <div className="absolute top-2 right-2 opacity-5 animate-pulse"><Edit3 size={14} /></div>
                     </div>
@@ -2013,7 +2046,7 @@ ${documentText}`;
                       onClick={handleAIEdit}
                       disabled={isAIProcessing || !aiUserInstruction}
                       className={cn(
-                        "w-full h-14 bg-neon-green brutal-border font-display uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-transform active:scale-[0.98] disabled:opacity-50 disabled:grayscale",
+                        "w-full h-14 bg-warning-yellow brutal-border font-display uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-transform active:scale-[0.98] disabled:opacity-50 disabled:grayscale",
                         !isAIProcessing && "hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                       )}
                     >
@@ -2063,9 +2096,9 @@ ${documentText}`;
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-              className="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 bg-brutal-black text-white font-display uppercase text-sm brutal-border z-[200] shadow-2xl flex items-center gap-3"
+              className="fixed bottom-10 left-1/2 -translate-x-1/2 px-6 py-3 bg-neutral-950 text-white font-display uppercase text-sm brutal-border z-[200] shadow-2xl flex items-center gap-3"
             >
-              <Sparkles className="text-neon-green" size={18} />
+              <Sparkles className="text-warning-yellow" size={18} />
               {toast}
             </motion.div>
           )}
@@ -2073,7 +2106,7 @@ ${documentText}`;
 
         {/* Right Sidebar: Elements (Desktop Only) */}
         {!isMobile && mode === 'default' && (
-          <aside className="w-64 bg-white border-l-2 border-brutal-black overflow-y-auto p-6 space-y-8">
+          <aside className="w-64 bg-white dark:bg-neutral-900 border-l border-neutral-200 dark:border-neutral-800 overflow-y-auto p-6 space-y-8">
             {renderElements()}
           </aside>
         )}
@@ -2179,7 +2212,7 @@ ${documentText}`;
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={() => aiPartialData && applyAIResult(aiPartialData.validatedText, aiPartialData.newSettings)}
-                  className="w-full py-3 bg-neon-green border-2 border-brutal-black font-display uppercase text-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
+                  className="w-full py-3 bg-warning-yellow border-2 border-brutal-black font-display uppercase text-sm hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-x-0 active:translate-y-0 active:shadow-none"
                 >
                   Apply Partial
                 </button>
@@ -2207,7 +2240,7 @@ ${documentText}`;
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] bg-brutal-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white"
           >
-            <Sparkles size={80} className="animate-pulse text-neon-green mb-8" />
+            <Sparkles size={80} className="animate-pulse text-warning-yellow mb-8" />
             <h2 className="text-4xl font-display uppercase tracking-tighter mb-4">Gemini is writing...</h2>
             <p className="font-mono text-sm opacity-60">OPTIMIZING LAYOUT & DISTRIBUTING TEXT</p>
           </motion.div>

@@ -113,7 +113,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-xl brutal-border brutal-shadow flex flex-col">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
+        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-warning-yellow">
           <h3 className="font-display uppercase text-xl">Edit Glyph: {char}</h3>
           <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
             <X size={24} />
@@ -165,7 +165,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
                 }}
                 disabled={isReanalyzing}
                 className={cn(
-                  "p-2 bg-white border-2 border-brutal-black hover:bg-neon-green transition-colors brutal-shadow",
+                  "p-2 bg-white border-2 border-brutal-black hover:bg-warning-yellow transition-colors brutal-shadow",
                   isReanalyzing && "animate-pulse cursor-wait"
                 )}
                 title="Re-analyze from Scans"

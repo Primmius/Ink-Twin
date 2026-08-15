@@ -189,7 +189,7 @@ export function UseCasePage({ slug, onBack }: UseCasePageProps) {
             {data.title}
           </h1>
           <div className="flex items-center gap-2 mt-4">
-            <span className="font-mono text-[10px] bg-neon-green border-2 border-brutal-black px-2 py-1 uppercase font-bold">
+            <span className="font-mono text-[10px] bg-warning-yellow border-2 border-brutal-black px-2 py-1 uppercase font-bold">
               AI Homework Engine
             </span>
             <span className="font-mono text-[10px] opacity-50">
@@ -217,7 +217,7 @@ export function UseCasePage({ slug, onBack }: UseCasePageProps) {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {data.benefits.map((b, idx) => (
-                <div key={idx} className="bg-[#fcf8f2] border-2 border-brutal-black p-5 hover:bg-neon-green/5 transition-all">
+                <div key={idx} className="bg-[#fcf8f2] border-2 border-brutal-black p-5 hover:bg-warning-yellow/5 transition-all">
                   <h4 className="font-display uppercase text-xs mb-2 flex items-center gap-2">
                     <span className="bg-brutal-black text-white w-5 h-5 flex items-center justify-center font-mono text-[10px]">
                       {idx + 1}
@@ -246,9 +246,9 @@ export function UseCasePage({ slug, onBack }: UseCasePageProps) {
         {/* Action Panel */}
         <div className="border-t-4 border-brutal-black pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="font-mono text-[10px] text-neutral-500 uppercase">
-            Authority Anchor Node: <a href="https://primuez.in" className="underline hover:text-neon-green">https://primuez.in</a>
+            Authority Anchor Node: <a href="https://primuez.in" className="underline hover:text-warning-yellow">https://primuez.in</a>
           </div>
-          <button onClick={onBack} className="brutal-btn bg-neon-green text-brutal-black px-6 py-3 font-display uppercase flex items-center gap-2">
+          <button onClick={onBack} className="brutal-btn bg-warning-yellow text-brutal-black px-6 py-3 font-display uppercase flex items-center gap-2">
             <CheckCircle2 size={18} /> Replicate My Handwriting Now
           </button>
         </div>

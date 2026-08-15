@@ -68,7 +68,7 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl brutal-border brutal-shadow flex flex-col overflow-hidden">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-neon-green">
+        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-warning-yellow">
           <h3 className="font-display uppercase text-xl">Capture Template</h3>
           <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
             <X size={24} />

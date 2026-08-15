@@ -145,7 +145,7 @@ body.dark .text-gray-600 {
   color: rgba(243, 244, 246, 0.65);
 }
 
-/* Inputs / selects in dark mode */
+/* Inputs / selects in dark mode (Excluding paper surfaces) */
 body.dark input:not([type="range"]):not(.paper-input),
 body.dark textarea:not(.paper-textarea),
 body.dark select:not(.paper-select) {
@@ -165,9 +165,17 @@ body.dark select:not(.paper-select) {
   color-scheme: light !important;
 }
 
-.handwriting-paper-surface .paper-textarea {
+.handwriting-paper-surface .paper-textarea,
+.paper-textarea,
+body.dark .handwriting-paper-surface .paper-textarea,
+body.dark .paper-textarea,
+body.dark .handwriting-paper-surface textarea {
   background-color: transparent !important;
+  background: transparent !important;
   color: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 /* Navigation Tabs */

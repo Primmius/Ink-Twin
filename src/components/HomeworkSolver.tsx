@@ -217,28 +217,28 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           <div className="flex border-2 theme-border font-mono text-xs mb-4">
             <button 
               onClick={() => setActiveTab('upload')}
-              className={cn("flex-1 py-3 transition-colors flex items-center justify-center gap-2", activeTab === 'upload' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
+              className={cn("flex-1 py-3 transition-colors flex items-center justify-center gap-2", activeTab === 'upload' ? "bg-warning-yellow text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
               <Upload size={14} />
               FILE
             </button>
             <button 
               onClick={() => setActiveTab('text')}
-              className={cn("flex-1 py-3 border-l-2 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'text' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
+              className={cn("flex-1 py-3 border-l-2 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'text' ? "bg-warning-yellow text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
               <Type size={14} />
               TEXT
             </button>
             <button 
               onClick={() => setActiveTab('url')}
-              className={cn("flex-1 py-3 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'url' ? "bg-neon-green text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
+              className={cn("flex-1 py-3 border-r-2 theme-border transition-colors flex items-center justify-center gap-2", activeTab === 'url' ? "bg-warning-yellow text-brutal-black" : "hover:bg-neutral-100 dark:hover:bg-neutral-800")}
             >
               <LinkIcon size={14} />
               URL
             </button>
             <button 
               onClick={onOpenCamera}
-              className="px-4 py-3 hover:bg-neon-green transition-colors flex items-center justify-center"
+              className="px-4 py-3 hover:bg-warning-yellow transition-colors flex items-center justify-center"
               title="Capture with Camera"
             >
               <Camera size={16} />
@@ -254,15 +254,15 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-4"
               >
-                <label className="w-full h-32 brutal-border border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-neon-green/5 transition-colors group">
-                  <Upload size={24} className="opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all text-neon-green" />
+                <label className="w-full h-32 brutal-border border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-warning-yellow/5 transition-colors group">
+                  <Upload size={24} className="opacity-30 group-hover:opacity-100 group-hover:scale-110 transition-all text-warning-yellow" />
                   <span className="font-mono text-[10px] font-bold uppercase">PDF, JPG, PNG, DOCX</span>
                   <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.docx" onChange={handleFileUpload} />
                 </label>
                 {uploadStatus === 'detected' && (
-                  <div className="p-3 bg-neon-green/10 border-2 border-neon-green text-[11px] font-mono flex items-center justify-between">
+                  <div className="p-3 bg-warning-yellow/10 border-2 border-warning-yellow text-[11px] font-mono flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                       <CheckCircle2 size={14} className="text-neon-green" /> 
+                       <CheckCircle2 size={14} className="text-warning-yellow" /> 
                        Content Detected
                     </span>
                     <button onClick={() => { setInput({}); setUploadStatus('idle'); }} className="text-error-red font-bold hover:underline">RESET</button>
@@ -292,7 +292,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Paste or type your homework questions here..."
-                  className="w-full h-40 brutal-border p-4 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors resize-none"
+                  className="w-full h-40 brutal-border p-4 font-mono text-xs outline-none focus:bg-warning-yellow/5 transition-colors resize-none"
                 />
               </motion.div>
             )}
@@ -310,7 +310,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="Paste question URL here..."
-                  className="w-full brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors"
+                  className="w-full brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-warning-yellow/5 transition-colors"
                 />
                 <p className="text-[10px] opacity-40 font-mono italic px-1">Note: Gemini will visit this page to read the question.</p>
               </motion.div>
@@ -331,7 +331,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                 onClick={() => setAnswerMode(m.id as AnswerMode)}
                 className={cn(
                   "p-3 brutal-border text-left transition-all",
-                  answerMode === m.id ? "bg-neon-green brutal-shadow" : "theme-card hover:bg-neutral-50"
+                  answerMode === m.id ? "bg-warning-yellow brutal-shadow" : "theme-card hover:bg-neutral-50"
                 )}
               >
                 <div className="font-display uppercase text-xs font-bold text-text-primary">{m.label}</div>
@@ -352,7 +352,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           onClick={handleSolve}
           disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
           className={cn(
-            "w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black transition-all flex items-center justify-center gap-2 group",
+            "w-full brutal-btn bg-brutal-black text-white hover:bg-warning-yellow hover:text-brutal-black transition-all flex items-center justify-center gap-2 group",
             "lg:mt-auto py-4"
           )}
         >
@@ -385,7 +385,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             </div>
             {result && (
                <div className="flex gap-2">
-                 <button onClick={copyToClipboard} className="p-2 brutal-border hover:bg-neon-green transition-colors" title="Copy">
+                 <button onClick={copyToClipboard} className="p-2 brutal-border hover:bg-warning-yellow transition-colors" title="Copy">
                    <Copy size={14} />
                  </button>
                </div>
@@ -424,7 +424,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                         e.target.style.height = e.target.scrollHeight + 'px';
                       }}
                     />
-                    <div className="absolute top-2 right-2 bg-neon-green px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
+                    <div className="absolute top-2 right-2 bg-warning-yellow px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
                       Editable Mode
                     </div>
                   </div>
@@ -454,13 +454,13 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                 onChange={(e) => setFollowUp(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleFollowUp()}
                 placeholder="Ask follow-up question..."
-                className="flex-grow brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-neon-green/5 transition-colors"
+                className="flex-grow brutal-border px-4 py-2 font-mono text-xs outline-none focus:bg-warning-yellow/5 transition-colors"
                 disabled={isProcessing}
               />
               <button 
                 onClick={handleFollowUp}
                 disabled={isProcessing || !followUp}
-                className="brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black disabled:opacity-50"
+                className="brutal-btn bg-brutal-black text-white hover:bg-warning-yellow hover:text-brutal-black disabled:opacity-50"
               >
                 <Send size={16} />
               </button>
@@ -477,7 +477,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             <button 
               onClick={() => onSendToWriter(editableAnswer)}
               disabled={!editableAnswer}
-              className="w-full brutal-btn bg-neon-green flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
+              className="w-full brutal-btn bg-warning-yellow flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-brutal-black"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="font-display uppercase text-sm">Send to Editor</span>
@@ -489,7 +489,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             <button 
               onClick={() => onSendToHumanizer(editableAnswer)}
               disabled={!editableAnswer}
-              className="w-full brutal-btn bg-brutal-black text-white hover:bg-neon-green hover:text-brutal-black flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale transition-all"
+              className="w-full brutal-btn bg-brutal-black text-white hover:bg-warning-yellow hover:text-brutal-black flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale transition-all"
             >
               <div className="flex items-center justify-between w-full">
                 <span className="font-display uppercase text-sm">Humanize with AI</span>
@@ -515,19 +515,19 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             <div className="grid grid-cols-1 gap-2">
               <button 
                 onClick={() => { setAnswerMode('final'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-warning-yellow/10 transition-colors text-text-primary"
               >
                 Final Answer Only
               </button>
               <button 
                 onClick={() => { setAnswerMode('step-by-step'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-warning-yellow/10 transition-colors text-text-primary"
               >
                 Step by Step
               </button>
               <button 
                 onClick={() => { setAnswerMode('both'); handleSolve(); }}
-                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-neon-green/10 transition-colors text-text-primary"
+                className="w-full p-2 text-left brutal-border text-[10px] uppercase font-bold hover:bg-warning-yellow/10 transition-colors text-text-primary"
               >
                 Both
               </button>
@@ -536,7 +536,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         )}
 
         <div className="mt-auto p-4 theme-card brutal-border border-dashed space-y-2">
-           <div className="flex items-center gap-2 text-neon-green">
+           <div className="flex items-center gap-2 text-warning-yellow">
               <CheckCircle2 size={16} />
               <span className="font-display uppercase text-[10px]">HW Engine v3.0</span>
            </div>
