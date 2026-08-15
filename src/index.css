@@ -133,8 +133,7 @@ body.dark .border {
 }
 
 /* Text in dark mode */
-body.dark .text-brutal-black,
-body.dark .text-black {
+body.dark .text-adaptive {
   color: var(--text-primary);
 }
 body.dark .text-neutral-500,
@@ -143,6 +142,23 @@ body.dark .text-neutral-700,
 body.dark .text-gray-500,
 body.dark .text-gray-600 {
   color: rgba(243, 244, 246, 0.65);
+}
+
+/* Ensure buttons with brand yellow background always have solid readable black text */
+.bg-warning-yellow,
+.bg-warning-yellow *,
+button.bg-warning-yellow,
+.bg-warning-yellow span,
+.bg-warning-yellow div,
+.bg-warning-yellow p,
+.bg-warning-yellow svg {
+  color: #0A0A0C !important;
+}
+
+.bg-warning-yellow .opacity-50,
+.bg-warning-yellow .opacity-60,
+.bg-warning-yellow .opacity-70 {
+  color: rgba(10, 10, 12, 0.7) !important;
 }
 
 /* Inputs / selects in dark mode (Excluding paper surfaces) */

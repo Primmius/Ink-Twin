@@ -1,7 +1,9 @@
 {
-  "name": "react-example",
-  "private": true,
-  "version": "0.0.0",
+  "name": "inktwin",
+  "version": "1.0.0",
+  "description": "AI-Powered Handwriting-to-Font Digitization & Document Studio",
+  "license": "AGPL-3.0-only",
+  "author": "Rahul Kasturiya",
   "type": "module",
   "scripts": {
     "dev": "vite --port=5000 --host=0.0.0.0",

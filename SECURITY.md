@@ -1,13 +1,34 @@
 # Security Policy
 
-## Supported Versions
-Currently, only the latest version of this repository is supported.
+## 🔒 Supported Versions
+We actively release security patches and updates for the latest version on the `main` branch.
 
-## Reporting a Vulnerability
+| Version | Supported          |
+| ------- | ------------------ |
+| Main (v1.x) | :white_check_mark: |
+| < 1.0   | :x:                |
 
-I take the security of this application seriously. If you discover a vulnerability, please practice responsible disclosure.
+---
 
-**How to report:**
-Please reach out to me via my professional contact channels. 
+## 🛡️ Reporting a Vulnerability
 
-**Do NOT disclose publicly:** You must not disclose any exploitable issues publicly (e.g., by creating a public GitHub Issue) before I have had the opportunity to evaluate and remediate it.
+We take the security of InkTwin and our users' privacy very seriously. If you discover a security vulnerability or sensitive data issue:
+
+1. **Do NOT open a public GitHub issue.**
+2. Please send a detailed report via email to: **[contact@primuez.com](mailto:contact@primuez.com)** with the subject line `[SECURITY VULNERABILITY] InkTwin`.
+3. Include in your report:
+   * A detailed description of the vulnerability.
+   * Steps or a script to reproduce the issue.
+   * Potential impact of the vulnerability.
+   * Any suggested remediations or mitigations.
+
+### Our Commitment
+* We will acknowledge receipt of your report within 48 hours.
+* We will keep you updated on progress towards resolving the issue.
+* Once resolved, we will publish a patch and credit you in release notes (if desired).
+
+---
+
+## 🔐 Client-Side Privacy Policy
+* InkTwin is architected to perform vectorization and TrueType font compilation **entirely client-side in the browser**.
+* When using Gemini AI features (character detection, homework solving, humanizing), API calls are made directly from the user's browser using their personal Bring-Your-Own-Key (BYOK). Keys are stored strictly in local browser storage (`localStorage`) and are never sent to any intermediary server.
