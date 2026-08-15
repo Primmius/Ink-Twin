@@ -225,6 +225,16 @@ export default function App() {
     setPhase('text-writer');
   };
 
+  const handleGoHome = () => {
+    setPhase('font-creation');
+    setStep(1);
+    setUseCaseSlug(null);
+    if (window.location.hash || window.location.pathname.startsWith('/use-cases/')) {
+      window.history.pushState({}, '', '/');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const saveApiKey = (key: string) => {
     setApiKey(key);
     localStorage.setItem('geminiApiKey', key);
@@ -442,18 +452,25 @@ export default function App() {
       <header className="border-b-2 p-4 md:p-6 flex flex-col md:flex-row items-center md:items-end justify-between gap-4 md:gap-6 z-40 header-mobile-refine" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
         <div className="flex flex-col gap-4 w-full md:w-auto">
           <div className="flex items-center gap-3">
-            <Logo size={isMobile ? 32 : 44} showText={false} />
-            <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title flex items-baseline gap-2">
-              Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
-              <a 
-                href="https://primuez.in" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="font-mono text-xs lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all"
-              >
-                by primuez.in
-              </a>
-            </h1>
+            <button
+              onClick={handleGoHome}
+              className="flex items-center gap-3 text-left bg-transparent border-0 p-0 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-green rounded transition-transform active:scale-95"
+              title="Go to Home"
+              aria-label="Go to InkTwin Home"
+            >
+              <Logo size={isMobile ? 32 : 44} showText={false} className="group-hover:scale-105 transition-transform" />
+              <h1 className="text-3xl md:text-5xl font-display uppercase tracking-tighter leading-none app-title flex items-baseline gap-2 group-hover:opacity-90 transition-opacity">
+                Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+              </h1>
+            </button>
+            <a
+              href="https://primuez.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-xs lowercase tracking-normal opacity-60 hover:text-warning-yellow hover:opacity-100 transition-all self-end md:self-baseline pb-1"
+            >
+              by primuez.in
+            </a>
           </div>
           
           {/* Phase Navigation */}

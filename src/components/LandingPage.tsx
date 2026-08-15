@@ -84,21 +84,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, theme, onTo
         style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}
       >
         <div className="flex items-center gap-3">
-          <Logo size={40} showText={false} />
-          <h1 className="text-2xl md:text-4xl font-display uppercase tracking-tighter leading-none flex items-baseline gap-2">
-            Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
-            <a
-              href="https://primuez.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-[10px] lowercase tracking-normal opacity-60 hover:opacity-100 transition-all"
-              style={{ color: 'inherit' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--warning-yellow)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
-            >
-              by primuez.in
-            </a>
-          </h1>
+          <button
+            onClick={() => {
+              if (window.location.hash || window.location.pathname.startsWith('/use-cases/')) {
+                window.history.pushState({}, '', '/');
+              }
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="flex items-center gap-3 text-left bg-transparent border-0 p-0 cursor-pointer group focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-green rounded transition-transform active:scale-95"
+            title="Go to Home"
+            aria-label="Go to InkTwin Home"
+          >
+            <Logo size={40} showText={false} className="group-hover:scale-105 transition-transform" />
+            <h1 className="text-2xl md:text-4xl font-display uppercase tracking-tighter leading-none flex items-baseline gap-2 group-hover:opacity-90 transition-opacity">
+              Ink<span style={{ color: 'var(--neon-green)' }}>Twin</span>
+            </h1>
+          </button>
+          <a
+            href="https://primuez.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-mono text-[10px] lowercase tracking-normal opacity-60 hover:opacity-100 transition-all self-end md:self-baseline pb-1"
+            style={{ color: 'inherit' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--warning-yellow)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+          >
+            by primuez.in
+          </a>
         </div>
 
         <div className="flex items-center gap-3">
