@@ -32,7 +32,8 @@ import {
   ShieldCheck,
   Zap,
   Info,
-  ExternalLink
+  ExternalLink,
+  Home
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
@@ -689,20 +690,20 @@ export default function App() {
 
           <button 
             onClick={toggleTheme}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
             title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             aria-label="Toggle dark mode"
           >
-            {theme === 'light' ? <Moon size={17} /> : <Sun size={17} />}
+            {theme === 'light' ? <Moon size={17} className="text-neutral-800" /> : <Sun size={17} className="text-warning-yellow" />}
           </button>
 
           <button
             onClick={() => promptApiKey(undefined, false)}
-            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
             title="Settings"
             aria-label="Open Settings"
           >
-            <Settings size={17} />
+            <Settings size={17} className="text-neutral-800 dark:text-neutral-100" />
           </button>
         </div>
       </header>
@@ -1442,10 +1443,10 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'home' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <span className="text-base leading-none">🏠</span>
+          <Home size={16} className={phase === 'home' ? "text-warning-yellow" : ""} />
           <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Home</span>
         </button>
 
@@ -1455,7 +1456,7 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'font-creation' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
           <PenTool size={16} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
@@ -1468,7 +1469,7 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'text-writer' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
           <FileText size={16} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
@@ -1481,7 +1482,7 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'homework-solver' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
           <GraduationCap size={16} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
@@ -1494,7 +1495,7 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'ai-humanizer' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
           <Sparkles size={16} className={phase === 'ai-humanizer' ? "text-warning-yellow" : ""} />
@@ -1507,7 +1508,7 @@ export default function App() {
             "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
             phase === 'find-font' 
               ? "text-warning-yellow font-bold" 
-              : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
           <Search size={16} className={phase === 'find-font' ? "text-warning-yellow" : ""} />

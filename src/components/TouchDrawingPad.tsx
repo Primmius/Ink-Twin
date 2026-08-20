@@ -272,7 +272,7 @@ export const TouchDrawingPad: React.FC<TouchDrawingPadProps> = ({
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 px-5 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 disabled:opacity-50"
+            className="flex-1 px-5 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 disabled:opacity-50"
           >
             {isSaving ? (
               <span>Saving...</span>

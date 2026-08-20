@@ -111,23 +111,23 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-xl brutal-border brutal-shadow flex flex-col">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-warning-yellow">
-          <h3 className="font-display uppercase text-xl">Edit Glyph: {char}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 w-full max-w-xl brutal-border brutal-shadow flex flex-col rounded-2xl overflow-hidden">
+        <div className="p-4 border-b-2 border-neutral-950 flex items-center justify-between bg-warning-yellow text-neutral-950">
+          <h3 className="font-display uppercase text-xl font-bold">Edit Glyph: {char}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-950 hover:text-white transition-colors rounded-lg">
             <X size={24} />
           </button>
         </div>
 
-        <div className="flex-grow p-8 flex flex-col items-center gap-6">
+        <div className="flex-grow p-6 sm:p-8 flex flex-col items-center gap-6 bg-neutral-50 dark:bg-neutral-950/60">
           {reanalyzeError && (
-            <div className="w-full max-w-[400px] bg-error-red text-white border-2 border-brutal-black p-3 text-xs font-mono flex items-start gap-2">
+            <div className="w-full max-w-[400px] bg-error-red text-white border-2 border-neutral-900 p-3 text-xs font-mono flex items-start gap-2 rounded-lg">
               <span className="flex-grow">{reanalyzeError}</span>
               <button onClick={() => setReanalyzeError(null)} className="font-bold">×</button>
             </div>
           )}
-          <div className="relative brutal-border bg-white cursor-crosshair touch-none">
+          <div className="relative border-2 border-neutral-300 dark:border-neutral-700 bg-white cursor-crosshair touch-none rounded-xl overflow-hidden">
             <canvas
               ref={canvasRef}
               width={500}
@@ -144,7 +144,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
             <div className="absolute top-2 right-2 flex flex-col gap-2">
               <button 
                 onClick={clear}
-                className="p-2 bg-white border-2 border-brutal-black hover:bg-error-red hover:text-white transition-colors brutal-shadow"
+                className="p-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border-2 border-neutral-300 dark:border-neutral-700 hover:bg-error-red hover:text-white dark:hover:bg-error-red dark:hover:text-white transition-colors brutal-shadow-small rounded-lg"
                 title="Clear Canvas"
               >
                 <Eraser size={20} />
@@ -165,7 +165,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
                 }}
                 disabled={isReanalyzing}
                 className={cn(
-                  "p-2 bg-white border-2 border-brutal-black hover:bg-warning-yellow transition-colors brutal-shadow",
+                  "p-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border-2 border-neutral-300 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors brutal-shadow-small rounded-lg",
                   isReanalyzing && "animate-pulse cursor-wait"
                 )}
                 title="Re-analyze from Scans"
@@ -190,7 +190,7 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
                     }
                   }
                 }}
-                className="p-2 bg-white border-2 border-brutal-black hover:bg-warning-yellow transition-colors brutal-shadow"
+                className="p-2 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-100 border-2 border-neutral-300 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors brutal-shadow-small rounded-lg"
                 title="Reset to Original"
               >
                 <RotateCcw size={20} />
@@ -198,24 +198,24 @@ export const GlyphEditor: React.FC<GlyphEditorProps> = ({ char, initialImage, on
             </div>
           </div>
 
-          <p className="font-mono text-[10px] uppercase opacity-60 text-center">
+          <p className="font-mono text-[10px] uppercase opacity-60 text-center text-neutral-600 dark:text-neutral-400">
             Draw your character clearly within the box. Use thick strokes for best results.
           </p>
         </div>
 
-        <div className="p-6 border-t-2 border-brutal-black flex gap-4 bg-neutral-50">
-          <button onClick={onClose} className="flex-grow brutal-btn">
+        <div className="p-5 border-t-2 border-neutral-200 dark:border-neutral-800 flex gap-3 bg-neutral-100 dark:bg-neutral-900">
+          <button onClick={onClose} className="flex-1 brutal-btn bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
             Cancel
           </button>
           <button 
             onClick={save} 
             disabled={isSaving || isReanalyzing}
-            className="flex-grow brutal-btn brutal-btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 brutal-btn bg-warning-yellow text-neutral-950 hover:bg-amber-300 font-bold uppercase flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {isSaving ? (
-              <RefreshCw size={20} className="animate-spin" />
+              <RefreshCw size={18} className="animate-spin" />
             ) : (
-              <Check size={20} />
+              <Check size={18} />
             )}
             {isSaving ? 'Saving...' : 'Save Glyph'}
           </button>
