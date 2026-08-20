@@ -53,6 +53,16 @@ import { FindFont } from './components/FindFont';
 import { AIHumanizer } from './components/AIHumanizer';
 import { UseCasePage } from './use-cases/UseCasePage';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { 
+  loadSavedFonts, 
+  saveFontToStorage, 
+  deleteFontFromStorage, 
+  renameFontInStorage, 
+  getActiveFontId, 
+  setActiveFontId as saveActiveFontId, 
+  registerFontFace, 
+  FONT_EXPIRY_MS 
+} from './lib/fontStorage';
 
 export function isApiKeyProblem(err: any): boolean {
   if (!err) return false;
@@ -155,22 +165,26 @@ export default function App() {
     }
   }, [toast]);
 
-  // Load saved fonts from localStorage
+  // Load saved fonts from IndexedDB & persistent storage (with 7-day auto-purge)
   useEffect(() => {
-    const stored = localStorage.getItem('handfont_saved_fonts');
-    if (stored) {
+    (async () => {
       try {
-        setSavedFonts(JSON.parse(stored));
+        const loaded = await loadSavedFonts();
+        setSavedFonts(loaded);
+        const activeId = getActiveFontId();
+        if (activeId) {
+          const matched = loaded.find(f => f.id === activeId);
+          if (matched) {
+            setFontUrl(matched.url);
+            setFontConfig(prev => ({ ...prev, name: matched.name }));
+            registerFontFace(matched).catch(() => {});
+          }
+        }
       } catch (e) {
-        console.error("Failed to parse saved fonts", e);
+        console.error("Failed to load saved fonts from storage", e);
       }
-    }
+    })();
   }, []);
-
-  // Save fonts to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('handfont_saved_fonts', JSON.stringify(savedFonts));
-  }, [savedFonts]);
 
   // Dark Mode Persistence
   useEffect(() => {
@@ -194,54 +208,70 @@ export default function App() {
       setToast("Already in library!");
       return;
     }
-    const response = await fetch(fontUrl);
-    const blob = await response.blob();
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-    setSavedFonts(prev => [...prev, {
-      id: Math.random().toString(36).substr(2, 9),
-      name: fontName,
-      url: dataUrl,
-      createdAt: Date.now(),
-      source: 'Phase 1',
-    }]);
-    setToast("Font saved to library!");
+    try {
+      const response = await fetch(fontUrl);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const newFont: SavedFont = {
+        id: Math.random().toString(36).substring(2, 11),
+        name: fontName,
+        url: dataUrl,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + FONT_EXPIRY_MS,
+        source: 'Phase 1',
+      };
+      await saveFontToStorage(newFont);
+      saveActiveFontId(newFont.id);
+      setSavedFonts(prev => [...prev, newFont]);
+      setToast("Font saved to library (7-day save)!");
+    } catch (err: any) {
+      console.error("Failed to save font", err);
+      setToast("Failed to save font");
+    }
   };
 
-  const savePendingFont = () => {
+  const savePendingFont = async () => {
     if (!pendingFontToName) return;
     const { name, url, profile, fontFamily } = pendingFontToName;
     const trimmedName = name.trim() || fontFamily;
-    setSavedFonts(prev => {
-      const alreadySaved = prev.some(f => f.name === trimmedName && f.googleFont);
-      if (alreadySaved) {
-        setToast("Font already in library!");
-        return prev;
-      }
-      return [...prev, {
-        id: Math.random().toString(36).substr(2, 9),
-        name: trimmedName,
-        url,
-        createdAt: Date.now(),
-        source: 'Find My Font',
-        fontFamily,
-        googleFont: true,
-        styleProfile: {
-          slant: profile.slant,
-          letterSpacing: profile.letterSpacing,
-          lineHeight: profile.lineHeight,
-          inkColor: profile.inkColor,
-          wobble: profile.wobble,
-          strokeWeight: profile.strokeWeight,
-          irregularity: profile.irregularity,
-        },
-      }];
-    });
-    setToast("Font saved to library!");
+    const alreadySaved = savedFonts.some(f => f.name === trimmedName && f.googleFont);
+    if (alreadySaved) {
+      setToast("Font already in library!");
+      setFontUrl(url);
+      setFontConfig(prev => ({ ...prev, name: trimmedName }));
+      setPendingProfile(profile);
+      setPendingFontToName(null);
+      setPhase('text-writer');
+      return;
+    }
+    const newFont: SavedFont = {
+      id: Math.random().toString(36).substring(2, 11),
+      name: trimmedName,
+      url,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + FONT_EXPIRY_MS,
+      source: 'Find My Font',
+      fontFamily,
+      googleFont: true,
+      styleProfile: {
+        slant: profile.slant,
+        letterSpacing: profile.letterSpacing,
+        lineHeight: profile.lineHeight,
+        inkColor: profile.inkColor,
+        wobble: profile.wobble,
+        strokeWeight: profile.strokeWeight,
+        irregularity: profile.irregularity,
+      },
+    };
+    await saveFontToStorage(newFont);
+    saveActiveFontId(newFont.id);
+    setSavedFonts(prev => [...prev, newFont]);
+    setToast("Font saved to library (7-day save)!");
     setFontUrl(url);
     setFontConfig(prev => ({ ...prev, name: trimmedName }));
     setPendingProfile(profile);
@@ -249,11 +279,16 @@ export default function App() {
     setPhase('text-writer');
   };
 
-  const handleDeleteFont = (id: string) => {
+  const handleDeleteFont = async (id: string) => {
+    await deleteFontFromStorage(id);
+    if (getActiveFontId() === id) {
+      saveActiveFontId(null);
+    }
     setSavedFonts(prev => prev.filter(f => f.id !== id));
   };
 
-  const handleRenameFont = (id: string, newName: string) => {
+  const handleRenameFont = async (id: string, newName: string) => {
+    await renameFontInStorage(id, newName);
     setSavedFonts(prev => prev.map(f => f.id === id ? { ...f, name: newName } : f));
   };
 
@@ -1326,11 +1361,17 @@ export default function App() {
             onSelectFont={(font) => {
               setFontUrl(font.url);
               setFontConfig(prev => ({ ...prev, name: font.name }));
+              saveActiveFontId(font.id);
             }}
             onDeleteFont={handleDeleteFont}
             onRenameFont={handleRenameFont}
-            onUploadFont={(font) => {
-              setSavedFonts(prev => [...prev, font]);
+            onUploadFont={async (font) => {
+              await saveFontToStorage(font);
+              saveActiveFontId(font.id);
+              setSavedFonts(prev => {
+                const filtered = prev.filter(f => f.id !== font.id);
+                return [...filtered, font];
+              });
               setFontUrl(font.url);
               setFontConfig(prev => ({ ...prev, name: font.name }));
             }}

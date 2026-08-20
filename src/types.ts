@@ -27,6 +27,7 @@ export interface SavedFont {
   name: string;
   url: string; // Blob URL or data URL
   createdAt: number;
+  expiresAt?: number;
   source?: string;
   fontFamily?: string;
   googleFont?: boolean;

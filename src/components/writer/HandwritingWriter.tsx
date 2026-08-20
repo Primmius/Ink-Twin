@@ -24,12 +24,23 @@ import {
   X,
   History,
   AlertCircle,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  Upload,
+  Info
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { PageConfig, WriterPage, AppPhase, WriterElement, WriterImage, SavedFont } from '../../types';
 import { CanvasPage, renderCanvasPage } from './CanvasPage';
 import { wrapTextIntoPages } from '../../lib/localLayout';
+import { 
+  formatExpiryLabel, 
+  exportFontAsFile, 
+  importFontFromFile, 
+  registerFontFace, 
+  getActiveFontId, 
+  setActiveFontId as saveActiveFontId 
+} from '../../lib/fontStorage';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { PDFDocument } from 'pdf-lib';
@@ -127,7 +138,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [mode, setMode] = useState<'default' | 'classic'>('default');
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [fontVersion, setFontVersion] = useState(0);
-  const [activeFontId, setActiveFontId] = useState<string | null>(null);
+  const [activeFontId, setActiveFontId] = useState<string | null>(() => getActiveFontId());
   const loadedSavedFontIds = useRef<Set<string>>(new Set());
 
   // The font family the canvas/textarea actually uses.
@@ -142,6 +153,18 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
         ? (activeFont.fontFamily || activeFont.name)
         : `inktwin-font-${activeFont.id}`)
     : fontName;
+
+  const handleSelectFontItem = async (font: SavedFont) => {
+    setActiveFontId(font.id);
+    saveActiveFontId(font.id);
+    onSelectFont(font);
+    try {
+      await registerFontFace(font);
+      setFontVersion(v => v + 1);
+    } catch (err) {
+      console.error('Error activating font:', err);
+    }
+  };
   
   const [settings, setSettings] = useState<PageConfig>({
     fontSize: 24,
@@ -179,18 +202,35 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
 
   const renderFontLibrary = () => (
     <section className="space-y-4">
-      <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-        <Type size={14} /> Font Library
-      </h3>
-      <div className={cn("grid gap-2", isMobile ? "grid-cols-2" : "space-y-2")}>
+      <div className="flex items-center justify-between">
+        <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+          <Type size={14} /> Font Library
+        </h3>
+        <span className="text-[9px] font-mono opacity-50 uppercase">
+          {savedFonts.length} {savedFonts.length === 1 ? 'Font' : 'Fonts'}
+        </span>
+      </div>
+
+      {/* 7-Day Free Offline Storage Callout */}
+      <div className="p-2.5 bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200 dark:border-neutral-800 rounded text-[9px] font-mono space-y-1">
+        <div className="flex items-center justify-between text-neutral-900 dark:text-neutral-100 font-bold">
+          <span className="flex items-center gap-1.5">
+            <Clock size={11} className="text-warning-yellow shrink-0" />
+            7-Day Temporary Storage
+          </span>
+          <span className="text-[8px] opacity-60">Client-Side</span>
+        </div>
+        <p className="opacity-70 leading-relaxed text-neutral-700 dark:text-neutral-300">
+          Handwriting fonts are saved for 7 days to keep your browser fast. Download your font file before it expires to import it back anytime!
+        </p>
+      </div>
+
+      <div className={cn("grid gap-2", isMobile ? "grid-cols-1 sm:grid-cols-2" : "space-y-2")}>
         {savedFonts.length === 0 && (
-          <div className="text-[10px] opacity-40 italic space-y-1 col-span-full">
-            <p>No saved fonts yet.</p>
+          <div className="text-[10px] opacity-40 italic space-y-1 col-span-full py-4 text-center">
+            <p>No saved fonts in your library.</p>
             <p>
-              Create one in <button onClick={() => onNavigate?.('font-creation')} className="underline hover:text-black hover:opacity-100 transition-all">✏️ Phase 1</button>
-            </p>
-            <p>
-              or find one in <button onClick={() => onNavigate?.('find-font')} className="underline hover:text-black hover:opacity-100 transition-all">🔍 Phase 4</button>!
+              Create one in <button onClick={() => onNavigate?.('font-creation')} className="underline hover:text-black dark:hover:text-white hover:opacity-100 transition-all font-bold">✏️ Phase 1</button> or find a match in <button onClick={() => onNavigate?.('find-font')} className="underline hover:text-black dark:hover:text-white hover:opacity-100 transition-all font-bold">🔍 Phase 4</button>!
             </p>
           </div>
         )}
@@ -202,61 +242,86 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
           <div 
             key={font.id}
             className={cn(
-              "group brutal-border p-2 flex flex-col gap-2 transition-colors",
-              isActive ? "bg-warning-yellow/10 border-warning-yellow" : "bg-white"
+              "group brutal-border p-2.5 flex flex-col gap-2 transition-colors",
+              isActive ? "bg-warning-yellow/10 border-warning-yellow" : "bg-white dark:bg-neutral-900"
             )}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col flex-grow">
+            <div className="flex items-start justify-between gap-1">
+              <div className="flex flex-col flex-grow min-w-0">
                 <input 
                   type="text"
                   value={font.name}
                   onChange={(e) => onRenameFont(font.id, e.target.value)}
-                  className="bg-transparent font-mono text-[10px] font-bold outline-none w-full"
+                  className="bg-transparent font-mono text-[10px] font-bold outline-none w-full truncate text-neutral-900 dark:text-neutral-100"
+                  placeholder="Font Name"
                 />
-                <span className="font-mono text-[8px] opacity-50 uppercase tracking-tighter">
-                  {font.source === 'Found - Phase 4' ? '🔍 Found match' : '✏️ Your handwriting'}
-                </span>
+                <div className="flex items-center justify-between gap-1 text-[8px] font-mono mt-1">
+                  <span className="opacity-50 uppercase truncate">
+                    {font.source === 'Found - Phase 4' ? '🔍 Match' : (font.source || '✏️ Handwriting')}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-bold border border-neutral-200 dark:border-neutral-700 flex items-center gap-1 shrink-0" title="Auto-deletes after 7 days to preserve storage">
+                    <Clock size={9} className="text-warning-yellow" />
+                    {formatExpiryLabel(font.createdAt || Date.now())}
+                  </span>
+                </div>
               </div>
-              <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await exportFontAsFile(font);
+                    } catch (err: any) {
+                      alert(err?.message || "Failed to download font");
+                    }
+                  }}
+                  className="p-1.5 text-neutral-600 dark:text-neutral-300 hover:text-warning-yellow transition-colors touch-manipulation"
+                  title="Download .TTF font backup to your device"
+                  aria-label={`Download ${font.name}`}
+                >
+                  <Download size={13} />
+                </button>
                 <button 
                   onClick={() => {
-                    if (window.confirm(`Delete "${font.name}"? This cannot be undone.`)) {
-                      if (activeFontId === font.id) setActiveFontId(null);
+                    if (window.confirm(`Delete "${font.name}"? You can re-import it later if you downloaded the .ttf file.`)) {
+                      if (activeFontId === font.id) {
+                        setActiveFontId(null);
+                        saveActiveFontId(null);
+                      }
                       onDeleteFont(font.id);
                       loadedSavedFontIds.current.delete(font.id);
                     }
                   }}
-                  className="p-2 hover:text-error-red touch-manipulation"
+                  className="p-1.5 text-neutral-600 dark:text-neutral-300 hover:text-error-red touch-manipulation"
+                  title="Delete from library"
                   aria-label={`Delete ${font.name}`}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>
             <button 
-              onClick={() => {
-                setActiveFontId(font.id);
-                onSelectFont(font);
-              }}
+              onClick={() => handleSelectFontItem(font)}
               className={cn(
-                "w-full py-1 font-mono text-[8px] uppercase font-bold brutal-border h-11 sm:h-auto",
-                isActive ? "bg-warning-yellow" : "bg-white hover:bg-neutral-50"
+                "w-full py-1.5 font-mono text-[9px] uppercase font-bold brutal-border h-9 sm:h-auto transition-colors",
+                isActive 
+                  ? "bg-warning-yellow text-neutral-950" 
+                  : "bg-white dark:bg-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-900 dark:text-neutral-100"
               )}
             >
-              {isActive ? "Active" : "Use Font"}
+              {isActive ? "Active Font" : "Use Font"}
             </button>
           </div>
           );
         })}
       </div>
-      {!isMobile && (
-        <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs mt-4">
-          <Type size={14} />
-          Upload Custom .TTF
-          <input type="file" className="hidden" accept=".ttf" onChange={handleCustomFontUpload} />
-        </label>
-      )}
+
+      {/* Import / Upload Handwriting .TTF */}
+      <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs mt-3 py-2.5 bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-100 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors">
+        <Upload size={14} />
+        Import Handwriting (.TTF)
+        <input type="file" className="hidden" accept=".ttf,.otf,.json" onChange={handleCustomFontUpload} />
+      </label>
     </section>
   );
 
@@ -1026,23 +1091,25 @@ ${documentText}`;
 
   // Reactive Reflow: Removed in favor of manual renderPage calls for tighter control
 
-  const handleCustomFontUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCustomFontUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    const name = file.name.split('.')[0];
-    const fontFace = new FontFace(name, `url(${url})`);
-    fontFace.load().then((loadedFace) => {
-      document.fonts.add(loadedFace);
+    try {
+      const newFont = await importFontFromFile(file);
       if (onUploadFont) {
-        onUploadFont({
-          id: Math.random().toString(36).substr(2, 9),
-          name,
-          url,
-          createdAt: Date.now()
-        });
+        onUploadFont(newFont);
       }
-    });
+      setActiveFontId(newFont.id);
+      saveActiveFontId(newFont.id);
+      onSelectFont(newFont);
+      await registerFontFace(newFont);
+      setFontVersion(v => v + 1);
+      setToast(`Handwriting font "${newFont.name}" imported & activated (7-day save)!`);
+    } catch (err: any) {
+      console.error("Failed to import font:", err);
+      alert(err?.message || "Failed to process font file.");
+    }
+    e.target.value = '';
   };
 
   const [snapGuides, setSnapGuides] = useState<{ x?: number, y?: number } | null>(null);
@@ -1231,9 +1298,7 @@ ${documentText}`;
     a.click();
   };
 
-  // Eagerly load every saved font into document.fonts.
-  // - Google Fonts (Phase 4): inject CSS link, use the real family name.
-  // - Binary fonts (Phase 1): load bytes under a unique id-based family.
+  // Eagerly load and register every saved font into document.fonts.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1241,32 +1306,7 @@ ${documentText}`;
         if (loadedSavedFontIds.current.has(font.id)) continue;
 
         try {
-          if (font.googleFont) {
-            const family = font.fontFamily || font.name;
-            if (font.url && !document.querySelector(`link[href="${font.url}"]`)) {
-              const link = document.createElement('link');
-              link.href = font.url;
-              link.rel = 'stylesheet';
-              document.head.appendChild(link);
-            }
-            const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
-            await Promise.all(
-              sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
-            );
-          } else {
-            const family = `inktwin-font-${font.id}`;
-            const res = await fetch(font.url);
-            const buffer = await res.arrayBuffer();
-            if (cancelled) return;
-            const face = new FontFace(family, buffer);
-            const loaded = await face.load();
-            if (cancelled) return;
-            document.fonts.add(loaded);
-            const sizes = [12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72];
-            await Promise.all(
-              sizes.map(s => document.fonts.load(`${s}px "${family}"`).catch(() => {}))
-            );
-          }
+          await registerFontFace(font);
           if (cancelled) return;
           loadedSavedFontIds.current.add(font.id);
           setFontVersion(v => v + 1);

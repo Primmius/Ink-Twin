@@ -11,8 +11,53 @@ export type HumanizeResult = {
   original: string;
   humanized: string;
   style: HumanizeStyle;
+  modelUsed?: string;
   timestamp: number;
 };
+
+export interface GeminiModelOption {
+  id: string;
+  name: string;
+  description: string;
+  tag?: string;
+  isRecommended?: boolean;
+}
+
+export const AVAILABLE_GEMINI_MODELS: GeminiModelOption[] = [
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    description: 'Recommended · High speed & natural tone formatting',
+    tag: 'Recommended',
+    isRecommended: true
+  },
+  {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash-Lite',
+    description: 'Ultra-fast · Highest rate limits & low latency',
+    tag: 'Fast & High Quota'
+  },
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    description: 'Standard multimodal flash model',
+    tag: 'Standard'
+  },
+  {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    description: 'Stable legacy fallback model',
+    tag: 'Stable'
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    description: 'Deep nuance & rich vocabulary',
+    tag: 'Pro Reasoning'
+  },
+];
+
+export const DEFAULT_HUMANIZE_MODEL = 'gemini-2.5-flash';
 
 const STYLE_PROMPTS: Record<HumanizeStyle, string> = {
   'student-casual': `Rewrite this as a typical student who wrote it themselves. Use natural, slightly informal language. Include occasional minor imperfections like starting a sentence with "So" or "Also". Keep it conversational but on-topic. Don't make it sound perfect.`,
@@ -43,7 +88,8 @@ export { STYLE_LABELS, STYLE_DESCS };
 export async function humanizeText(
   text: string,
   style: HumanizeStyle,
-  apiKey: string
+  apiKey: string,
+  modelName: string = DEFAULT_HUMANIZE_MODEL
 ): Promise<HumanizeResult> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("You don't have the API key set up yet. Please set up the API key.");
@@ -62,15 +108,44 @@ CRITICAL RULES:
 TEXT TO HUMANIZE:
 ${text}`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: prompt,
-  });
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_HUMANIZE_MODEL;
 
-  return {
-    original: text,
-    humanized: response.text || text,
-    style,
-    timestamp: Date.now(),
-  };
+  try {
+    const response = await ai.models.generateContent({
+      model: targetModel,
+      contents: prompt,
+    });
+
+    return {
+      original: text,
+      humanized: response.text || text,
+      style,
+      modelUsed: targetModel,
+      timestamp: Date.now(),
+    };
+  } catch (err: any) {
+    console.warn(`Primary humanize call failed with model "${targetModel}":`, err);
+
+    // If model failed (deprecated, 404, or rate limit), try fallback to gemini-2.5-flash or gemini-2.5-flash-lite
+    if (targetModel !== 'gemini-2.5-flash' && targetModel !== 'gemini-2.5-flash-lite') {
+      try {
+        console.log('Attempting automatic fallback to gemini-2.5-flash...');
+        const fallbackRes = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+        });
+        return {
+          original: text,
+          humanized: fallbackRes.text || text,
+          style,
+          modelUsed: 'gemini-2.5-flash (Fallback)',
+          timestamp: Date.now(),
+        };
+      } catch (fallbackErr) {
+        console.error('Fallback model failed too:', fallbackErr);
+      }
+    }
+
+    throw err;
+  }
 }
