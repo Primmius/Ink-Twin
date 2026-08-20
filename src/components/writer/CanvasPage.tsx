@@ -562,15 +562,41 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
       const lineFontSize = isHeading ? currentFontSize * 1.3 : currentFontSize;
       ctx.font = `${isHeading ? 'bold ' : ''}${lineFontSize}px "${font}"`;
 
-      // Baseline Calculation:
-      // On lined paper: baseline sits exactly 2px above the ruled horizontal line (lineY - 2)
-      // So letters like 'a', 'c', 'e', 'x' rest right on top of the printed line!
+      // Optical Baseline Calculation:
+      // Lowercase character bodies (a, c, e, o, m, n, x) sit comfortably above the ruled line
+      // leaving clean clearance for descenders (g, p, y, j, q) and punctuation
+      const baseOffset = Math.max(6, Math.min(11, Math.round(metrics.linePitch * 0.2)));
+      const headingExtra = isHeading ? Math.round(lineFontSize * 0.08) : 0;
+      const baselineOffset = baseOffset + headingExtra;
+
       let baselineY: number;
       if (metrics.isLined) {
         const lineY = metrics.startY + currentLineIndex * metrics.linePitch;
-        baselineY = lineY - 2;
+        baselineY = lineY - baselineOffset;
       } else {
         baselineY = unlinedBaselineY;
+      }
+
+      const trimmed = tempLine.trim();
+      if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+        ctx.save();
+        ctx.strokeStyle = currentInkColor;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(config.leftMargin, baselineY + Math.round(baseOffset * 0.5));
+        ctx.lineTo(w - config.leftMargin, baselineY + Math.round(baseOffset * 0.5));
+        ctx.stroke();
+        ctx.restore();
+        if (metrics.isLined) currentLineIndex += 1;
+        else unlinedBaselineY += currentLineHeight;
+        return;
+      }
+
+      if (trimmed === '') {
+        if (metrics.isLined) currentLineIndex += 1;
+        else unlinedBaselineY += currentLineHeight;
+        return;
       }
 
       // Split by inline tags
