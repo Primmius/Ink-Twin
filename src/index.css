@@ -222,8 +222,7 @@ input:focus, textarea:focus, select:focus {
 }
 
 @utility brutal-btn {
-  @apply px-5 py-2.5 font-display uppercase tracking-wider font-bold border-2 border-[var(--border-primary)] bg-[var(--bg-card)] cursor-pointer select-none inline-flex items-center justify-center gap-2;
-  color: var(--text-primary);
+  @apply px-5 py-2.5 font-display uppercase tracking-wider font-bold border-2 border-[var(--border-primary)] bg-[var(--bg-card)] cursor-pointer select-none inline-flex items-center justify-center gap-2 text-[var(--text-primary)];
   border-radius: 8px;
   box-shadow: 2px 2px 0px var(--shadow-color);
   transition: all 0.18s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -233,7 +232,7 @@ input:focus, textarea:focus, select:focus {
     transform: translate(-2px, -2px);
     box-shadow: 4px 4px 0px var(--shadow-color);
     background-color: var(--warning-yellow);
-    color: #0A0A0C;
+    color: #0A0A0C !important;
     border-color: #0A0A0C;
   }
 
@@ -249,14 +248,13 @@ input:focus, textarea:focus, select:focus {
 
   &:hover {
     background-color: #FFE600;
-    color: #0A0A0C;
+    color: #0A0A0C !important;
   }
 }
 
 @utility brutal-card {
-  @apply border-2 border-[var(--border-primary)] p-5 sm:p-6;
+  @apply border-2 border-[var(--border-primary)] p-5 sm:p-6 text-[var(--text-primary)];
   background-color: var(--bg-card);
-  color: var(--text-primary);
   border-radius: 12px;
   box-shadow: 3px 3px 0px var(--shadow-color);
   transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);

@@ -1534,7 +1534,7 @@ ${documentText}`;
           <div className="flex items-center gap-1">
             <button 
               onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-1.5 px-3 h-10 transition-colors"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-1.5 px-3 h-10 transition-colors"
             >
               <Sparkles size={15} />
               <span className="font-display uppercase text-xs font-bold">✨ AI Edit</span>
@@ -1549,7 +1549,7 @@ ${documentText}`;
                 setIsAIEditPanelOpen(true);
                 setShowReflowPrompt(false);
               }}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-black flex items-center justify-center gap-2 px-3 border-dashed h-10"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-2 px-3 border-dashed h-10"
             >
               <RefreshCw size={14} />
               <span className="font-mono text-[9px] font-bold uppercase">Reflow?</span>
@@ -1561,7 +1561,7 @@ ${documentText}`;
           <button 
             onClick={undo} 
             disabled={historyIndex <= 0}
-            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200"
             title="Undo"
           >
             <Undo2 size={18} />
@@ -1569,7 +1569,7 @@ ${documentText}`;
           <button 
             onClick={redo} 
             disabled={historyIndex >= history.length - 1}
-            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px]"
+            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200"
             title="Redo"
           >
             <Redo2 size={18} />
@@ -1581,7 +1581,7 @@ ${documentText}`;
           <button 
             onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} 
             disabled={currentPageIndex === 0}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
             title="Previous page"
           >
             <ChevronLeft size={18} />
@@ -1589,7 +1589,7 @@ ${documentText}`;
           <button 
             onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} 
             disabled={currentPageIndex >= pages.length - 1}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
             title="Next page"
           >
             <ChevronRight size={18} />
@@ -1597,7 +1597,7 @@ ${documentText}`;
           {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
           <button 
             onClick={addPage} 
-            className="brutal-btn p-2 bg-warning-yellow hover:bg-amber-300 text-black min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="brutal-btn p-2 bg-warning-yellow hover:bg-amber-300 text-neutral-950 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs active:scale-95"
             title="Add new page"
           >
             <Plus size={18} />
@@ -1605,7 +1605,7 @@ ${documentText}`;
           <button 
             onClick={() => removePage(currentPageIndex)} 
             disabled={pages.length <= 1}
-            className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30"
+            className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 shadow-xs active:scale-95"
             title="Delete current page"
           >
             <Trash2 size={18} />
@@ -1613,11 +1613,11 @@ ${documentText}`;
         </div>
 
         <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button onClick={downloadPDF} className="brutal-btn bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center gap-2 px-4 h-11 shadow-sm">
+          <button onClick={downloadPDF} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95">
             <Download size={17} />
             <span className="font-display uppercase text-xs font-bold">PDF</span>
           </button>
-          <button onClick={downloadAllAsZip} className="brutal-btn bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 flex items-center justify-center gap-2 px-4 h-11 shadow-sm">
+          <button onClick={downloadAllAsZip} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95">
             <Download size={17} />
             <span className="font-display uppercase text-xs font-bold">ZIP</span>
           </button>
@@ -2192,12 +2192,12 @@ ${documentText}`;
                   onClick={() => setActiveMobileDrawer(activeMobileDrawer === tab.id ? null : tab.id)}
                   className={cn(
                     "flex flex-col items-center gap-0.5 flex-1 py-1 transition-all active:scale-95",
-                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-white font-bold" : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
+                    activeMobileDrawer === tab.id ? "text-neutral-950 dark:text-warning-yellow font-bold" : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
                   )}
                 >
                   <div className={cn(
                     "p-1.5 rounded-xl transition-all",
-                    activeMobileDrawer === tab.id ? "bg-warning-yellow text-neutral-950 shadow-sm" : ""
+                    activeMobileDrawer === tab.id ? "bg-warning-yellow text-neutral-950 shadow-sm" : "text-neutral-700 dark:text-neutral-300"
                   )}>
                     {tab.icon}
                   </div>

@@ -124,6 +124,65 @@ export const renderCanvasPage = async (
   applyEffects(ctx, width, height, config.effect);
 };
 
+export function getLinedPaperMetrics(config: PageConfig, w: number, h: number) {
+  const isLined = [
+    'blue-lined',
+    'gray-lined',
+    'black-lined',
+    'legal-pad',
+    'project-floral',
+    'project-ocean',
+    'project-music',
+    'project-colorful',
+    'project-purple',
+    'project-pink'
+  ].includes(config.pageStyle);
+
+  if (!isLined) {
+    return {
+      isLined: false,
+      startY: config.topMargin || 40,
+      linePitch: config.lineHeight || 32,
+      lineBottom: h - 20,
+      lineLeft: config.leftMargin || 60,
+      lineRight: w
+    };
+  }
+
+  let startY = config.topMargin || 40;
+  let lineBottom = h - 20;
+  let lineLeft = 0;
+  let lineRight = w;
+  let linePitch = Math.max(18, config.lineHeight || 32);
+
+  if (config.pageStyle === 'legal-pad') {
+    startY = 100;
+    lineBottom = h - 20;
+    lineLeft = 0;
+    lineRight = w;
+  } else if (config.pageStyle === 'project-purple') {
+    startY = 106;
+    lineBottom = h - 20;
+    lineLeft = config.leftMargin || 60;
+    lineRight = w - 22;
+  } else if (['project-floral', 'project-ocean', 'project-music', 'project-colorful', 'project-pink'].includes(config.pageStyle)) {
+    startY = 82;
+    lineBottom = config.pageStyle === 'project-floral' ? h - 62
+               : config.pageStyle === 'project-colorful' ? h - 50 : h - 18;
+    lineLeft = config.leftMargin || 60;
+    lineRight = config.pageStyle === 'project-colorful' ? w - 52 : w - 18;
+  }
+
+  return {
+    isLined: true,
+    startY,
+    linePitch,
+    lineBottom,
+    lineLeft,
+    lineRight
+  };
+}
+
 const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, config: PageConfig) => {
   ctx.save();
   
@@ -338,45 +397,50 @@ const drawBackground = (ctx: CanvasRenderingContext2D, w: number, h: number, con
       'project-floral':'#3d3d3d','project-ocean':'#1a73e8','project-music':'#555',
       'project-colorful':'#aaaaaa','project-purple':'#8e24aa','project-pink':'#ec407a',
     };
-    const lc = lColorMap[config.pageStyle];
-    const lineTop    = config.pageStyle === 'project-purple' ? 106 : 82;
-    const lineBottom = config.pageStyle === 'project-floral'    ? h - 62
-                     : config.pageStyle === 'project-colorful'  ? h - 50 : h - 18;
-    const lineRight  = config.pageStyle === 'project-colorful'  ? w - 52
-                     : config.pageStyle === 'project-purple'    ? w - 22 : w - 18;
+    const lc = lColorMap[config.pageStyle] || '#444444';
+    const metrics = getLinedPaperMetrics(config, w, h);
 
-    ctx.strokeStyle = lc; ctx.lineWidth = 0.6;
-    for (let y = lineTop; y < lineBottom; y += 30) {
-      ctx.beginPath(); ctx.moveTo(config.leftMargin, y); ctx.lineTo(lineRight, y); ctx.stroke();
+    ctx.strokeStyle = lc;
+    ctx.lineWidth = 0.6;
+    for (let y = metrics.startY; y < metrics.lineBottom; y += metrics.linePitch) {
+      ctx.beginPath();
+      ctx.moveTo(metrics.lineLeft, y);
+      ctx.lineTo(metrics.lineRight, y);
+      ctx.stroke();
     }
 
     // Red/pink margin line (matches existing lined-paper behaviour)
-    ctx.strokeStyle = '#ff6666'; ctx.lineWidth = 1.2;
+    ctx.strokeStyle = '#ff6666';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.moveTo(config.leftMargin, lineTop - 4);
-    ctx.lineTo(config.leftMargin, lineBottom);
+    ctx.moveTo(config.leftMargin, metrics.startY - 4);
+    ctx.lineTo(config.leftMargin, metrics.lineBottom);
     ctx.stroke();
   }
 
-  // 3. Margin Lines
-  const isLined = ['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle);
-  if (isLined) {
+  // 3. Margin & Ruled Lines for Standard Lined Paper
+  const isStandardLined = ['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle);
+  if (isStandardLined) {
     const lineColor = config.pageStyle === 'blue-lined' ? '#a8c4e0' : 
                       (config.pageStyle === 'black-lined' ? '#333333' : 
                       (config.pageStyle === 'legal-pad' ? '#a8c4e0' : '#cccccc'));
     ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 0.5;
-    const startY = config.pageStyle === 'legal-pad' ? 100 : 32;
-    for (let y = startY; y < h; y += 32) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    ctx.lineWidth = 0.6;
+    const metrics = getLinedPaperMetrics(config, w, h);
+    for (let y = metrics.startY; y < metrics.lineBottom; y += metrics.linePitch) {
+      ctx.beginPath();
+      ctx.moveTo(metrics.lineLeft, y);
+      ctx.lineTo(metrics.lineRight, y);
+      ctx.stroke();
     }
     
     // Vertical margin line
-    if (['blue-lined', 'gray-lined', 'black-lined', 'legal-pad'].includes(config.pageStyle)) {
-      ctx.strokeStyle = '#ffaaaa';
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(config.leftMargin, 0); ctx.lineTo(config.leftMargin, h); ctx.stroke();
-    }
+    ctx.strokeStyle = '#ffaaaa';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(config.leftMargin, 0);
+    ctx.lineTo(config.leftMargin, h);
+    ctx.stroke();
   }
 
   if (config.pageStyle === 'grid' || config.pageStyle === 'graph-paper') {
@@ -460,12 +524,14 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
   let currentInkColor = config.pageStyle === 'blackboard' ? '#FFFFFF' : config.inkColor;
   let currentThickness = config.thickness;
   let currentLineHeight = config.lineHeight;
-  ctx.textBaseline = 'top';
+  ctx.textBaseline = 'alphabetic';
 
-  const paragraphs = text.split('\n\n');
-  let cursorY = config.topMargin;
+  const metrics = getLinedPaperMetrics(config, w, h);
+  let currentLineIndex = 0;
+  let unlinedBaselineY = config.topMargin + config.fontSize * 0.85;
 
   const rgb = hexToRgb(currentInkColor);
+  const paragraphs = text.split('\n\n');
 
   paragraphs.forEach((paragraph, pIdx) => {
     const lines = paragraph.split('\n');
@@ -476,7 +542,14 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
       let isBoldNext = false;
 
       if (tempLine.includes('[CENTER]')) { isCentered = true; tempLine = tempLine.replace('[CENTER]', ''); }
-      if (tempLine.includes('[GAP]')) { cursorY += currentLineHeight; tempLine = tempLine.replace('[GAP]', ''); }
+      if (tempLine.includes('[GAP]')) { 
+        if (metrics.isLined) {
+          currentLineIndex += 1;
+        } else {
+          unlinedBaselineY += currentLineHeight; 
+        }
+        tempLine = tempLine.replace('[GAP]', ''); 
+      }
       if (tempLine.includes('[HEADING]')) { isHeading = true; tempLine = tempLine.replace('[HEADING]', ''); }
       if (tempLine.includes('[LINE:')) {
         const lineMatch = tempLine.match(/\[LINE:(\d+)\]/);
@@ -486,9 +559,45 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
         }
       }
 
-      const lineFontSize = isHeading ? currentFontSize * 1.4 : currentFontSize;
-      const eh = isHeading ? currentLineHeight * 1.4 : currentLineHeight;
+      const lineFontSize = isHeading ? currentFontSize * 1.3 : currentFontSize;
       ctx.font = `${isHeading ? 'bold ' : ''}${lineFontSize}px "${font}"`;
+
+      // Optical Baseline Calculation:
+      // Lowercase character bodies (a, c, e, o, m, n, x) sit comfortably above the ruled line
+      // leaving clean clearance for descenders (g, p, y, j, q) and punctuation
+      const baseOffset = Math.max(6, Math.min(11, Math.round(metrics.linePitch * 0.2)));
+      const headingExtra = isHeading ? Math.round(lineFontSize * 0.08) : 0;
+      const baselineOffset = baseOffset + headingExtra;
+
+      let baselineY: number;
+      if (metrics.isLined) {
+        const lineY = metrics.startY + currentLineIndex * metrics.linePitch;
+        baselineY = lineY - baselineOffset;
+      } else {
+        baselineY = unlinedBaselineY;
+      }
+
+      const trimmed = tempLine.trim();
+      if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
+        ctx.save();
+        ctx.strokeStyle = currentInkColor;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(config.leftMargin, baselineY + Math.round(baseOffset * 0.5));
+        ctx.lineTo(w - config.leftMargin, baselineY + Math.round(baseOffset * 0.5));
+        ctx.stroke();
+        ctx.restore();
+        if (metrics.isLined) currentLineIndex += 1;
+        else unlinedBaselineY += currentLineHeight;
+        return;
+      }
+
+      if (trimmed === '') {
+        if (metrics.isLined) currentLineIndex += 1;
+        else unlinedBaselineY += currentLineHeight;
+        return;
+      }
 
       // Split by inline tags
       const parts = tempLine.split(/(\[INK:[^\]]+\]|\[SIZE:[^\]]+\]|\[BOLD\]|\[NORMAL\])/);
@@ -538,7 +647,7 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
           const words = part.split(' ');
           const segmentThickness = isBoldNext ? (config.thickness + 2) : currentThickness;
           
-          words.forEach((word, wordIdx) => {
+          words.forEach((word) => {
             // Apply Ink Variation per word (not for shadow)
             let wordColor = currentInkColor;
             if (config.inkVariation && rgb && !isShadow) {
@@ -550,7 +659,6 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
             }
 
             // Draw Character by Character (Grapheme cluster aware for Indic scripts/Hindi)
-            // This prevents "dotted circles" by keeping combining marks with their base
             const clusters = word.match(/[\u0900-\u097F][\u093E-\u094D\u0900-\u0903\u0951-\u0954\u0962-\u0963]*|[^\uD800-\uDFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]/gu) || Array.from(word);
 
             clusters.forEach((cluster) => {
@@ -559,14 +667,14 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
               // Slant
               ctx.transform(1, 0, Math.tan(config.slant * Math.PI / 180), 1, 0, 0);
 
-              // Randomness
+              // Organic Natural Randomness (gentle human baseline wobble without jumping off the ruled line)
               let charOffsetY = 0;
               if (config.naturalRandomness) {
-                charOffsetY = (Math.random() - 0.5) * config.randomnessIntensity * 3;
-                const rotation = (Math.random() - 0.5) * config.randomnessIntensity * 3;
-                ctx.translate(cursorX, cursorY + charOffsetY);
+                charOffsetY = (Math.random() - 0.5) * config.randomnessIntensity * 1.5;
+                const rotation = (Math.random() - 0.5) * config.randomnessIntensity * 2;
+                ctx.translate(cursorX, baselineY + charOffsetY);
                 ctx.rotate(rotation * Math.PI / 180);
-                ctx.translate(-cursorX, -(cursorY + charOffsetY));
+                ctx.translate(-cursorX, -(baselineY + charOffsetY));
               }
 
               // Thickness (draw multiple times with tiny offsets)
@@ -576,12 +684,12 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
                 ctx.globalAlpha = 0.3;
                 const iterations = Math.floor(effectiveThickness);
                 for (let t = 0; t < iterations; t++) {
-                  ctx.fillText(cluster, cursorX + (Math.random() * 0.7), cursorY + charOffsetY + (Math.random() * 0.7));
+                  ctx.fillText(cluster, cursorX + (Math.random() * 0.7), baselineY + charOffsetY + (Math.random() * 0.7));
                 }
                 ctx.globalAlpha = baseAlpha;
               }
 
-              ctx.fillText(cluster, cursorX, cursorY + charOffsetY);
+              ctx.fillText(cluster, cursorX, baselineY + charOffsetY);
               ctx.restore();
               cursorX += ctx.measureText(cluster).width + config.letterSpacing;
             });
@@ -593,9 +701,23 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
         }
       });
 
-      cursorY += eh;
+      // Advance line
+      if (metrics.isLined) {
+        currentLineIndex += 1;
+      } else {
+        const eh = isHeading ? currentLineHeight * 1.3 : currentLineHeight;
+        unlinedBaselineY += eh;
+      }
     });
-    cursorY += config.paragraphSpacing;
+
+    // Advance paragraph (stays locked to integer line units on lined paper)
+    if (metrics.isLined) {
+      if (config.paragraphSpacing > metrics.linePitch * 0.5) {
+        currentLineIndex += 1;
+      }
+    } else {
+      unlinedBaselineY += config.paragraphSpacing;
+    }
   });
   
   ctx.restore();

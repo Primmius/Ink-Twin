@@ -370,7 +370,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                     </div>
                     <button 
                       onClick={() => loadFont(analysis.fontFamily, analysis)}
-                      className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 border-2 border-neutral-900 dark:border-warning-yellow hover:bg-warning-yellow hover:text-neutral-950 px-6 md:px-10 py-4 md:py-5 text-base md:text-xl font-display font-bold uppercase whitespace-nowrap"
+                      className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 border-2 border-neutral-950 dark:border-warning-yellow px-6 md:px-10 py-4 md:py-5 text-base md:text-xl font-display font-bold uppercase whitespace-nowrap shadow-md active:scale-95 transition-all"
                     >
                       Use High-Fidelity Match
                     </button>
@@ -507,7 +507,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                           </div>
                           <button 
                             onClick={() => loadFont(font.name, analysis)}
-                            className="w-full py-3 font-mono text-[11px] uppercase font-bold bg-neutral-900 dark:bg-neutral-800 text-white border border-neutral-900 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-colors mt-auto"
+                            className="w-full py-3 font-mono text-[11px] uppercase font-bold bg-warning-yellow hover:bg-amber-300 text-neutral-950 border border-neutral-950 dark:border-warning-yellow transition-colors mt-auto rounded-lg shadow-xs active:scale-95"
                           >
                             Switch to this
                           </button>

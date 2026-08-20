@@ -352,12 +352,12 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           onClick={handleSolve}
           disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
           className={cn(
-            "w-full brutal-btn bg-neutral-900 dark:bg-neutral-800 text-white border-2 border-neutral-900 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 transition-all flex items-center justify-center gap-2 group",
-            "lg:mt-auto py-4 disabled:opacity-50 disabled:grayscale"
+            "w-full brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 border-2 border-neutral-950 dark:border-warning-yellow transition-all flex items-center justify-center gap-2 group",
+            "lg:mt-auto py-4 disabled:opacity-50 disabled:grayscale font-bold uppercase shadow-sm active:scale-95"
           )}
         >
-          {isProcessing ? <RefreshCw size={20} className="animate-spin text-warning-yellow" /> : <Brain size={20} className="group-hover:scale-110 transition-transform" />}
-          <span className="font-display uppercase tracking-wider font-bold">Solve Homework</span>
+          {isProcessing ? <RefreshCw size={20} className="animate-spin text-neutral-950" /> : <Brain size={20} className="group-hover:scale-110 transition-transform text-neutral-950" />}
+          <span className="font-display uppercase tracking-wider font-bold text-neutral-950">Solve Homework</span>
         </button>
 
         <div className="mt-8 border-t-2 border-brutal-black pt-6">

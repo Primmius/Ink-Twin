@@ -163,15 +163,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
           <button
             onClick={onToggleTheme}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            className="w-10 h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
           >
-            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+            {theme === 'light' ? <Moon size={18} className="text-neutral-800" /> : <Sun size={18} className="text-warning-yellow" />}
           </button>
 
           {onExplore && (
             <button
               onClick={() => onExplore('font-creation')}
-              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
             >
               <span>Get Started</span>
               <ChevronRight size={16} />
@@ -204,7 +204,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
             <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start pt-2">
               <button
                 onClick={() => onExplore?.('font-creation')}
-                className="px-5 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-sm uppercase tracking-wider flex items-center gap-2 shadow-md active:scale-95 transition-all"
+                className="px-5 py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-sm uppercase tracking-wider flex items-center gap-2 shadow-md active:scale-95 transition-all"
               >
                 <PenTool size={18} />
                 <span>Create My Font</span>

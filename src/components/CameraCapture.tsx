@@ -66,20 +66,20 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brutal-black/80 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl brutal-border brutal-shadow flex flex-col overflow-hidden">
-        <div className="p-4 border-b-2 border-brutal-black flex items-center justify-between bg-warning-yellow">
-          <h3 className="font-display uppercase text-xl">Capture Template</h3>
-          <button onClick={onClose} className="p-1 hover:bg-brutal-black hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl brutal-border brutal-shadow flex flex-col overflow-hidden rounded-2xl">
+        <div className="p-4 border-b-2 border-neutral-950 flex items-center justify-between bg-warning-yellow text-neutral-950">
+          <h3 className="font-display uppercase text-xl font-bold">Capture Template</h3>
+          <button onClick={onClose} className="p-1 hover:bg-neutral-950 hover:text-white transition-colors rounded-lg">
             <X size={24} />
           </button>
         </div>
 
-        <div className="relative flex-grow bg-brutal-black aspect-video flex items-center justify-center">
+        <div className="relative flex-grow bg-black aspect-video flex items-center justify-center">
           {error ? (
             <div className="text-white text-center p-8">
               <p className="font-mono text-sm mb-4">{error}</p>
-              <button onClick={startCamera} className="brutal-btn brutal-btn-primary">Try Again</button>
+              <button onClick={startCamera} className="brutal-btn bg-warning-yellow text-neutral-950 font-bold">Try Again</button>
             </div>
           ) : capturedImage ? (
             <img src={capturedImage} className="w-full h-full object-contain" alt="Captured" />
@@ -93,22 +93,22 @@ export const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture, onClose
           )}
         </div>
 
-        <div className="p-6 border-t-2 border-brutal-black flex justify-center gap-4 bg-neutral-50">
+        <div className="p-6 border-t-2 border-neutral-200 dark:border-neutral-800 flex justify-center gap-4 bg-neutral-100 dark:bg-neutral-900">
           {!capturedImage ? (
             <button 
               onClick={capture}
-              className="brutal-btn brutal-btn-primary flex items-center gap-2 px-12"
+              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-bold flex items-center gap-2 px-12 shadow-sm active:scale-95"
             >
               <Camera size={24} />
               Capture
             </button>
           ) : (
             <>
-              <button onClick={retake} className="brutal-btn flex items-center gap-2">
+              <button onClick={retake} className="brutal-btn bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
                 <RefreshCw size={20} />
                 Retake
               </button>
-              <button onClick={confirm} className="brutal-btn brutal-btn-primary flex items-center gap-2">
+              <button onClick={confirm} className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-bold flex items-center gap-2 shadow-sm active:scale-95">
                 <Check size={20} />
                 Use Photo
               </button>

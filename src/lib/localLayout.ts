@@ -120,7 +120,8 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
 
     // Add paragraph spacing after each paragraph (except if it's the last one in the text)
     if (pIdx < paragraphs.length - 1) {
-      if (currentY + config.paragraphSpacing > maxHeight) {
+      const pSpacing = config.paragraphSpacing > config.lineHeight * 0.5 ? config.lineHeight : config.paragraphSpacing;
+      if (currentY + pSpacing > maxHeight) {
         pages.push(currentPageLines.join('\n'));
         currentPageLines = [];
         currentY = 0;
@@ -129,7 +130,7 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
         if (currentPageLines.length > 0) {
           currentPageLines[currentPageLines.length - 1] += '\n';
         }
-        currentY += config.paragraphSpacing;
+        currentY += pSpacing;
       }
     }
   });

@@ -40,8 +40,8 @@ export const HomeworkHistory: React.FC<HomeworkHistoryProps> = ({ history, onSel
               className="w-full text-left p-3 brutal-border theme-card hover:bg-warning-yellow/5 transition-colors group relative"
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] bg-brutal-black text-white px-1 font-mono">{item.subject}</span>
-                <span className="text-[9px] opacity-40 font-mono">
+                <span className="text-[9px] bg-neutral-900 text-white dark:bg-neutral-800 dark:text-neutral-200 px-1 font-mono rounded-xs">{item.subject}</span>
+                <span className="text-[9px] opacity-50 font-mono text-neutral-600 dark:text-neutral-400">
                   {new Date(item.timestamp).toLocaleDateString()}
                 </span>
               </div>
