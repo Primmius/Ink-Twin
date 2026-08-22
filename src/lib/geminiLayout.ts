@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { DEFAULT_MODEL, isModelNotFoundError } from "./models";
 
 /**
  * Note: AI Layout features have been moved to inline components in HandwritingWriter.tsx
@@ -6,10 +7,27 @@ import { GoogleGenAI, Type } from "@google/genai";
  * These functions remain as historical reference or potential future utilities.
  */
 
+async function withFallback<T>(
+  _apiKey: string,
+  primary: string,
+  run: (model: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await run(primary);
+  } catch (err) {
+    if (primary !== DEFAULT_MODEL && isModelNotFoundError(err)) {
+      console.warn(`[geminiLayout] Model "${primary}" unavailable, retrying with "${DEFAULT_MODEL}"`);
+      return await run(DEFAULT_MODEL);
+    }
+    throw err;
+  }
+}
+
 export async function smartTextFitting(
-  text: string, 
+  text: string,
   config: { width: number; height: number; fontSize: number; lineHeight: number; leftMargin: number; topMargin: number },
-  apiKey: string
+  apiKey: string,
+  model: string = DEFAULT_MODEL
 ): Promise<string[]> {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -22,31 +40,30 @@ export async function smartTextFitting(
   
   Return JSON with an array of page content strings. No markdown, no explanation.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: [{ parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          pages: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
-          }
-        },
-        required: ["pages"]
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            pages: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            }
+          },
+          required: ["pages"]
+        }
       }
-    }
-  });
+    })
+  );
 
   try {
-    const text = response.text;
-    if (!text) return [text || ''];
-    const parsed = JSON.parse(text);
+    const parsed = JSON.parse(response.text || '{}');
     return parsed.pages || [text];
-  } catch (e) {
-    console.error("Failed to parse Gemini response for text fitting", e);
+  } catch {
     return [text];
   }
 }

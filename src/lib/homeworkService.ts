@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { DEFAULT_MODEL, isModelNotFoundError } from "./models";
 
 export type HomeworkInput = {
   text?: string;
@@ -44,10 +45,32 @@ If the question is in Arabic, answer in Arabic. Never switch to English unless t
 Match the student's language exactly.
 `;
 
-export async function solveHomework(
-  input: HomeworkInput, 
-  mode: AnswerMode, 
+/**
+ * If the picked model 404s (Google rotates/deprecates models without notice),
+ * try once with the default model before giving up. This keeps the UX
+ * working even when Gemini quietly retires a free-tier model.
+ */
+async function withFallback<T>(
   apiKey: string,
+  primary: string,
+  run: (model: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await run(primary);
+  } catch (err) {
+    if (primary !== DEFAULT_MODEL && isModelNotFoundError(err)) {
+      console.warn(`[homework] Model "${primary}" unavailable, retrying with "${DEFAULT_MODEL}"`);
+      return await run(DEFAULT_MODEL);
+    }
+    throw err;
+  }
+}
+
+export async function solveHomework(
+  input: HomeworkInput,
+  mode: AnswerMode,
+  apiKey: string,
+  model: string = DEFAULT_MODEL,
   followUp?: string,
   previousAnswer?: string
 ): Promise<HomeworkResult> {
@@ -60,7 +83,7 @@ export async function solveHomework(
   };
 
   let prompt = `${SYSTEM_PROMPT}\n\nMODE: ${modeInstructions[mode]}\n\n`;
-  
+
   if (followUp && previousAnswer) {
     prompt += `PREVIOUS ANSWER: ${previousAnswer}\n\nFOLLOW-UP QUESTION/REQUEST: ${followUp}\n\nRefine the answer based on this request.`;
   } else {
@@ -82,37 +105,41 @@ export async function solveHomework(
     });
   }
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite", // Use Pro for complex tasks
-    contents: { parts },
-    config: {
-      tools: [
-        {
-          googleSearch: {},
-        },
-      ],
-    }
-  });
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: { parts },
+      config: {
+        tools: [
+          {
+            googleSearch: {},
+          },
+        ],
+      }
+    })
+  );
 
   const responseText = response.text || "";
 
   const metaPrompt = `Based on the answer above, what is the 'subject' and 'difficulty' (Primary/Secondary/University)? Return ONLY JSON: {"subject": "...", "difficulty": "..."}`;
-  const metaResponse = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: responseText + "\n\n" + metaPrompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          subject: { type: Type.STRING },
-          difficulty: { type: Type.STRING }
-        },
-        required: ["subject", "difficulty"]
+  const metaResponse = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: responseText + "\n\n" + metaPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            subject: { type: Type.STRING },
+            difficulty: { type: Type.STRING }
+          },
+          required: ["subject", "difficulty"]
+        }
       }
-    }
-  });
-  
+    })
+  );
+
   let meta = { subject: "General", difficulty: "Unknown" };
   try {
     const metaJson = JSON.parse(metaResponse.text || '{}');
@@ -120,10 +147,10 @@ export async function solveHomework(
   } catch (e) {}
 
   return {
-    subject: meta.subject,
-    question: input.text || (input.imageData ? "Image Query" : "Homework Question"),
+    subject: meta.subject || "General",
+    question: input.text || (input.imageData ? "[Image question]" : "[Uploaded document question]"),
     answer: responseText,
-    difficulty: meta.difficulty,
+    difficulty: meta.difficulty || "Unknown",
     timestamp: Date.now()
   };
 }

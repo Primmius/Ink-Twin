@@ -38,6 +38,7 @@ interface HandwritingWriterProps {
   fontUrl: string | null;
   fontName: string;
   apiKey: string;
+  model?: string;
   savedFonts: SavedFont[];
   onSelectFont: (font: SavedFont) => void;
   onDeleteFont: (id: string) => void;
@@ -48,12 +49,14 @@ interface HandwritingWriterProps {
   initialProfile?: any;
   onProfileApplied?: () => void;
   onNavigate?: (p: AppPhase) => void;
+  onOpenSettings?: () => void;
 }
 
-export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({ 
-  fontUrl, 
-  fontName, 
+export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
+  fontUrl,
+  fontName,
   apiKey,
+  model,
   savedFonts,
   onSelectFont,
   onDeleteFont,
@@ -63,7 +66,8 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   onTextConsumed,
   initialProfile,
   onProfileApplied,
-  onNavigate
+  onNavigate,
+  onOpenSettings
 }) => {
   const [pages, setPages] = useState<WriterPage[]>([
     { id: '1', content: 'Type your text here...', images: [], elements: [] }
@@ -904,22 +908,36 @@ ${documentText}`;
 
       console.log("Gemini Request Body:", JSON.stringify(requestBody, null, 2));
       setIsAIProcessing(true);
-      
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody)
-        }
-      );
 
+      const chosenModel = model || "gemini-2.0-flash";
+      const FALLBACK_MODEL = "gemini-2.0-flash";
+
+      // Retry once with a fallback model if Google 404s the chosen id
+      // (Gemini deprecates models without warning).
+      const callOnce = async (modelId: string) =>
+        fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestBody),
+          }
+        );
+
+      let response = await callOnce(chosenModel);
       if (!response.ok) {
-        const errorBody = await response.text();
-        console.error("Gemini API error:", errorBody);
-        throw new Error("API call failed: " + errorBody);
+        const errBody = await response.text();
+        const isModelMissing =
+          response.status === 404 || /no longer available|not found/i.test(errBody);
+        if (isModelMissing && chosenModel !== FALLBACK_MODEL) {
+          console.warn(
+            `[HandwritingWriter] Model "${chosenModel}" unavailable (${response.status}), retrying with "${FALLBACK_MODEL}"`
+          );
+          response = await callOnce(FALLBACK_MODEL);
+        } else {
+          console.error("Gemini API error:", errBody);
+          throw new Error("API call failed: " + errBody + ". Try changing the AI model in Settings.");
+        }
       }
 
       const data = await response.json();

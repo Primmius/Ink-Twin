@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { DEFAULT_MODEL, isModelNotFoundError } from "./models";
 
 export type HumanizeStyle =
   | 'student-casual'
@@ -40,10 +41,28 @@ const STYLE_DESCS: Record<HumanizeStyle, string> = {
 
 export { STYLE_LABELS, STYLE_DESCS };
 
+/** Same retry-once-on-404 helper used by homeworkService. */
+async function withFallback<T>(
+  apiKey: string,
+  primary: string,
+  run: (model: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await run(primary);
+  } catch (err) {
+    if (primary !== DEFAULT_MODEL && isModelNotFoundError(err)) {
+      console.warn(`[humanize] Model "${primary}" unavailable, retrying with "${DEFAULT_MODEL}"`);
+      return await run(DEFAULT_MODEL);
+    }
+    throw err;
+  }
+}
+
 export async function humanizeText(
   text: string,
   style: HumanizeStyle,
-  apiKey: string
+  apiKey: string,
+  model: string = DEFAULT_MODEL
 ): Promise<HumanizeResult> {
   const ai = new GoogleGenAI({ apiKey });
 
@@ -59,10 +78,12 @@ CRITICAL RULES:
 TEXT TO HUMANIZE:
 ${text}`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.0-flash",
-    contents: prompt,
-  });
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: prompt,
+    })
+  );
 
   return {
     original: text,

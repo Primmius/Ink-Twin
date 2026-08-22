@@ -55,11 +55,13 @@ export interface HandwritingProfile {
 
 interface FindFontProps {
   apiKey: string;
+  model?: string;
   onFontSelected: (fontName: string, fontUrl: string, profile: HandwritingProfile) => void;
   onGoToPhase1: () => void;
+  onOpenSettings?: () => void;
 }
 
-export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGoToPhase1 }) => {
+export const FindFont: React.FC<FindFontProps> = ({ apiKey, model, onFontSelected, onGoToPhase1, onOpenSettings }) => {
   const [step, setStep] = useState<'upload' | 'analyzing' | 'results'>('upload');
   const [analysis, setAnalysis] = useState<HandwritingProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
     }, 2500);
 
     try {
-      const rawRes = await analyzeHandwritingForFontMatch(imgData, apiKey);
+      const rawRes = await analyzeHandwritingForFontMatch(imgData, apiKey, model);
       if (!rawRes) throw new Error("Analysis failed: Empty response from AI.");
 
       const isCursiveLike = rawRes.scriptType !== "print";
@@ -287,12 +289,22 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
               </div>
 
               {error && (
-                <div className="p-6 bg-error-red border-4 border-brutal-black brutal-shadow flex items-center gap-4 text-white font-mono text-sm uppercase">
-                  <AlertCircle size={24} />
-                  <div>
-                    <p className="font-bold">Encryption Error</p>
-                    <p className="opacity-80">{error}</p>
+                <div className="p-6 bg-error-red border-4 border-brutal-black brutal-shadow flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-white font-mono text-sm uppercase">
+                  <div className="flex items-center gap-4">
+                    <AlertCircle size={24} className="shrink-0" />
+                    <div>
+                      <p className="font-bold">AI Analysis Error</p>
+                      <p className="opacity-80 text-xs normal-case">{error}</p>
+                    </div>
                   </div>
+                  {onOpenSettings && (
+                    <button
+                      onClick={onOpenSettings}
+                      className="px-3 py-2 bg-white text-brutal-black font-bold uppercase text-xs hover:bg-neon-green transition-colors border-2 border-brutal-black shrink-0"
+                    >
+                      Change AI Model
+                    </button>
+                  )}
                 </div>
               )}
             </motion.div>

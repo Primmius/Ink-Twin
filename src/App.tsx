@@ -37,6 +37,14 @@ import { buildFont } from './lib/fontBuilder';
 import { CameraCapture } from './components/CameraCapture';
 import { GlyphEditor } from './components/GlyphEditor';
 import { HandwritingWriter } from './components/writer/HandwritingWriter';
+import {
+  GeminiModel,
+  getStoredModelId,
+  setStoredModelId,
+  fetchLiveModels,
+  DEFAULT_MODEL,
+} from './lib/models';
+import { ModelPicker } from './lib/ModelPicker';
 import { HomeworkSolver } from './components/HomeworkSolver';
 import { FindFont } from './components/FindFont';
 import { AIHumanizer } from './components/AIHumanizer';
@@ -49,6 +57,9 @@ export default function App() {
   const [apiKey, setApiKey] = useState<string>(
     localStorage.getItem('geminiApiKey') || localStorage.getItem('gemini_api_key') || process.env.GEMINI_API_KEY || ''
   );
+  const [selectedModel, setSelectedModel] = useState<string>(getStoredModelId() || DEFAULT_MODEL);
+  const [availableModels, setAvailableModels] = useState<GeminiModel[]>([]);
+  const [modelListLoading, setModelListLoading] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [editingCharIndex, setEditingCharIndex] = useState<number | null>(null);
@@ -114,6 +125,31 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Refresh the live model list when the settings modal opens (or apiKey changes)
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    let cancelled = false;
+    setModelListLoading(true);
+    fetchLiveModels(apiKey || null)
+      .then((list) => {
+        if (cancelled) return;
+        setAvailableModels(list);
+        // If the persisted model id isn't in the live list, keep it (user may
+        // have a custom value), but make sure the default is present.
+        setSelectedModel((current: string) => current || DEFAULT_MODEL);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setAvailableModels([]);
+      })
+      .finally(() => {
+        if (!cancelled) setModelListLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSettingsOpen, apiKey]);
 
   // Load saved fonts from localStorage
   useEffect(() => {
@@ -231,6 +267,13 @@ export default function App() {
     setIsSettingsOpen(false);
   };
 
+  const saveModel = (id: string) => {
+    const trimmed = (id || '').trim();
+    if (!trimmed) return;
+    setSelectedModel(trimmed);
+    setStoredModelId(trimmed);
+  };
+
   const handleDownloadTemplate = async () => {
     const pdfBytes = await generateTemplatePDF();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -279,7 +322,7 @@ export default function App() {
     try {
       let allDetected: DetectedCharacter[] = [];
       for (const imgData of uploadedImages) {
-        const results = await analyzeHandwriting(imgData, apiKey);
+        const results = await analyzeHandwriting(imgData, apiKey, selectedModel);
         
         if (!Array.isArray(results)) {
           console.warn("Gemini returned non-array results", results);
@@ -377,7 +420,7 @@ export default function App() {
 
     for (const image of uploadedImages) {
       try {
-        const result = await reanalyzeSpecificCharacter(charToReanalyze, image, apiKey);
+        const result = await reanalyzeSpecificCharacter(charToReanalyze, image, apiKey, selectedModel);
         if (result && result.boundingBox.width > 0 && result.boundingBox.height > 0) {
           if (!bestResult || (result.confidence ?? 0) > (bestResult.result.confidence ?? 0)) {
             bestResult = { result, image };
@@ -1144,10 +1187,11 @@ export default function App() {
         </section>
           </>
         ) : phase === 'text-writer' ? (
-          <HandwritingWriter 
-            fontUrl={fontUrl} 
-            fontName={fontConfig.name} 
-            apiKey={apiKey} 
+          <HandwritingWriter
+            fontUrl={fontUrl}
+            fontName={fontConfig.name}
+            apiKey={apiKey}
+            model={selectedModel}
             savedFonts={savedFonts}
             onSelectFont={(font) => {
               setFontUrl(font.url);
@@ -1165,10 +1209,12 @@ export default function App() {
             initialProfile={pendingProfile}
             onProfileApplied={() => setPendingProfile(null)}
             onNavigate={(p) => setPhase(p)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
           />
         ) : phase === 'homework-solver' ? (
-          <HomeworkSolver 
+          <HomeworkSolver
             apiKey={apiKey}
+            model={selectedModel}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onSendToWriter={(text) => {
               setPrefilledWriterText(text);
@@ -1183,6 +1229,7 @@ export default function App() {
         ) : phase === 'ai-humanizer' ? (
           <AIHumanizer
             apiKey={apiKey}
+            model={selectedModel}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onSendToWriter={(text) => {
               setPrefilledWriterText(text);
@@ -1193,6 +1240,8 @@ export default function App() {
         ) : phase === 'find-font' ? (
           <FindFont 
             apiKey={apiKey}
+            model={selectedModel}
+            onOpenSettings={() => setIsSettingsOpen(true)}
             onFontSelected={(name, url, profile) => {
               setPendingFontToName({
                 name: profile.fontFamily,
@@ -1263,32 +1312,40 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="bg-white w-full max-w-md p-8 brutal-shadow relative z-10 border-4 border-brutal-black"
             >
-              <h2 className="text-3xl font-display uppercase mb-2">Gemini API Key</h2>
+              <h2 className="text-3xl font-display uppercase mb-2">Settings</h2>
               <p className="font-mono text-xs opacity-60 mb-6 uppercase">
                 [SECURE_STORAGE_V1] LOCAL_ONLY_ENCRYPTION
               </p>
-              
+
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">API Key</label>
-                  <input 
-                    type="password" 
+                  <label className="font-mono text-[10px] font-bold uppercase opacity-60">Gemini API Key</label>
+                  <input
+                    type="password"
                     placeholder="Enter key..."
                     className="w-full px-4 py-3 bg-neutral-50 brutal-border font-mono outline-none focus:bg-neon-green/10"
                     onChange={(e) => setApiKey(e.target.value)}
                     value={apiKey}
                   />
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brutal-black text-xs font-bold uppercase underline flex items-center gap-1 hover:text-neon-green"
+                  >
+                    Get a free key from Google AI Studio
+                    <ChevronRight size={14} />
+                  </a>
                 </div>
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-brutal-black text-xs font-bold uppercase underline flex items-center gap-1 hover:text-neon-green"
-                >
-                  Get a free key from Google AI Studio
-                  <ChevronRight size={14} />
-                </a>
-                <button 
+
+                <ModelPicker
+                  value={selectedModel}
+                  onChange={saveModel}
+                  models={availableModels}
+                  loading={modelListLoading}
+                />
+
+                <button
                   onClick={() => saveApiKey(apiKey)}
                   className="w-full brutal-btn brutal-btn-primary"
                 >

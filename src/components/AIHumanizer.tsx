@@ -8,6 +8,9 @@ import {
   ClipboardPaste,
   CheckCircle2,
   ArrowLeftRight,
+  AlertTriangle,
+  Settings,
+  Cpu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -18,9 +21,11 @@ import {
   STYLE_LABELS,
   STYLE_DESCS,
 } from '../lib/humanizeService';
+import { DEFAULT_MODEL } from '../lib/models';
 
 interface AIHumanizerProps {
   apiKey: string;
+  model?: string;
   onSendToWriter: (text: string) => void;
   onOpenSettings: () => void;
   prefillText?: string | null;
@@ -35,7 +40,7 @@ const STYLES: HumanizeStyle[] = [
 ];
 
 const STYLE_EMOJI: Record<HumanizeStyle, string> = {
-  'student-casual': '🧑‍🎓',
+  'student-casual': '🧑🎓',
   'teen-natural': '😎',
   'formal-essay': '📄',
   'primary-simple': '🌱',
@@ -44,6 +49,7 @@ const STYLE_EMOJI: Record<HumanizeStyle, string> = {
 
 export const AIHumanizer: React.FC<AIHumanizerProps> = ({
   apiKey,
+  model,
   onSendToWriter,
   onOpenSettings,
   prefillText,
@@ -55,6 +61,9 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
   const [copied, setCopied] = useState(false);
   const [view, setView] = useState<'humanized' | 'compare'>('humanized');
   const [editableOutput, setEditableOutput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const activeModel = model || DEFAULT_MODEL;
 
   const handleHumanize = async () => {
     if (!apiKey) {
@@ -64,13 +73,15 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
     if (!inputText.trim()) return;
 
     setIsProcessing(true);
+    setError(null);
     try {
-      const res = await humanizeText(inputText.trim(), style, apiKey);
+      const res = await humanizeText(inputText.trim(), style, apiKey, activeModel);
       setResult(res);
       setEditableOutput(res.humanized);
       setView('humanized');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Humanizer failed', err);
+      setError(err?.message || 'Humanizer failed. Try selecting another model in settings.');
     } finally {
       setIsProcessing(false);
     }
@@ -98,21 +109,40 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
       <div className="w-full lg:w-[320px] xl:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-4 md:p-6 flex flex-col gap-4 theme-bg lg:overflow-y-auto">
 
         {/* Heading — hidden on mobile to save space, shown on lg+ */}
-        <div className="hidden lg:block space-y-1">
-          <h2 className="text-2xl font-display uppercase">Input Text</h2>
-          <p className="text-[10px] font-mono opacity-50 uppercase">Paste AI-generated text to humanize</p>
+        <div className="hidden lg:flex items-center justify-between">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-display uppercase">Input Text</h2>
+            <p className="text-[10px] font-mono opacity-50 uppercase">Paste AI-generated text to humanize</p>
+          </div>
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center gap-1 px-2 py-1 brutal-border bg-white hover:bg-neon-green text-[10px] font-mono font-bold uppercase transition-colors"
+            title="Change AI Model"
+          >
+            <Cpu size={11} />
+            <span className="truncate max-w-[100px]">{activeModel}</span>
+          </button>
         </div>
 
         {/* Mobile heading + paste button in one row */}
         <div className="flex items-center justify-between lg:hidden">
           <h2 className="text-xl font-display uppercase">Humanize Text</h2>
-          <button
-            onClick={handlePaste}
-            className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white hover:bg-neon-green transition-colors font-mono text-[10px] uppercase font-bold"
-          >
-            <ClipboardPaste size={12} />
-            Paste
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-1 px-2 py-1.5 brutal-border bg-white hover:bg-neon-green text-[10px] font-mono font-bold uppercase"
+              title="Change Model"
+            >
+              <Cpu size={11} />
+            </button>
+            <button
+              onClick={handlePaste}
+              className="flex items-center gap-1.5 px-3 py-1.5 brutal-border bg-white hover:bg-neon-green transition-colors font-mono text-[10px] uppercase font-bold"
+            >
+              <ClipboardPaste size={12} />
+              Paste
+            </button>
+          </div>
         </div>
 
         {/* Textarea */}
@@ -180,6 +210,28 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
             ))}
           </div>
         </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 border-2 border-red-500 text-red-700 dark:text-red-300 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-xs">
+              <AlertTriangle size={15} className="text-red-500 flex-shrink-0" />
+              <span>Humanizer Error</span>
+            </div>
+            <p className="text-[10px] font-mono leading-relaxed">
+              {error}
+            </p>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="px-2.5 py-1 brutal-border bg-white dark:bg-neutral-900 text-text-primary hover:bg-neon-green hover:text-brutal-black transition-colors font-mono text-[10px] uppercase font-bold flex items-center gap-1.5"
+              >
+                <Settings size={11} />
+                Switch AI Model
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Humanize button */}
         <button
@@ -399,10 +451,16 @@ export const AIHumanizer: React.FC<AIHumanizerProps> = ({
         )}
 
         <div className="lg:mt-auto p-3 md:p-4 theme-card brutal-border border-dashed space-y-2">
-          <div className="flex items-center gap-2 text-neon-green">
-            <CheckCircle2 size={14} />
-            <span className="font-display uppercase text-[10px]">Humanizer v1.0 · gemini-2.0-flash</span>
-          </div>
+          <button 
+            onClick={onOpenSettings} 
+            className="w-full flex items-center justify-between text-neon-green hover:underline"
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={14} />
+              <span className="font-display uppercase text-[10px]">Model: {activeModel}</span>
+            </div>
+            <Settings size={12} />
+          </button>
           <p className="text-[9px] font-mono opacity-60 leading-tight uppercase text-text-primary">
             Rewrites AI text to match real student voices. Facts stay accurate — only the tone changes.
           </p>

@@ -15,24 +15,36 @@ import {
   Brain,
   Trash2,
   Trash,
-  Wand2
+  Wand2,
+  AlertTriangle,
+  Settings,
+  Cpu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import mammoth from 'mammoth';
 import { cn } from '../lib/utils';
 import { pdfToText, pdfToImages } from '../lib/pdf';
 import { HomeworkInput, AnswerMode, solveHomework, HomeworkResult } from '../lib/homeworkService';
+import { DEFAULT_MODEL } from '../lib/models';
 import { HomeworkHistory } from './HomeworkHistory';
 
 interface HomeworkSolverProps {
   apiKey: string;
+  model?: string;
   onSendToWriter: (text: string) => void;
   onSendToHumanizer: (text: string) => void;
   onOpenSettings: () => void;
   onOpenCamera: () => void;
 }
 
-export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendToWriter, onSendToHumanizer, onOpenSettings, onOpenCamera }) => {
+export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ 
+  apiKey, 
+  model, 
+  onSendToWriter, 
+  onSendToHumanizer, 
+  onOpenSettings, 
+  onOpenCamera 
+}) => {
   const [input, setInput] = useState<HomeworkInput>({});
   const [inputText, setInputText] = useState('');
   const [url, setUrl] = useState('');
@@ -45,6 +57,9 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const [history, setHistory] = useState<HomeworkResult[]>([]);
   const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url' | 'camera'>('upload');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'detected' | 'error'>('idle');
+  const [error, setError] = useState<string | null>(null);
+
+  const activeModel = model || DEFAULT_MODEL;
 
   // Loading messages rotation
   useEffect(() => {
@@ -131,13 +146,16 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
     if (url) finalInput.sourceUrl = url;
 
     setIsProcessing(true);
+    setError(null);
     try {
-      const res = await solveHomework(finalInput, answerMode, apiKey);
+      const res = await solveHomework(finalInput, answerMode, apiKey, activeModel);
       setResult(res);
       setEditableAnswer(res.answer);
       saveHistory(res);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Solver failed", err);
+      const rawMsg = err?.message || String(err);
+      setError(rawMsg);
     } finally {
       setIsProcessing(false);
     }
@@ -146,13 +164,16 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const handleFollowUp = async () => {
     if (!followUp || !result || !apiKey) return;
     setIsProcessing(true);
+    setError(null);
     try {
-      const res = await solveHomework(input, answerMode, apiKey, followUp, result.answer);
+      const res = await solveHomework(input, answerMode, apiKey, activeModel, followUp, result.answer);
       setResult(res);
       setEditableAnswer(res.answer);
       setFollowUp('');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Follow-up failed", err);
+      const rawMsg = err?.message || String(err);
+      setError(rawMsg);
     } finally {
       setIsProcessing(false);
     }
@@ -163,16 +184,22 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
     alert("Copied to clipboard!");
   };
 
-  const handleRegenerate = () => {
-    handleSolve();
-  };
-
   return (
     <div className="flex flex-col lg:flex-row lg:h-full overflow-y-auto lg:overflow-hidden theme-bg">
       {/* Left Column: Upload & Input */}
       <div className="w-full lg:w-1/3 border-b-2 lg:border-b-0 lg:border-r-2 theme-border p-6 flex flex-col gap-6 theme-bg lg:overflow-y-auto">
         <div className="space-y-4">
-          <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-display uppercase">Step 1: Upload</h2>
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center gap-1 px-2.5 py-1 brutal-border bg-white hover:bg-neon-green text-[10px] font-mono font-bold uppercase transition-colors"
+              title="Change AI Model"
+            >
+              <Cpu size={11} />
+              <span className="truncate max-w-[110px]">{activeModel}</span>
+            </button>
+          </div>
           
           <div className="flex border-2 theme-border font-mono text-xs mb-4">
             <button 
@@ -301,6 +328,28 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           </div>
         </div>
 
+        {error && (
+          <div className="p-4 brutal-border bg-red-50 dark:bg-red-950/40 border-red-500 text-red-700 dark:text-red-300 space-y-2">
+            <div className="flex items-center gap-2 font-bold text-xs">
+              <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
+              <span>AI Generation Error</span>
+            </div>
+            <p className="text-[11px] font-mono leading-relaxed">
+              {error}
+            </p>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="px-3 py-1.5 brutal-border bg-white dark:bg-neutral-900 text-text-primary hover:bg-neon-green hover:text-brutal-black transition-colors font-mono text-[10px] uppercase font-bold flex items-center gap-1.5"
+              >
+                <Settings size={12} />
+                Switch AI Model / Settings
+              </button>
+            </div>
+          </div>
+        )}
+
         <button 
           onClick={handleSolve}
           disabled={isProcessing || (!input.imageData && !input.pdfText && !input.docxText && !inputText && !url)}
@@ -319,7 +368,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       </div>
 
       {/* Center Column: Answer Preview */}
-      <div className="flex-grow flex flex-col p-4 lg:p-6 lg:overflow-hidden bg-bg-secondary min-h-[60vh] lg:min-h-0">
+      <div className="flex-grow flex-col p-4 lg:p-6 lg:overflow-hidden bg-bg-secondary min-h-[60vh] lg:min-h-0 flex">
         <div className="flex-grow theme-card brutal-border brutal-shadow flex flex-col lg:overflow-hidden">
           <div className="p-4 border-b-2 theme-border flex items-center justify-between bg-bg-secondary">
             <div className="flex items-center gap-3">
@@ -489,12 +538,18 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         )}
 
         <div className="mt-auto p-4 theme-card brutal-border border-dashed space-y-2">
-           <div className="flex items-center gap-2 text-neon-green">
-              <CheckCircle2 size={16} />
-              <span className="font-display uppercase text-[10px]">HW Engine v3.0</span>
-           </div>
+           <button 
+             onClick={onOpenSettings} 
+             className="w-full flex items-center justify-between text-neon-green hover:underline"
+           >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} />
+                <span className="font-display uppercase text-[10px]">Model: {activeModel}</span>
+              </div>
+              <Settings size={12} />
+           </button>
            <p className="text-[9px] font-mono opacity-60 leading-tight uppercase text-text-primary">
-             Optimized for handwriting output. No markdown symbols or cluttered formatting.
+             Optimized for handwriting output. Switch model anytime in Settings.
            </p>
         </div>
       </div>

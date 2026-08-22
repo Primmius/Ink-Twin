@@ -1,7 +1,28 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
+import { DEFAULT_MODEL, isModelNotFoundError } from "./models";
 
-export async function analyzeHandwriting(imageData: string, apiKey: string): Promise<DetectedCharacter[]> {
+async function withFallback<T>(
+  _apiKey: string,
+  primary: string,
+  run: (model: string) => Promise<T>
+): Promise<T> {
+  try {
+    return await run(primary);
+  } catch (err) {
+    if (primary !== DEFAULT_MODEL && isModelNotFoundError(err)) {
+      console.warn(`[gemini] Model "${primary}" unavailable, retrying with "${DEFAULT_MODEL}"`);
+      return await run(DEFAULT_MODEL);
+    }
+    throw err;
+  }
+}
+
+export async function analyzeHandwriting(
+  imageData: string,
+  apiKey: string,
+  model: string = DEFAULT_MODEL
+): Promise<DetectedCharacter[]> {
   const ai = new GoogleGenAI({ apiKey });
   
   // Remove data:image/...;base64, prefix and detect real MIME type
@@ -36,19 +57,87 @@ Return JSON only in this format: a JSON array of objects, where each object has:
 
 Return JSON only, no explanation, no markdown.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              char: { type: Type.STRING },
+              boundingBox: {
+                type: Type.OBJECT,
+                properties: {
+                  x: { type: Type.NUMBER },
+                  y: { type: Type.NUMBER },
+                  width: { type: Type.NUMBER },
+                  height: { type: Type.NUMBER }
+                },
+                required: ["x", "y", "width", "height"]
+              },
+              confidence: { type: Type.NUMBER },
+              thickness_variation: { type: Type.NUMBER }
+            },
+            required: ["char", "boundingBox", "confidence", "thickness_variation"]
+          }
+        }
+      }
+    })
+  );
+
+  try {
+    const text = response.text;
+    if (!text) return [];
+    return JSON.parse(text);
+  } catch (e) {
+    console.error("Failed to parse Gemini response", e);
+    return [];
+  }
+}
+
+export async function reanalyzeSpecificCharacter(
+  char: string,
+  imageData: string,
+  apiKey: string,
+  model: string = DEFAULT_MODEL
+): Promise<DetectedCharacter | null> {
+  const ai = new GoogleGenAI({ apiKey });
+  const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
+  const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
+  const base64Data = imageData.split(',')[1];
+  
+  const prompt = `Find the handwritten character "${char}" in this image. 
+  The image may be a grid template or freehand text. 
+  If it's a grid, look for the box labeled "${char}". 
+  If it's freehand, find the single cleanest and clearest instance of "${char}" in the text.
+  Ignore distractions like bleed-through, ruled lines, or non-character marks.
+  IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include grid lines, box borders, or printed labels.
+  Analyze stroke thickness variations for this character.
+  Return its bounding box as percentages (x, y, width, height) between 0 and 100, a confidence score, and thickness_variation (0-1).
+  The box should tightly enclose ONLY the handwritten stroke.
+  If not found, return null. Return as JSON only.`;
+
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
           type: Type.OBJECT,
           properties: {
             char: { type: Type.STRING },
@@ -68,67 +157,8 @@ Return JSON only, no explanation, no markdown.`;
           required: ["char", "boundingBox", "confidence", "thickness_variation"]
         }
       }
-    }
-  });
-
-  try {
-    const text = response.text;
-    if (!text) return [];
-    return JSON.parse(text);
-  } catch (e) {
-    console.error("Failed to parse Gemini response", e);
-    return [];
-  }
-}
-
-export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
-  const ai = new GoogleGenAI({ apiKey });
-  const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
-  const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
-  const base64Data = imageData.split(',')[1];
-  
-  const prompt = `Find the handwritten character "${char}" in this image. 
-  The image may be a grid template or freehand text. 
-  If it's a grid, look for the box labeled "${char}". 
-  If it's freehand, find the single cleanest and clearest instance of "${char}" in the text.
-  Ignore distractions like bleed-through, ruled lines, or non-character marks.
-  IMPORTANT: The bounding box must ONLY enclose the handwritten stroke. DO NOT include grid lines, box borders, or printed labels.
-  Analyze stroke thickness variations for this character.
-  Return its bounding box as percentages (x, y, width, height) between 0 and 100, a confidence score, and thickness_variation (0-1).
-  The box should tightly enclose ONLY the handwritten stroke.
-  If not found, return null. Return as JSON only.`;
-
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          char: { type: Type.STRING },
-          boundingBox: {
-            type: Type.OBJECT,
-            properties: {
-              x: { type: Type.NUMBER },
-              y: { type: Type.NUMBER },
-              width: { type: Type.NUMBER },
-              height: { type: Type.NUMBER }
-            },
-            required: ["x", "y", "width", "height"]
-          },
-          confidence: { type: Type.NUMBER },
-          thickness_variation: { type: Type.NUMBER }
-        },
-        required: ["char", "boundingBox", "confidence", "thickness_variation"]
-      }
-    }
-  });
+    })
+  );
 
   try {
     const text = response.text;
@@ -139,7 +169,11 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   }
 }
 
-export async function analyzeHandwritingForFontMatch(imageData: string, apiKey: string): Promise<any> {
+export async function analyzeHandwritingForFontMatch(
+  imageData: string,
+  apiKey: string,
+  model: string = DEFAULT_MODEL
+): Promise<any> {
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.split(',')[1];
   
@@ -174,16 +208,18 @@ Return JSON only. No markdown. No explanation.`;
   const mimeMatch2 = imageData.match(/^data:([^;]+);base64,/);
   const mimeType2 = (mimeMatch2 ? mimeMatch2[1] : 'image/jpeg') as string;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType: mimeType2, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: { responseMimeType: "application/json" }
-  });
+  const response = await withFallback<any>(apiKey, model, (m) =>
+    ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType: mimeType2, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: { responseMimeType: "application/json" }
+    })
+  );
 
   try {
     const text = response.text;
