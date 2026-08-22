@@ -1,7 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
+import { DEFAULT_VISION_MODEL, isModelNotFoundError } from "./geminiModels";
 
-export async function analyzeHandwriting(imageData: string, apiKey: string): Promise<DetectedCharacter[]> {
+export async function analyzeHandwriting(
+  imageData: string,
+  apiKey: string,
+  modelName: string = DEFAULT_VISION_MODEL
+): Promise<DetectedCharacter[]> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("You don't have the API key set up yet. Please set up the API key.");
   }
@@ -39,40 +44,56 @@ Return JSON only in this format: a JSON array of objects, where each object has:
 
 Return JSON only, no explanation, no markdown.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            char: { type: Type.STRING },
-            boundingBox: {
-              type: Type.OBJECT,
-              properties: {
-                x: { type: Type.NUMBER },
-                y: { type: Type.NUMBER },
-                width: { type: Type.NUMBER },
-                height: { type: Type.NUMBER }
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+
+  const runRequest = async (m: string) => {
+    return await ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              char: { type: Type.STRING },
+              boundingBox: {
+                type: Type.OBJECT,
+                properties: {
+                  x: { type: Type.NUMBER },
+                  y: { type: Type.NUMBER },
+                  width: { type: Type.NUMBER },
+                  height: { type: Type.NUMBER }
+                },
+                required: ["x", "y", "width", "height"]
               },
-              required: ["x", "y", "width", "height"]
+              confidence: { type: Type.NUMBER },
+              thickness_variation: { type: Type.NUMBER }
             },
-            confidence: { type: Type.NUMBER },
-            thickness_variation: { type: Type.NUMBER }
-          },
-          required: ["char", "boundingBox", "confidence", "thickness_variation"]
+            required: ["char", "boundingBox", "confidence", "thickness_variation"]
+          }
         }
       }
+    });
+  };
+
+  let response;
+  try {
+    response = await runRequest(targetModel);
+  } catch (err) {
+    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
+      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
+      response = await runRequest('gemini-2.5-flash');
+    } else {
+      throw err;
     }
-  });
+  }
 
   try {
     const text = response.text;
@@ -84,7 +105,12 @@ Return JSON only, no explanation, no markdown.`;
   }
 }
 
-export async function reanalyzeSpecificCharacter(char: string, imageData: string, apiKey: string): Promise<DetectedCharacter | null> {
+export async function reanalyzeSpecificCharacter(
+  char: string,
+  imageData: string,
+  apiKey: string,
+  modelName: string = DEFAULT_VISION_MODEL
+): Promise<DetectedCharacter | null> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("You don't have the API key set up yet. Please set up the API key.");
   }
@@ -104,37 +130,53 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   The box should tightly enclose ONLY the handwritten stroke.
   If not found, return null. Return as JSON only.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          char: { type: Type.STRING },
-          boundingBox: {
-            type: Type.OBJECT,
-            properties: {
-              x: { type: Type.NUMBER },
-              y: { type: Type.NUMBER },
-              width: { type: Type.NUMBER },
-              height: { type: Type.NUMBER }
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+
+  const runRequest = async (m: string) => {
+    return await ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            char: { type: Type.STRING },
+            boundingBox: {
+              type: Type.OBJECT,
+              properties: {
+                x: { type: Type.NUMBER },
+                y: { type: Type.NUMBER },
+                width: { type: Type.NUMBER },
+                height: { type: Type.NUMBER }
+              },
+              required: ["x", "y", "width", "height"]
             },
-            required: ["x", "y", "width", "height"]
+            confidence: { type: Type.NUMBER },
+            thickness_variation: { type: Type.NUMBER }
           },
-          confidence: { type: Type.NUMBER },
-          thickness_variation: { type: Type.NUMBER }
-        },
-        required: ["char", "boundingBox", "confidence", "thickness_variation"]
+          required: ["char", "boundingBox", "confidence", "thickness_variation"]
+        }
       }
+    });
+  };
+
+  let response;
+  try {
+    response = await runRequest(targetModel);
+  } catch (err) {
+    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
+      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
+      response = await runRequest('gemini-2.5-flash');
+    } else {
+      throw err;
     }
-  });
+  }
 
   try {
     const text = response.text;
@@ -145,7 +187,11 @@ export async function reanalyzeSpecificCharacter(char: string, imageData: string
   }
 }
 
-export async function analyzeHandwritingForFontMatch(imageData: string, apiKey: string): Promise<any> {
+export async function analyzeHandwritingForFontMatch(
+  imageData: string,
+  apiKey: string,
+  modelName: string = DEFAULT_VISION_MODEL
+): Promise<any> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("You don't have the API key set up yet. Please set up the API key.");
   }
@@ -183,16 +229,32 @@ Return JSON only. No markdown. No explanation.`;
   const mimeMatch2 = imageData.match(/^data:([^;]+);base64,/);
   const mimeType2 = (mimeMatch2 ? mimeMatch2[1] : 'image/jpeg') as string;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: {
-      parts: [
-        { inlineData: { mimeType: mimeType2, data: base64Data } },
-        { text: prompt }
-      ]
-    },
-    config: { responseMimeType: "application/json" }
-  });
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+
+  const runRequest = async (m: string) => {
+    return await ai.models.generateContent({
+      model: m,
+      contents: {
+        parts: [
+          { inlineData: { mimeType: mimeType2, data: base64Data } },
+          { text: prompt }
+        ]
+      },
+      config: { responseMimeType: "application/json" }
+    });
+  };
+
+  let response;
+  try {
+    response = await runRequest(targetModel);
+  } catch (err) {
+    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
+      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
+      response = await runRequest('gemini-2.5-flash');
+    } else {
+      throw err;
+    }
+  }
 
   try {
     const text = response.text;

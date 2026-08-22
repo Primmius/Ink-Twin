@@ -22,6 +22,8 @@ import mammoth from 'mammoth';
 import { cn } from '../lib/utils';
 import { pdfToText, pdfToImages } from '../lib/pdf';
 import { HomeworkInput, AnswerMode, solveHomework, HomeworkResult } from '../lib/homeworkService';
+import { DEFAULT_HOMEWORK_MODEL } from '../lib/geminiModels';
+import { ModelSelector } from './common/ModelSelector';
 import { HomeworkHistory } from './HomeworkHistory';
 
 interface HomeworkSolverProps {
@@ -46,6 +48,16 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const [activeTab, setActiveTab] = useState<'upload' | 'text' | 'url' | 'camera'>('upload');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'detected' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
+
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem('inktwin_homework_model') || DEFAULT_HOMEWORK_MODEL;
+  });
+  const [customModel, setCustomModel] = useState<string>('');
+  const [isCustomModelActive, setIsCustomModelActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('inktwin_homework_model', selectedModel);
+  }, [selectedModel]);
 
   // Loading messages rotation
   useEffect(() => {
@@ -151,10 +163,12 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
     if (inputText) finalInput.text = inputText;
     if (url) finalInput.sourceUrl = url;
 
+    const modelToUse = isCustomModelActive && customModel.trim() ? customModel.trim() : selectedModel;
+
     setIsProcessing(true);
     setError(null);
     try {
-      const res = await solveHomework(finalInput, answerMode, apiKey);
+      const res = await solveHomework(finalInput, answerMode, apiKey, modelToUse);
       setResult(res);
       setEditableAnswer(res.answer);
       saveHistory(res);
@@ -164,7 +178,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         setError("You don't have the API key set up yet. Please set up the API key.");
         onOpenSettings();
       } else {
-        setError(err?.message || "Solver failed. Please try again.");
+        const rawMsg = err?.message || "Solver failed. Please try again.";
+        setError(`${rawMsg} (If this model is deprecated, try choosing Gemini 2.5 Flash, Gemini 2.0 Flash, or Gemini 1.5 Pro)`);
       }
     } finally {
       setIsProcessing(false);
@@ -178,10 +193,13 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
       return;
     }
     if (!followUp || !result) return;
+
+    const modelToUse = isCustomModelActive && customModel.trim() ? customModel.trim() : selectedModel;
+
     setIsProcessing(true);
     setError(null);
     try {
-      const res = await solveHomework(input, answerMode, apiKey, followUp, result.answer);
+      const res = await solveHomework(input, answerMode, apiKey, modelToUse, followUp, result.answer);
       setResult(res);
       setEditableAnswer(res.answer);
       setFollowUp('');
@@ -191,7 +209,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         setError("You don't have the API key set up yet. Please set up the API key.");
         onOpenSettings();
       } else {
-        setError(err?.message || "Follow-up failed. Please try again.");
+        const rawMsg = err?.message || "Follow-up failed. Please try again.";
+        setError(`${rawMsg} (Try choosing another model above)`);
       }
     } finally {
       setIsProcessing(false);
@@ -201,10 +220,6 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
   const copyToClipboard = () => {
     navigator.clipboard.writeText(editableAnswer);
     alert("Copied to clipboard!");
-  };
-
-  const handleRegenerate = () => {
-    handleSolve();
   };
 
   return (
@@ -318,6 +333,17 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
           </AnimatePresence>
         </div>
 
+        {/* Gemini Model Selector */}
+        <ModelSelector
+          selectedModel={selectedModel}
+          onSelectModel={setSelectedModel}
+          customModel={customModel}
+          onChangeCustomModel={setCustomModel}
+          isCustomModelActive={isCustomModelActive}
+          onSetCustomModelActive={setIsCustomModelActive}
+          label="AI Study Model"
+        />
+
         <div className="space-y-4 mb-4">
           <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 text-text-primary">Answer Mode</h3>
           <div className="grid grid-cols-1 gap-2">
@@ -376,9 +402,12 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
               <div>
                 <h3 className="font-display uppercase text-sm leading-tight text-text-primary">Gemini Answer</h3>
                 {result && (
-                  <div className="flex gap-2 text-text-primary">
+                  <div className="flex flex-wrap gap-2 text-text-primary">
                      <span className="text-[9px] font-mono uppercase opacity-50">Subject: {result.subject}</span>
                      <span className="text-[9px] font-mono uppercase opacity-50">Level: {result.difficulty}</span>
+                     {result.modelUsed && (
+                       <span className="text-[9px] font-mono uppercase opacity-70 text-warning-yellow font-bold">[{result.modelUsed}]</span>
+                     )}
                   </div>
                 )}
               </div>
@@ -424,7 +453,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
                         e.target.style.height = e.target.scrollHeight + 'px';
                       }}
                     />
-                    <div className="absolute top-2 right-2 bg-warning-yellow px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none">
+                    <div className="absolute top-2 right-2 bg-warning-yellow px-2 py-1 font-mono text-[9px] font-bold uppercase pointer-events-none text-neutral-950">
                       Editable Mode
                     </div>
                   </div>
@@ -446,8 +475,8 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             </AnimatePresence>
           </div>
           
-                  {result && (
-            <div className="p-4 border-t-2 border-neutral-300 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex gap-2">
+          {result && (
+            <div className="p-4 border-t-2 border-brutal-black bg-neutral-50 dark:bg-neutral-900 flex gap-2">
               <input 
                 type="text"
                 value={followUp}
@@ -460,7 +489,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
               <button 
                 onClick={handleFollowUp}
                 disabled={isProcessing || !followUp}
-                className="brutal-btn bg-neutral-900 dark:bg-neutral-800 text-white border-2 border-neutral-900 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 disabled:opacity-50"
+                className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 border-2 border-neutral-950 font-bold disabled:opacity-50"
               >
                 <Send size={16} />
               </button>
@@ -477,25 +506,25 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
             <button 
               onClick={() => onSendToWriter(editableAnswer)}
               disabled={!editableAnswer}
-              className="w-full brutal-btn bg-warning-yellow text-neutral-950 border-2 border-neutral-950 flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale hover:bg-[#FFE600] transition-colors"
+              className="w-full brutal-btn bg-warning-yellow hover:bg-amber-300 border-2 border-neutral-950 flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale text-neutral-950 font-bold"
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-display uppercase text-sm font-bold text-neutral-950">Send to Editor</span>
-                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform text-neutral-950" />
+                <span className="font-display uppercase text-sm">Send to Editor</span>
+                <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
               </div>
-              <span className="text-[9px] font-mono text-neutral-900/75 uppercase text-left">Auto-layout in your handwriting font</span>
+              <span className="text-[9px] font-mono opacity-60 uppercase text-left font-normal">Auto-layout in your handwriting font</span>
             </button>
 
             <button 
               onClick={() => onSendToHumanizer(editableAnswer)}
               disabled={!editableAnswer}
-              className="w-full brutal-btn bg-neutral-900 dark:bg-neutral-800 text-white border-2 border-neutral-900 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-warning-yellow dark:hover:text-neutral-950 flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale transition-all"
+              className="w-full brutal-btn bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex flex-col items-start gap-1 group disabled:opacity-50 disabled:grayscale transition-all border-2 border-neutral-300 dark:border-neutral-700"
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-display uppercase text-sm font-bold">Humanize with AI</span>
-                <Wand2 size={18} className="group-hover:scale-110 transition-transform" />
+                <span className="font-display uppercase text-sm">Humanize with AI</span>
+                <Wand2 size={18} className="group-hover:scale-110 transition-transform text-warning-yellow" />
               </div>
-              <span className="text-[9px] font-mono opacity-60 uppercase text-left">Make it sound naturally human</span>
+              <span className="text-[9px] font-mono opacity-50 uppercase text-left">Make it sound naturally human</span>
             </button>
 
             <button 
@@ -538,10 +567,10 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         <div className="mt-auto p-4 theme-card brutal-border border-dashed space-y-2">
            <div className="flex items-center gap-2 text-warning-yellow">
               <CheckCircle2 size={16} />
-              <span className="font-display uppercase text-[10px]">HW Engine v3.0</span>
+              <span className="font-display uppercase text-[10px]">HW Engine · {isCustomModelActive ? (customModel.trim() || 'Custom') : selectedModel}</span>
            </div>
            <p className="text-[9px] font-mono opacity-60 leading-tight uppercase text-text-primary">
-             Optimized for handwriting output. No markdown symbols or cluttered formatting.
+             Optimized for handwriting output. Select any Gemini model above.
            </p>
         </div>
       </div>

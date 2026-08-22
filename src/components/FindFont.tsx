@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload, Camera, RefreshCw, CheckCircle2, AlertCircle, Type as TypeIcon, ArrowRight, Search, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { analyzeHandwritingForFontMatch } from '../lib/gemini';
+import { DEFAULT_VISION_MODEL } from '../lib/geminiModels';
+import { ModelSelector } from './common/ModelSelector';
 import { CameraCapture } from './CameraCapture';
 
 const allowedFonts = [
@@ -69,6 +71,16 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
   const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem('inktwin_findfont_model') || DEFAULT_VISION_MODEL;
+  });
+  const [customModel, setCustomModel] = useState<string>('');
+  const [isCustomModelActive, setIsCustomModelActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('inktwin_findfont_model', selectedModel);
+  }, [selectedModel]);
 
   const [styleFilter, setStyleFilter] = useState<'all' | 'cursive' | 'print' | 'mixed'>('all');
   const [weightFilter, setWeightFilter] = useState<'all' | 'thin' | 'medium' | 'thick'>('all');
@@ -175,8 +187,10 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
       setLoadingText(loadingPhrases[phraseIndex]);
     }, 2500);
 
+    const modelToUse = isCustomModelActive && customModel.trim() ? customModel.trim() : selectedModel;
+
     try {
-      const rawRes = await analyzeHandwritingForFontMatch(imgData, apiKey);
+      const rawRes = await analyzeHandwritingForFontMatch(imgData, apiKey, modelToUse);
       if (!rawRes) throw new Error("Analysis failed: Empty response from AI.");
 
       const isCursiveLike = rawRes.scriptType !== "print";
@@ -307,6 +321,19 @@ export const FindFont: React.FC<FindFontProps> = ({ apiKey, onFontSelected, onGo
                     <Camera size={24} />
                     <span>Capture with Camera</span>
                   </button>
+
+                  <div className="w-full max-w-sm text-left">
+                    <ModelSelector
+                      selectedModel={selectedModel}
+                      onSelectModel={setSelectedModel}
+                      customModel={customModel}
+                      onChangeCustomModel={setCustomModel}
+                      isCustomModelActive={isCustomModelActive}
+                      onSetCustomModelActive={setIsCustomModelActive}
+                      label="Vision AI Model"
+                    />
+                  </div>
+
                   <p className="font-mono text-[11px] opacity-40 uppercase text-neutral-600 dark:text-neutral-400">
                     Supported: JPG, PNG, PDF. High lighting recommended.
                   </p>
