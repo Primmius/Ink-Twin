@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { DEFAULT_LAYOUT_MODEL, isModelNotFoundError } from "./geminiModels";
 
 /**
  * Note: AI Layout features have been moved to inline components in HandwritingWriter.tsx
@@ -9,7 +10,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 export async function smartTextFitting(
   text: string,
   config: { width: number; height: number; fontSize: number; lineHeight: number; leftMargin: number; topMargin: number },
-  apiKey: string
+  apiKey: string,
+  modelName: string = DEFAULT_LAYOUT_MODEL
 ): Promise<string[]> {
   if (!apiKey || !apiKey.trim()) {
     throw new Error("You don't have the API key set up yet. Please set up the API key.");
@@ -25,23 +27,38 @@ export async function smartTextFitting(
   
   Return JSON with an array of page content strings. No markdown, no explanation.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: [{ parts: [{ text: prompt }] }],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          pages: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
-          }
-        },
-        required: ["pages"]
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_LAYOUT_MODEL;
+
+  const runRequest = async (m: string) => {
+    return await ai.models.generateContent({
+      model: m,
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            pages: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            }
+          },
+          required: ["pages"]
+        }
       }
+    });
+  };
+
+  let response;
+  try {
+    response = await runRequest(targetModel);
+  } catch (err) {
+    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
+      response = await runRequest('gemini-2.5-flash');
+    } else {
+      throw err;
     }
-  });
+  }
 
   try {
     const text = response.text;

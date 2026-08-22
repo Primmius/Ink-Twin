@@ -33,6 +33,8 @@ import { cn } from '../../lib/utils';
 import { PageConfig, WriterPage, AppPhase, WriterElement, WriterImage, SavedFont } from '../../types';
 import { CanvasPage, renderCanvasPage } from './CanvasPage';
 import { wrapTextIntoPages } from '../../lib/localLayout';
+import { DEFAULT_LAYOUT_MODEL } from '../../lib/geminiModels';
+import { ModelSelector } from '../common/ModelSelector';
 import { 
   formatExpiryLabel, 
   exportFontAsFile, 
@@ -741,6 +743,16 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [showAIWarning, setShowAIWarning] = useState(false);
   const [aiPartialData, setAiPartialData] = useState<{validatedText: string, newSettings: PageConfig} | null>(null);
 
+  const [selectedModel, setSelectedModel] = useState<string>(() => {
+    return localStorage.getItem('inktwin_layout_model') || DEFAULT_LAYOUT_MODEL;
+  });
+  const [customModel, setCustomModel] = useState<string>('');
+  const [isCustomModelActive, setIsCustomModelActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem('inktwin_layout_model', selectedModel);
+  }, [selectedModel]);
+
   // Apply profile from Phase 4
   useEffect(() => {
     if (initialProfile) {
@@ -970,21 +982,34 @@ ${documentText}`;
       console.log("Gemini Request Body:", JSON.stringify(requestBody, null, 2));
       setIsAIProcessing(true);
       
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody)
-        }
-      );
+      const modelToUse = isCustomModelActive && customModel.trim() ? customModel.trim() : selectedModel;
+
+      const callOnce = async (m: string) => {
+        return await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+          }
+        );
+      };
+
+      let response = await callOnce(modelToUse);
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error("Gemini API error:", errorBody);
-        throw new Error("API call failed: " + errorBody);
+        if (response.status === 404 || errorBody.toLowerCase().includes('not found') || errorBody.toLowerCase().includes('no longer available')) {
+          console.warn(`[HandwritingWriter] Model ${modelToUse} failed (404), attempting fallback to gemini-2.5-flash...`);
+          response = await callOnce('gemini-2.5-flash');
+        }
+        if (!response.ok) {
+          const finalErr = await response.text();
+          console.error("Gemini API error:", finalErr);
+          throw new Error("API call failed: " + finalErr + " (Try selecting another model in the panel)");
+        }
       }
 
       const data = await response.json();
@@ -2038,6 +2063,17 @@ ${documentText}`;
                   </div>
 
                   <div className="h-[1px] bg-neutral-100" />
+
+                  {/* Gemini Model Selector */}
+                  <ModelSelector
+                    selectedModel={selectedModel}
+                    onSelectModel={setSelectedModel}
+                    customModel={customModel}
+                    onChangeCustomModel={setCustomModel}
+                    isCustomModelActive={isCustomModelActive}
+                    onSetCustomModelActive={setIsCustomModelActive}
+                    label="Layout AI Model"
+                  />
 
                   {/* Instruction Box */}
                   <div className="space-y-3">

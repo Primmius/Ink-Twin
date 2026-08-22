@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { DEFAULT_HOMEWORK_MODEL, isModelNotFoundError } from "./geminiModels";
 
 export type HomeworkInput = {
   text?: string;
@@ -15,6 +16,7 @@ export type HomeworkResult = {
   question: string;
   answer: string;
   difficulty: string;
+  modelUsed?: string;
   timestamp: number;
 };
 
@@ -48,6 +50,7 @@ export async function solveHomework(
   input: HomeworkInput,
   mode: AnswerMode,
   apiKey: string,
+  modelName: string = DEFAULT_HOMEWORK_MODEL,
   followUp?: string,
   previousAnswer?: string
 ): Promise<HomeworkResult> {
@@ -85,48 +88,77 @@ export async function solveHomework(
     });
   }
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite", // Use Pro for complex tasks
-    contents: { parts },
-    config: {
-      tools: [
-        {
-          googleSearch: {},
-        },
-      ],
-    }
-  });
+  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_HOMEWORK_MODEL;
+  let responseText = "";
+  let effectiveModel = targetModel;
 
-  const responseText = response.text || "";
+  try {
+    const response = await ai.models.generateContent({
+      model: targetModel,
+      contents: { parts },
+      config: {
+        tools: [
+          {
+            googleSearch: {},
+          },
+        ],
+      }
+    });
+    responseText = response.text || "";
+  } catch (err: any) {
+    console.warn(`[homeworkService] Error with model ${targetModel}:`, err);
+    if (isModelNotFoundError(err) || targetModel === 'gemini-2.5-flash-lite') {
+      const fallback = targetModel !== 'gemini-2.5-flash' ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
+      console.log(`[homeworkService] Attempting automatic fallback to ${fallback}...`);
+      try {
+        const fallbackRes = await ai.models.generateContent({
+          model: fallback,
+          contents: { parts },
+          config: {
+            tools: [{ googleSearch: {} }]
+          }
+        });
+        responseText = fallbackRes.text || "";
+        effectiveModel = `${fallback} (Auto Fallback)`;
+      } catch (fallbackErr) {
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
 
   const metaPrompt = `Based on the answer above, what is the 'subject' and 'difficulty' (Primary/Secondary/University)? Return ONLY JSON: {"subject": "...", "difficulty": "..."}`;
-  const metaResponse = await ai.models.generateContent({
-    model: "gemini-2.5-flash-lite",
-    contents: responseText + "\n\n" + metaPrompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          subject: { type: Type.STRING },
-          difficulty: { type: Type.STRING }
-        },
-        required: ["subject", "difficulty"]
-      }
-    }
-  });
-  
   let meta = { subject: "General", difficulty: "Unknown" };
+  
   try {
+    const metaResponse = await ai.models.generateContent({
+      model: effectiveModel.startsWith('gemini') ? effectiveModel.split(' ')[0] : DEFAULT_HOMEWORK_MODEL,
+      contents: responseText + "\n\n" + metaPrompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            subject: { type: Type.STRING },
+            difficulty: { type: Type.STRING }
+          },
+          required: ["subject", "difficulty"]
+        }
+      }
+    });
     const metaJson = JSON.parse(metaResponse.text || '{}');
     meta = metaJson;
-  } catch (e) {}
+  } catch (e) {
+    // meta extraction failure is non-critical
+  }
 
   return {
-    subject: meta.subject,
+    subject: meta.subject || "General",
     question: input.text || (input.imageData ? "Image Query" : "Homework Question"),
     answer: responseText,
-    difficulty: meta.difficulty,
+    difficulty: meta.difficulty || "Unknown",
+    modelUsed: effectiveModel,
     timestamp: Date.now()
   };
 }
