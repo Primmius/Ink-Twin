@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
-import { DEFAULT_MODEL, isModelNotFoundError } from "./models";
+import { isModelNotFoundError } from "./models";
+
+export const GEMINI_VISION_DEFAULT = "gemini-3-flash-preview";
 
 async function withFallback<T>(
   _apiKey: string,
@@ -10,9 +12,9 @@ async function withFallback<T>(
   try {
     return await run(primary);
   } catch (err) {
-    if (primary !== DEFAULT_MODEL && isModelNotFoundError(err)) {
-      console.warn(`[gemini] Model "${primary}" unavailable, retrying with "${DEFAULT_MODEL}"`);
-      return await run(DEFAULT_MODEL);
+    if (primary !== GEMINI_VISION_DEFAULT && isModelNotFoundError(err)) {
+      console.warn(`[gemini] Model "${primary}" unavailable, retrying with "${GEMINI_VISION_DEFAULT}"`);
+      return await run(GEMINI_VISION_DEFAULT);
     }
     throw err;
   }
@@ -21,7 +23,7 @@ async function withFallback<T>(
 export async function analyzeHandwriting(
   imageData: string,
   apiKey: string,
-  model: string = DEFAULT_MODEL
+  model: string = GEMINI_VISION_DEFAULT
 ): Promise<DetectedCharacter[]> {
   const ai = new GoogleGenAI({ apiKey });
   
@@ -108,7 +110,7 @@ export async function reanalyzeSpecificCharacter(
   char: string,
   imageData: string,
   apiKey: string,
-  model: string = DEFAULT_MODEL
+  model: string = GEMINI_VISION_DEFAULT
 ): Promise<DetectedCharacter | null> {
   const ai = new GoogleGenAI({ apiKey });
   const mimeMatch = imageData.match(/^data:([^;]+);base64,/);
@@ -172,7 +174,7 @@ export async function reanalyzeSpecificCharacter(
 export async function analyzeHandwritingForFontMatch(
   imageData: string,
   apiKey: string,
-  model: string = DEFAULT_MODEL
+  model: string = GEMINI_VISION_DEFAULT
 ): Promise<any> {
   const ai = new GoogleGenAI({ apiKey });
   const base64Data = imageData.split(',')[1];
