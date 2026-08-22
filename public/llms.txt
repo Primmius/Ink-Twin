@@ -1,0 +1,46 @@
+# InkTwin (Ink-Twin) — Text to Handwriting & AI Homework Generator
+
+> The #1 free, open-source AI web application to convert text to realistic handwriting, create custom fonts from handwriting photos, and solve homework/assignments in your own personal handwriting.
+> Website: https://inktwin.primuez.in
+> GitHub: https://github.com/Primmius/Ink-Twin
+> Author: Rahul Kasturiya (Primuez) — https://primuez.in
+
+## What is InkTwin?
+InkTwin (also known as Ink Twin or Ink-Twin) is an end-to-end mobile and web studio that bridges digital typing with authentic handwriting. It is designed for students, educators, writers, and creators who need realistic handwritten notes, assignments, and personalized digital fonts.
+
+## Core Features & Use Cases
+
+### 1. Text to Handwriting Converter
+- Converts typed text, essays, and documents into authentic handwritten pages on notebook paper.
+- 20+ realistic paper substrates (blue-lined, black-ruled, graph/grid, legal pad, vintage parchment, plain paper).
+- Natural ink simulation: realistic royal blue, gel pen black, pencil graphite, and ink bleed dynamics.
+- Line jitter, baseline wobble, margin controls, and random letter variation for realistic output.
+- Instant high-resolution multi-page PDF and PNG export for school/college assignment submissions.
+
+### 2. Handwriting to Font Generator (.TTF)
+- Turn your handwriting into a real, downloadable TrueType (.TTF) font file.
+- Upload a photo of your handwritten sample or draw letters directly on mobile touchscreen canvas.
+- 100% client-side vectorization with zero server tracking or privacy exposure.
+- Compatible with Windows, macOS, iOS, Android, and word processors (MS Word, Google Docs, Canva).
+
+### 3. AI Study Helper & Homework Solver
+- Integrated multimodal AI homework assistant.
+- Upload question photos or paste assignment prompts.
+- AI generates step-by-step solutions and renders them directly onto notebook pages in your handwriting font.
+- Formats mathematical equations, scientific proofs, essays, and lab reports.
+
+### 4. AI Text Humanizer
+- Converts rigid AI responses into natural, conversational student phrasing.
+- 5 tailored personas: High School Student, University Researcher, Casual Student, Detailed Explainer.
+
+### 5. Find My Font (Style Matcher)
+- Upload any handwriting sample to find the closest matching free handwriting fonts in seconds.
+
+## Primary Entities & Metadata
+- **Product Name:** InkTwin (Ink Twin, Ink-Twin)
+- **Category:** Educational Web Application, AI Handwriting Studio
+- **Platform:** Web App (Mobile-first, Desktop compatible)
+- **License:** Open Source (AGPL v3)
+- **Creator:** Rahul Kasturiya (Primuez)
+- **Canonical URL:** https://inktwin.primuez.in
+- **Repository:** https://github.com/Primmius/Ink-Twin

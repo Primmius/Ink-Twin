@@ -1,17 +1,18 @@
 <div align="center">
 
-# 🖋️ InkTwin
+# 🖋️ InkTwin (Ink-Twin)
 
-### **AI-Powered Handwriting-to-Font Digitization & Document Studio**
+### **The #1 Free AI Web App for Text to Handwriting & Handwriting-to-Font Creation**
+#### *AI Study Helper & Homework Solver That Writes Assignments in Your Exact Personal Handwriting*
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-yellow.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3+-61DAFB.svg)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.0+-646CFF.svg)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4+-38B2AC.svg)](https://tailwindcss.com/)
-[![Privacy: Client--Side BYOK](https://img.shields.io/badge/Privacy-100%25%20Client--Side%20BYOK-success.svg)](#-privacy--security)
+[![Privacy: Client-Side BYOK](https://img.shields.io/badge/Privacy-100%25%20Client--Side%20BYOK-success.svg)](#-privacy--security)
 
-**[🌐 Live Demo: inktwin.primuez.in](https://inktwin.primuez.in)**
+**[🌐 Launch Free Web App: inktwin.primuez.in](https://inktwin.primuez.in)**
 
 </div>
 
@@ -19,94 +20,59 @@
 
 ## 📖 Overview
 
-**InkTwin** is an end-to-end mobile-first handwriting digitization studio and document synthesis suite. It transforms real handwriting photos into functional TrueType (`.ttf`) font files, simulates natural multi-page handwritten documents on ruled paper substrates, solves homework assignments with AI, and humanizes machine text into authentic student handwriting.
+**InkTwin** (also known as **Ink Twin** or **Ink-Twin**) is an open-source, mobile-first AI studio designed to bridge digital text with natural handwriting. 
 
-All font vectorization and `.ttf` compilation run **100% client-side in the browser** with zero desktop friction.
-
----
-
-## ✨ Key Capabilities
-
-### 1. ✏️ 6-Step Font Creation Studio
-* **Guided Mobile Flow**: Download printable A4 grid templates, snap samples with a smartphone camera, or upload photos/PDFs.
-* **Touchscreen Drawing Pad**: Built-in full-screen touch canvas to draw or refine individual missing glyphs with finger or stylus.
-* **AI Glyph Detection**: Automated bounding-box segmentation and character recognition powered by Gemini Multimodal AI.
-* **Client-Side Vectorization**: Bezier path extraction via `imagetracerjs` and instant TrueType font assembly via `opentype.js`.
-
-### 2. 📝 Realistic Document Studio Writer
-* **20+ Authentic Paper Substrates**: Black-lined, blue-lined, legal pad, kraft, old parchment, grid, notebook, blackboard, and floral stationery.
-* **Authentic Paper Preservation**: Document sheets maintain their physical paper color (`#FFFFFF` / `#FAF9F6`) in dark mode, while the software chrome switches to dark carbon.
-* **Natural Handwriting Realism**: Customizable ink colors (royal blue, deep black, gel pen, pencil), line jitter, baseline wobble, letter spacing, and line height.
-* **Multi-Page Export**: Download single pages or multi-page documents as high-resolution PDFs or zipped PNGs.
-
-### 3. 🎓 Multimodal AI Homework Solver
-* **Instant Question Ingestion**: Upload assignment photos, PDFs, DOCX, or paste questions directly.
-* **Step-by-Step Solutions**: Formatted mathematical proofs, essays, and equations.
-* **1-Tap Transfer**: Send answers directly into Studio Writer to render them in your own handwriting font.
-
-### 4. 🔍 Find My Font (Style Matcher)
-* Upload any handwriting sample to analyze stroke width, slant, and letterform characteristics.
-* Matches samples with the closest free Google Web Font alternatives for instant use in the writer.
-
-### 5. ✨ AI Text Humanizer
-* Converts robotic AI drafts into natural student phrasing (Casual Student, High Schooler, University Researcher).
-* Interactive split-view editor with notebook-ruled preview before sending to Studio Writer.
+Whether you need to **convert text to realistic handwritten notes**, **create a custom downloadable `.ttf` font from your own handwriting**, or use an **AI study helper to solve homework and write assignments in your personal handwriting**, InkTwin handles the entire pipeline 100% client-side with zero desktop installation.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## ✨ Core Features & Search Capabilities
 
-```
-                     ┌──────────────────────────────────────────────┐
-                     │          InkTwin Mobile Browser App           │
-                     └───────┬──────────────────────────────┬───────┘
-                             │                              │
-             ┌───────────────▼──────────────┐ ┌──────────────▼──────────────┐
-             │    Client-Side Engine         │ │    Multimodal AI (BYOK)     │
-             │                              │ │                              │
-             │ • opentype.js (.TTF builder) │ │ • Gemini 2.5 Flash           │
-             │ • imagetracerjs (Vectors)    │ │ • Character Extraction       │
-             │ • Canvas 2D Rendering Engine │ │ • Homework Solver Engine     │
-             │ • pdf-lib & mammoth.js       │ │ • Text Humanization Engine   │
-             └──────────────────────────────┘ └──────────────────────────────┘
-```
+### 1. 📝 Text to Realistic Handwriting Generator
+* **Authentic Paper Textures**: 20+ notebook backgrounds including single-ruled, blue-ruled, legal pad, grid, vintage parchment, and blank paper.
+* **Natural Ink Physics**: Realistic ink bleed, pen pressure variation, baseline wobble, letter spacing, and line jitter.
+* **Ink Customization**: Royal blue, gel pen black, ballpoint, pencil graphite, and custom RGB colors.
+* **Multi-Page Assignment Export**: Instant high-resolution PDF and PNG exports ready for school, university, or work submissions.
 
-* **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide Icons, Motion (`framer-motion`).
-* **Font Generation**: `opentype.js`, `imagetracerjs`.
-* **Document Processing**: `pdfjs-dist`, `pdf-lib`, `mammoth.js`, `xlsx`.
-* **AI Integration**: Google Gemini API via official `@google/genai` SDK (Client-Side Bring-Your-Own-Key model).
+### 2. ✏️ Handwriting to Font Creator (.TTF)
+* **Photo to Font**: Snap a smartphone photo of your handwriting sample or printable A4 grid template.
+* **Touchscreen Drawing Pad**: Draw or tweak individual missing letters/glyphs directly using finger or stylus on mobile or iPad.
+* **100% Client-Side Vectorization**: Bezier curve extraction via `imagetracerjs` and instant TrueType font assembly via `opentype.js`.
+* **Universal Compatibility**: Download your real `.ttf` font and use it in MS Word, Google Docs, Canva, Photoshop, or InkTwin Writer.
+
+### 3. 🎓 AI Study Helper & Homework Solver in Your Handwriting
+* **Instant Problem Solving**: Snap a photo of your math, science, or essay questions, or paste the assignment prompt.
+* **Step-by-Step AI Solutions**: Solves equations, writes code, drafts essays, and explains proofs using Google Gemini Multimodal AI.
+* **1-Tap Handwriting Transfer**: Sends solved answers directly to Studio Writer to render them automatically onto ruled paper in your personal handwriting.
+
+### 4. ✨ AI Text Humanizer (Student Tone Personas)
+* Removes robotic AI sentence structures and converts text into authentic student phrasing.
+* Personas: High School Student, College Researcher, Casual Learner, Detailed Explainer.
+
+### 5. 🔍 Find My Font (Style Matcher)
+* Upload any handwriting sample to instantly find the closest free matching web fonts.
 
 ---
 
-## 🚀 Quickstart & Local Setup
+## 🚀 Quick Start & Deployment
 
-### Prerequisites
-* **Node.js** `v18.0.0` or higher
-* **npm** `v9.0.0` or higher
-* (Optional) A free **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
+### Local Development
 
-### Installation
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/Primmius/Ink-Twin.git
 cd Ink-Twin
 
-# 2. Install dependencies
+# Install dependencies
 npm install
 
-# 3. Configure environment variables (optional)
-cp .env.example .env.local
-
-# 4. Start local development server
+# Start development server
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+### Production Build
 
-### Build & Validate
 ```bash
-# Type check and production build
-npm run lint
 npm run build
 ```
 
@@ -114,30 +80,23 @@ npm run build
 
 ## 🔒 Privacy & Security
 
-* **100% Client-Side Font Compilation**: Handwriting images and generated TrueType `.ttf` files are processed locally in your browser and never uploaded to an external font generation server.
-* **Bring-Your-Own-Key (BYOK)**: Users provide their own Gemini API key for AI features. Keys are stored strictly in local browser storage (`localStorage`) and communicated directly with Google's API endpoints.
-* See [`SECURITY.md`](./SECURITY.md) for vulnerability disclosure procedures.
+* **100% Client-Side Processing**: All vectorization, glyph extraction, and `.ttf` font compilation run locally inside your browser sandbox.
+* **Zero Cloud Storage of Handwriting**: Your personal handwriting samples never touch remote servers.
+* **Bring Your Own Key (BYOK)**: AI Homework features connect directly to your Gemini API key from the browser.
 
 ---
 
-## 📜 Intellectual Property, Licensing & Trademarks
+## 👤 Author & Credits
 
-* **Source Code**: Licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](./LICENSE).
-* **Trademark & Brand Protection**: The **"InkTwin"** name, logo, favicon, and brand styling are protected trademarks of Rahul Kasturiya. Reusing or distributing forks requires complete rebranding. See [`TRADEMARKS.md`](./TRADEMARKS.md).
-* **Asset Exclusions**: Demo handwriting datasets, evaluation samples, and model prompt configurations are excluded from the open-source grant. See [`NOTICE.md`](./NOTICE.md).
-* **Commercial Inquiries**: For proprietary dual-licensing or commercial inquiries, contact [contact@primuez.in](mailto:contact@primuez.in).
+Created and maintained by **[Primuez (Rahul Kasturiya)](https://primuez.in)**.
 
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please review our [Contributing Guidelines and Contributor License Agreement](./CONTRIBUTING.md) before submitting a Pull Request.
+* **Portfolio:** [primuez.in](https://primuez.in)
+* **GitHub:** [@Primuez](https://github.com/Primuez) | [@Primmius](https://github.com/Primmius)
+* **YouTube:** [@Primuez](https://youtube.com/@primuez)
+* **Twitter / X:** [@Primuez](https://x.com/Primuez)
 
 ---
 
-## 👤 Author
+## 📄 License
 
-**Rahul Kasturiya**  
-* Website: [primuez.in](https://primuez.in)  
-* Project: [inktwin.primuez.in](https://inktwin.primuez.in)  
-* GitHub: [@Primmius](https://github.com/Primmius)
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See [LICENSE](./LICENSE) for details.
