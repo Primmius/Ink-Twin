@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { DetectedCharacter, CHARACTERS_TO_DETECT } from "../types";
-import { DEFAULT_VISION_MODEL, isModelNotFoundError } from "./geminiModels";
+import { DEFAULT_VISION_MODEL, getFallbackChain, isModelUnavailableError } from "./geminiModels";
 
 export async function analyzeHandwriting(
   imageData: string,
@@ -44,61 +44,65 @@ Return JSON only in this format: a JSON array of objects, where each object has:
 
 Return JSON only, no explanation, no markdown.`;
 
-  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+  const fallbackModels = getFallbackChain(modelName, true);
+  let responseText = "";
+  let lastError: any = null;
 
-  const runRequest = async (m: string) => {
-    return await ai.models.generateContent({
-      model: m,
-      contents: {
-        parts: [
-          { inlineData: { mimeType, data: base64Data } },
-          { text: prompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              char: { type: Type.STRING },
-              boundingBox: {
-                type: Type.OBJECT,
-                properties: {
-                  x: { type: Type.NUMBER },
-                  y: { type: Type.NUMBER },
-                  width: { type: Type.NUMBER },
-                  height: { type: Type.NUMBER }
+  for (const m of fallbackModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: {
+          parts: [
+            { inlineData: { mimeType, data: base64Data } },
+            { text: prompt }
+          ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                char: { type: Type.STRING },
+                boundingBox: {
+                  type: Type.OBJECT,
+                  properties: {
+                    x: { type: Type.NUMBER },
+                    y: { type: Type.NUMBER },
+                    width: { type: Type.NUMBER },
+                    height: { type: Type.NUMBER }
+                  },
+                  required: ["x", "y", "width", "height"]
                 },
-                required: ["x", "y", "width", "height"]
+                confidence: { type: Type.NUMBER },
+                thickness_variation: { type: Type.NUMBER }
               },
-              confidence: { type: Type.NUMBER },
-              thickness_variation: { type: Type.NUMBER }
-            },
-            required: ["char", "boundingBox", "confidence", "thickness_variation"]
+              required: ["char", "boundingBox", "confidence", "thickness_variation"]
+            }
           }
         }
+      });
+      responseText = response.text || "";
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[gemini] Vision model "${m}" failed:`, err?.message || err);
+      if (!isModelUnavailableError(err)) {
+        throw err;
       }
-    });
-  };
-
-  let response;
-  try {
-    response = await runRequest(targetModel);
-  } catch (err) {
-    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
-      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
-      response = await runRequest('gemini-2.5-flash');
-    } else {
-      throw err;
     }
   }
 
+  if (!responseText && lastError) {
+    throw lastError;
+  }
+
   try {
-    const text = response.text;
-    if (!text) return [];
-    return JSON.parse(text);
+    if (!responseText) return [];
+    return JSON.parse(responseText);
   } catch (e) {
     console.error("Failed to parse Gemini response", e);
     return [];
@@ -130,58 +134,62 @@ export async function reanalyzeSpecificCharacter(
   The box should tightly enclose ONLY the handwritten stroke.
   If not found, return null. Return as JSON only.`;
 
-  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+  const fallbackModels = getFallbackChain(modelName, true);
+  let responseText = "";
+  let lastError: any = null;
 
-  const runRequest = async (m: string) => {
-    return await ai.models.generateContent({
-      model: m,
-      contents: {
-        parts: [
-          { inlineData: { mimeType, data: base64Data } },
-          { text: prompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            char: { type: Type.STRING },
-            boundingBox: {
-              type: Type.OBJECT,
-              properties: {
-                x: { type: Type.NUMBER },
-                y: { type: Type.NUMBER },
-                width: { type: Type.NUMBER },
-                height: { type: Type.NUMBER }
+  for (const m of fallbackModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: {
+          parts: [
+            { inlineData: { mimeType, data: base64Data } },
+            { text: prompt }
+          ]
+        },
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              char: { type: Type.STRING },
+              boundingBox: {
+                type: Type.OBJECT,
+                properties: {
+                  x: { type: Type.NUMBER },
+                  y: { type: Type.NUMBER },
+                  width: { type: Type.NUMBER },
+                  height: { type: Type.NUMBER }
+                },
+                required: ["x", "y", "width", "height"]
               },
-              required: ["x", "y", "width", "height"]
+              confidence: { type: Type.NUMBER },
+              thickness_variation: { type: Type.NUMBER }
             },
-            confidence: { type: Type.NUMBER },
-            thickness_variation: { type: Type.NUMBER }
-          },
-          required: ["char", "boundingBox", "confidence", "thickness_variation"]
+            required: ["char", "boundingBox", "confidence", "thickness_variation"]
+          }
         }
+      });
+      responseText = response.text || "";
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[gemini] reanalyzeSpecificCharacter model "${m}" failed:`, err?.message || err);
+      if (!isModelUnavailableError(err)) {
+        throw err;
       }
-    });
-  };
-
-  let response;
-  try {
-    response = await runRequest(targetModel);
-  } catch (err) {
-    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
-      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
-      response = await runRequest('gemini-2.5-flash');
-    } else {
-      throw err;
     }
   }
 
+  if (!responseText && lastError) {
+    throw lastError;
+  }
+
   try {
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text);
+    if (!responseText) return null;
+    return JSON.parse(responseText);
   } catch (e) {
     return null;
   }
@@ -229,37 +237,41 @@ Return JSON only. No markdown. No explanation.`;
   const mimeMatch2 = imageData.match(/^data:([^;]+);base64,/);
   const mimeType2 = (mimeMatch2 ? mimeMatch2[1] : 'image/jpeg') as string;
 
-  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_VISION_MODEL;
+  const fallbackModels = getFallbackChain(modelName, true);
+  let responseText = "";
+  let lastError: any = null;
 
-  const runRequest = async (m: string) => {
-    return await ai.models.generateContent({
-      model: m,
-      contents: {
-        parts: [
-          { inlineData: { mimeType: mimeType2, data: base64Data } },
-          { text: prompt }
-        ]
-      },
-      config: { responseMimeType: "application/json" }
-    });
-  };
-
-  let response;
-  try {
-    response = await runRequest(targetModel);
-  } catch (err) {
-    if (isModelNotFoundError(err) && targetModel !== 'gemini-2.5-flash') {
-      console.warn(`[gemini] Model "${targetModel}" unavailable, retrying with "gemini-2.5-flash"`);
-      response = await runRequest('gemini-2.5-flash');
-    } else {
-      throw err;
+  for (const m of fallbackModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: {
+          parts: [
+            { inlineData: { mimeType: mimeType2, data: base64Data } },
+            { text: prompt }
+          ]
+        },
+        config: { responseMimeType: "application/json" }
+      });
+      responseText = response.text || "";
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[gemini] font match model "${m}" failed:`, err?.message || err);
+      if (!isModelUnavailableError(err)) {
+        throw err;
+      }
     }
   }
 
+  if (!responseText && lastError) {
+    throw lastError;
+  }
+
   try {
-    const text = response.text;
-    if (!text) return null;
-    return JSON.parse(text);
+    if (!responseText) return null;
+    return JSON.parse(responseText);
   } catch (e) {
     return null;
   }

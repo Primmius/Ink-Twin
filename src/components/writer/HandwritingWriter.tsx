@@ -33,7 +33,7 @@ import { cn } from '../../lib/utils';
 import { PageConfig, WriterPage, AppPhase, WriterElement, WriterImage, SavedFont } from '../../types';
 import { CanvasPage, renderCanvasPage } from './CanvasPage';
 import { wrapTextIntoPages } from '../../lib/localLayout';
-import { DEFAULT_LAYOUT_MODEL } from '../../lib/geminiModels';
+import { DEFAULT_LAYOUT_MODEL, getFallbackChain } from '../../lib/geminiModels';
 import { ModelSelector } from '../common/ModelSelector';
 import { 
   formatExpiryLabel, 
@@ -997,19 +997,28 @@ ${documentText}`;
         );
       };
 
-      let response = await callOnce(modelToUse);
+      const fallbackModels = getFallbackChain(modelToUse, false);
+      let response: Response | null = null;
+      let lastErrorText = "";
 
-      if (!response.ok) {
-        const errorBody = await response.text();
-        if (response.status === 404 || errorBody.toLowerCase().includes('not found') || errorBody.toLowerCase().includes('no longer available')) {
-          console.warn(`[HandwritingWriter] Model ${modelToUse} failed (404), attempting fallback to gemini-2.5-flash...`);
-          response = await callOnce('gemini-2.5-flash');
+      for (const m of fallbackModels) {
+        try {
+          const res = await callOnce(m);
+          if (res.ok) {
+            response = res;
+            break;
+          } else {
+            lastErrorText = await res.text();
+            console.warn(`[HandwritingWriter] Model ${m} returned HTTP ${res.status}:`, lastErrorText);
+          }
+        } catch (err: any) {
+          lastErrorText = err?.message || String(err);
+          console.warn(`[HandwritingWriter] Model ${m} fetch failed:`, err);
         }
-        if (!response.ok) {
-          const finalErr = await response.text();
-          console.error("Gemini API error:", finalErr);
-          throw new Error("API call failed: " + finalErr + " (Try selecting another model in the panel)");
-        }
+      }
+
+      if (!response || !response.ok) {
+        throw new Error("API call failed: " + lastErrorText + " (Try selecting another model in the panel)");
       }
 
       const data = await response.json();
