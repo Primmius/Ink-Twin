@@ -3,7 +3,8 @@ import {
   AVAILABLE_GEMINI_MODELS,
   DEFAULT_HUMANIZE_MODEL,
   GeminiModelOption,
-  isModelNotFoundError
+  getFallbackChain,
+  isModelUnavailableError
 } from "./geminiModels";
 
 export { AVAILABLE_GEMINI_MODELS, DEFAULT_HUMANIZE_MODEL, type GeminiModelOption };
@@ -72,44 +73,39 @@ CRITICAL RULES:
 TEXT TO HUMANIZE:
 ${text}`;
 
-  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_HUMANIZE_MODEL;
+  const fallbackModels = getFallbackChain(modelName, false);
+  let responseText = "";
+  let successfulModel = fallbackModels[0];
+  let lastError: any = null;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: targetModel,
-      contents: prompt,
-    });
-
-    return {
-      original: text,
-      humanized: response.text || text,
-      style,
-      modelUsed: targetModel,
-      timestamp: Date.now(),
-    };
-  } catch (err: any) {
-    console.warn(`Primary humanize call failed with model "${targetModel}":`, err);
-
-    // If model failed (deprecated, 404, or rate limit), try fallback to gemini-2.5-flash or gemini-2.0-flash
-    if (targetModel !== 'gemini-2.5-flash' && targetModel !== 'gemini-2.0-flash') {
-      try {
-        console.log('Attempting automatic fallback to gemini-2.5-flash...');
-        const fallbackRes = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: prompt,
-        });
-        return {
-          original: text,
-          humanized: fallbackRes.text || text,
-          style,
-          modelUsed: 'gemini-2.5-flash (Fallback)',
-          timestamp: Date.now(),
-        };
-      } catch (fallbackErr) {
-        console.error('Fallback model failed too:', fallbackErr);
+  for (const m of fallbackModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: prompt,
+      });
+      responseText = response.text || text;
+      successfulModel = m;
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[humanizeService] Model "${m}" failed:`, err?.message || err);
+      if (!isModelUnavailableError(err)) {
+        throw err;
       }
     }
-
-    throw err;
   }
+
+  if (!responseText && lastError) {
+    throw lastError;
+  }
+
+  return {
+    original: text,
+    humanized: responseText,
+    style,
+    modelUsed: successfulModel !== modelName ? `${successfulModel} (Fallback)` : successfulModel,
+    timestamp: Date.now(),
+  };
 }

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { DEFAULT_HOMEWORK_MODEL, isModelNotFoundError } from "./geminiModels";
+import { DEFAULT_HOMEWORK_MODEL, getFallbackChain, isModelUnavailableError } from "./geminiModels";
 
 export type HomeworkInput = {
   text?: string;
@@ -80,85 +80,89 @@ export async function solveHomework(
   const parts: any[] = [{ text: prompt }];
   if (input.imageData) {
     const base64Data = input.imageData.split(',')[1];
+    const mimeMatch = input.imageData.match(/^data:([^;]+);base64,/);
+    const mimeType = (mimeMatch ? mimeMatch[1] : 'image/jpeg') as string;
     parts.push({
       inlineData: {
-        mimeType: "image/jpeg",
+        mimeType: mimeType,
         data: base64Data,
       },
     });
   }
 
-  const targetModel = (modelName && modelName.trim()) ? modelName.trim() : DEFAULT_HOMEWORK_MODEL;
+  const fallbackModels = getFallbackChain(modelName, false);
   let responseText = "";
-  let effectiveModel = targetModel;
+  let successfulModel = fallbackModels[0];
+  let lastError: any = null;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: targetModel,
-      contents: { parts },
-      config: {
-        tools: [
-          {
-            googleSearch: {},
-          },
-        ],
-      }
-    });
-    responseText = response.text || "";
-  } catch (err: any) {
-    console.warn(`[homeworkService] Error with model ${targetModel}:`, err);
-    if (isModelNotFoundError(err) || targetModel === 'gemini-2.5-flash-lite') {
-      const fallback = targetModel !== 'gemini-2.5-flash' ? 'gemini-2.5-flash' : 'gemini-2.0-flash';
-      console.log(`[homeworkService] Attempting automatic fallback to ${fallback}...`);
-      try {
-        const fallbackRes = await ai.models.generateContent({
-          model: fallback,
-          contents: { parts },
-          config: {
-            tools: [{ googleSearch: {} }]
-          }
-        });
-        responseText = fallbackRes.text || "";
-        effectiveModel = `${fallback} (Auto Fallback)`;
-      } catch (fallbackErr) {
+  for (const m of fallbackModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: m,
+        contents: { parts },
+        config: {
+          tools: [
+            {
+              googleSearch: {},
+            },
+          ],
+        }
+      });
+      responseText = response.text || "";
+      successfulModel = m;
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[homeworkService] Model "${m}" failed:`, err?.message || err);
+      if (!isModelUnavailableError(err)) {
+        // If it is a real non-recoverable error (e.g. invalid API key), rethrow immediately
         throw err;
       }
-    } else {
-      throw err;
+      // If it is 404 or 429, continue to next model in the fallback chain
     }
+  }
+
+  if (!responseText && lastError) {
+    throw lastError;
   }
 
   const metaPrompt = `Based on the answer above, what is the 'subject' and 'difficulty' (Primary/Secondary/University)? Return ONLY JSON: {"subject": "...", "difficulty": "..."}`;
   let meta = { subject: "General", difficulty: "Unknown" };
   
-  try {
-    const metaResponse = await ai.models.generateContent({
-      model: effectiveModel.startsWith('gemini') ? effectiveModel.split(' ')[0] : DEFAULT_HOMEWORK_MODEL,
-      contents: responseText + "\n\n" + metaPrompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            subject: { type: Type.STRING },
-            difficulty: { type: Type.STRING }
-          },
-          required: ["subject", "difficulty"]
+  for (const m of [successfulModel, DEFAULT_HOMEWORK_MODEL, 'gemini-1.5-flash']) {
+    try {
+      const metaResponse = await ai.models.generateContent({
+        model: m,
+        contents: responseText + "\n\n" + metaPrompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              subject: { type: Type.STRING },
+              difficulty: { type: Type.STRING }
+            },
+            required: ["subject", "difficulty"]
+          }
         }
+      });
+      const metaJson = JSON.parse(metaResponse.text || '{}');
+      if (metaJson.subject) {
+        meta = metaJson;
+        break;
       }
-    });
-    const metaJson = JSON.parse(metaResponse.text || '{}');
-    meta = metaJson;
-  } catch (e) {
-    // meta extraction failure is non-critical
+    } catch (e) {
+      // Ignore meta extraction errors
+    }
   }
 
   return {
     subject: meta.subject || "General",
-    question: input.text || (input.imageData ? "Image Query" : "Homework Question"),
+    question: input.text || (input.imageData ? "Image / Document Query" : "Homework Question"),
     answer: responseText,
-    difficulty: meta.difficulty || "Unknown",
-    modelUsed: effectiveModel,
+    difficulty: meta.difficulty || "Secondary",
+    modelUsed: successfulModel !== modelName ? `${successfulModel} (Fallback)` : successfulModel,
     timestamp: Date.now()
   };
 }

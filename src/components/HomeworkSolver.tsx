@@ -179,7 +179,7 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
         onOpenSettings();
       } else {
         const rawMsg = err?.message || "Solver failed. Please try again.";
-        setError(`${rawMsg} (If this model is deprecated, try choosing Gemini 2.5 Flash, Gemini 2.0 Flash, or Gemini 1.5 Pro)`);
+        setError(`${rawMsg} (Try selecting Gemini 2.0 Flash or Gemini 1.5 Flash in the model selector above)`);
       }
     } finally {
       setIsProcessing(false);

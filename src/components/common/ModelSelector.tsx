@@ -117,7 +117,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             type="text"
             value={customModel}
             onChange={(e) => onChangeCustomModel(e.target.value)}
-            placeholder="e.g. gemini-2.5-flash"
+            placeholder="e.g. gemini-2.0-flash"
             className="w-full p-2 brutal-border bg-white dark:bg-neutral-800 font-mono text-xs outline-none focus:border-warning-yellow"
           />
           <p className="text-[9px] font-mono opacity-50 mt-1">
