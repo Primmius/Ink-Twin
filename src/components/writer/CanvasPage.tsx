@@ -548,7 +548,10 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
         } else {
           unlinedBaselineY += currentLineHeight; 
         }
-        tempLine = tempLine.replace('[GAP]', ''); 
+        tempLine = tempLine.replace(/\[GAP\]/g, ''); 
+        if (tempLine.trim() === '') {
+          return; // Gap line processed cleanly — do not double increment
+        }
       }
       if (tempLine.includes('[HEADING]')) { isHeading = true; tempLine = tempLine.replace('[HEADING]', ''); }
       if (tempLine.includes('[LINE:')) {
