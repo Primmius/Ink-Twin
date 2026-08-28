@@ -700,18 +700,22 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
       });
     });
     
-    // Note: CanvasPage components will redraw visually when props change
+    // Safety guard: guarantee currentPageIndex is never left out-of-bounds when pages shrink
+    setCurrentPageIndex(curr => Math.min(curr, Math.max(0, fitted.length - 1)));
   };
 
   const handleTextChange = (newPageContent: string) => {
     // 1. Update everything atomically to avoid state delays
     setPages(prev => {
+      const safeIdx = Math.min(Math.max(0, currentPageIndex), Math.max(0, prev.length - 1));
       const nextPages = prev.map((p, idx) => 
-        idx === currentPageIndex ? { ...p, content: newPageContent } : p
+        idx === safeIdx ? { ...p, content: newPageContent } : p
       );
       
-      // 2. Update full document text using the new pages array
-      const fullText = nextPages.map(p => p.content).join('\n\n');
+      // 2. If multiple pages exist, join with [BREAK] so manual pages are preserved across reflows
+      const fullText = nextPages.length > 1 
+        ? nextPages.map(p => p.content).join('\n[BREAK]\n')
+        : (nextPages[0]?.content || '');
       setInputText(fullText);
 
       // 3. Debounce the layout reflow
@@ -1420,15 +1424,21 @@ ${documentText}`;
       images: [], 
       elements: [] 
     };
-    updatePages([...pages, newPage]);
-    setCurrentPageIndex(pages.length);
+    const nextPages = [...pages, newPage];
+    updatePages(nextPages);
+    setCurrentPageIndex(nextPages.length - 1);
+    const fullText = nextPages.map(p => p.content).join('\n[BREAK]\n');
+    setInputText(fullText);
   };
 
   const removePage = (index: number) => {
-    if (pages.length === 1) return;
-    const newPages = pages.filter((_, i) => i !== index);
-    setPages(newPages);
-    setCurrentPageIndex(Math.max(0, index - 1));
+    if (pages.length <= 1) return;
+    const nextPages = pages.filter((_, i) => i !== index);
+    const newIndex = Math.max(0, Math.min(index, nextPages.length - 1));
+    updatePages(nextPages);
+    setCurrentPageIndex(newIndex);
+    const fullText = nextPages.map(p => p.content).join('\n[BREAK]\n');
+    setInputText(fullText);
   };
 
 
@@ -1536,6 +1546,14 @@ ${documentText}`;
     URL.revokeObjectURL(url);
   };
 
+  const safePageIndex = Math.min(Math.max(0, currentPageIndex), Math.max(0, pages.length - 1));
+  const currentPage: WriterPage = pages[safePageIndex] || pages[0] || {
+    id: 'default',
+    content: '',
+    images: [],
+    elements: []
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-950">
       {/* Top Toolbar */}
@@ -1610,19 +1628,19 @@ ${documentText}`;
           </button>
           {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
           <span className="font-mono text-xs font-bold px-2 text-neutral-800 dark:text-neutral-200">
-            PAGE {currentPageIndex + 1} OF {pages.length}
+            PAGE {safePageIndex + 1} OF {pages.length}
           </span>
           <button 
-            onClick={() => setCurrentPageIndex(Math.max(0, currentPageIndex - 1))} 
-            disabled={currentPageIndex === 0}
+            onClick={() => setCurrentPageIndex(Math.max(0, safePageIndex - 1))} 
+            disabled={safePageIndex === 0}
             className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
             title="Previous page"
           >
             <ChevronLeft size={18} />
           </button>
           <button 
-            onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, currentPageIndex + 1))} 
-            disabled={currentPageIndex >= pages.length - 1}
+            onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, safePageIndex + 1))} 
+            disabled={safePageIndex >= pages.length - 1}
             className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
             title="Next page"
           >
@@ -1637,7 +1655,7 @@ ${documentText}`;
             <Plus size={18} />
           </button>
           <button 
-            onClick={() => removePage(currentPageIndex)} 
+            onClick={() => removePage(safePageIndex)} 
             disabled={pages.length <= 1}
             className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 shadow-xs active:scale-95"
             title="Delete current page"
@@ -1679,106 +1697,106 @@ ${documentText}`;
                     const w = 200;
                     const h = 200 / ratio;
                     updatePages(prev => prev.map((page, idx) => 
-                      idx === currentPageIndex 
+                      idx === safePageIndex 
                         ? { ...page, images: [...page.images, { id: newId, src, x: 147, y: 150, width: w, height: h, layer: 'above', rotation: 0 }] }
                         : page
                     ));
                     setSelectedElementId(newId);
-                  };
-                  img.src = src;
-                };
-                reader.readAsDataURL(file);
-              }
-            }
-          }
-        }}
-      >
-        {/* Left Sidebar: Controls (Desktop Only) */}
-        {!isMobile && mode === 'default' && (
-          <aside className="w-80 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 overflow-y-auto p-6 space-y-8">
-            {renderFontLibrary()}
-            {renderPageStyle()}
-            {renderTypography()}
-            {renderEffects()}
-            
-            <section className="space-y-4">
-              <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
-                <FileUp size={14} /> Import Options
-              </h3>
-              <div className="space-y-2">
-                <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs">
-                  <FileUp size={14} />
-                  Import Excel/CSV
-                  <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleImportExcel} />
-                </label>
-              </div>
-            </section>
-          </aside>
-        )}
+                    };
+                    img.src = src;
+                    };
+                    reader.readAsDataURL(file);
+                    }
+                    }
+                    }
+                    }}
+                    >
+                    {/* Left Sidebar: Controls (Desktop Only) */}
+                    {!isMobile && mode === 'default' && (
+                    <aside className="w-80 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 overflow-y-auto p-6 space-y-8">
+                    {renderFontLibrary()}
+                    {renderPageStyle()}
+                    {renderTypography()}
+                    {renderEffects()}
+          
+                    <section className="space-y-4">
+                    <h3 className="text-[10px] uppercase font-bold tracking-widest opacity-60 flex items-center gap-2">
+                    <FileUp size={14} /> Import Options
+                    </h3>
+                    <div className="space-y-2">
+                    <label className="w-full brutal-btn flex items-center justify-center gap-2 cursor-pointer text-xs">
+                    <FileUp size={14} />
+                    Import Excel/CSV
+                    <input type="file" className="hidden" accept=".csv,.xlsx,.xls" onChange={handleImportExcel} />
+                    </label>
+                    </div>
+                    </section>
+                    </aside>
+                    )}
 
-        {/* Center: Canvas Area Workbench */}
-        <main className={cn(
-          "flex-grow flex flex-col items-center bg-neutral-200 dark:bg-[#0c0d11] overflow-x-hidden",
-          isMobile ? "gap-6 p-4 pb-36 overflow-y-auto" : "gap-12 p-12 overflow-auto"
-        )}>
-          {/* Canvas Wrapper for Scaling */}
-          <div
-            className="relative"
-            style={isMobile ? {
-              width: `${595 * mobileScale}px`,
-              height: `${842 * mobileScale}px`,
-              overflow: 'hidden',
-              transition: 'all 0.3s ease',
-              flexShrink: 0
-            } : { width: '595px', height: '842px' }}
-          >
-            <div
-              className="relative group shadow-2xl bg-white rounded-sm overflow-hidden"
-              style={{
-                width: '595px',
-                height: '842px',
-                transform: isMobile ? `scale(${mobileScale})` : undefined,
-                transformOrigin: 'top left',
-                backgroundColor: '#FFFFFF',
-              }}
-              ref={containerRef}
-              onClick={(e) => {
-                // FIX 3: convert click to canvas-internal coordinates before hit-testing
-                // so that element deselection works correctly on mobile-scaled canvases
-                if (containerRef.current) {
-                  const pos = getCanvasRelativePosition(e, containerRef.current);
-                  const hitEl = pages[currentPageIndex]?.elements.find(el => {
+                    {/* Center: Canvas Area Workbench */}
+                    <main className={cn(
+                    "flex-grow flex flex-col items-center bg-neutral-200 dark:bg-[#0c0d11] overflow-x-hidden",
+                    isMobile ? "gap-6 p-4 pb-36 overflow-y-auto" : "gap-12 p-12 overflow-auto"
+                    )}>
+                    {/* Canvas Wrapper for Scaling */}
+                    <div
+                    className="relative"
+                    style={isMobile ? {
+                    width: `${595 * mobileScale}px`,
+                    height: `${842 * mobileScale}px`,
+                    overflow: 'hidden',
+                    transition: 'all 0.3s ease',
+                    flexShrink: 0
+                    } : { width: '595px', height: '842px' }}
+                    >
+                    <div
+                    className="relative group shadow-2xl bg-white rounded-sm overflow-hidden"
+                    style={{
+                    width: '595px',
+                    height: '842px',
+                    transform: isMobile ? `scale(${mobileScale})` : undefined,
+                    transformOrigin: 'top left',
+                    backgroundColor: '#FFFFFF',
+                    }}
+                    ref={containerRef}
+                    onClick={(e) => {
+                    // FIX 3: convert click to canvas-internal coordinates before hit-testing
+                    // so that element deselection works correctly on mobile-scaled canvases
+                    if (containerRef.current) {
+                    const pos = getCanvasRelativePosition(e, containerRef.current);
+                    const hitEl = currentPage.elements.find(el => {
                     const w = el.width || 100;
                     const h = el.height || 24;
                     return pos.x >= el.x && pos.x <= el.x + w && pos.y >= el.y && pos.y <= el.y + h;
-                  });
-                  if (!hitEl) setSelectedElementId(null);
-                } else {
-                  setSelectedElementId(null);
-                }
-              }}
-            >
-              <CanvasPage 
-                key={`${effectiveFontName}-${fontVersion}`}
-                page={pages[currentPageIndex]} 
-                config={settings} 
-                fontName={effectiveFontName}
-                skipImages={true}
-              >
-                {/* Guides */}
-                {snapGuides && (
-                  <div className="absolute inset-0 pointer-events-none z-40">
+                    });
+                    if (!hitEl) setSelectedElementId(null);
+                    } else {
+                    setSelectedElementId(null);
+                    }
+                    }}
+                    >
+                    <CanvasPage 
+                    key={`${effectiveFontName}-${fontVersion}`}
+                    page={currentPage} 
+                    config={settings} 
+                    fontName={effectiveFontName}
+                    skipImages={true}
+                    >
+                    {/* Guides */}
+                    {snapGuides && (
+                    <div className="absolute inset-0 pointer-events-none z-40">
                     {snapGuides.x !== undefined && (
                       <div className="absolute top-0 bottom-0 w-[1px] border-l border-dashed border-warning-yellow bg-warning-yellow/20" style={{ left: snapGuides.x }} />
                     )}
                     {snapGuides.y !== undefined && (
                       <div className="absolute left-0 right-0 h-[1px] border-t border-dashed border-warning-yellow bg-warning-yellow/20" style={{ top: snapGuides.y }} />
                     )}
-                  </div>
-                )}
+                    </div>
+                    )}
 
                     <textarea
-                      value={pages[currentPageIndex].content}
+                      value={currentPage.content}
                       onChange={(e) => handleTextChange(e.target.value)}
                       onPaste={(e) => {
                         const pastedText = e.clipboardData.getData('text');
@@ -1795,7 +1813,7 @@ ${documentText}`;
                             letterSpacing: settings.letterSpacing,
                             paragraphSpacing: settings.paragraphSpacing
                           }, effectiveFontName);
-                          
+                        
                           const newPages: WriterPage[] = fitted.map(content => ({
                             id: Math.random().toString(36).substr(2, 9),
                             content,
@@ -1823,14 +1841,14 @@ ${documentText}`;
                       placeholder="Start writing directly on the page..."
                     />
 
-                {/* Interactive Element Overlays — Canva-style DOM rendering */}
-                <div className="absolute inset-0 pointer-events-none z-20">
-                  {[...pages[currentPageIndex].elements, ...pages[currentPageIndex].images].map((el) => {
+                    {/* Interactive Element Overlays — Canva-style DOM rendering */}
+                    <div className="absolute inset-0 pointer-events-none z-20">
+                    {[...currentPage.elements, ...currentPage.images].map((el) => {
                     const isSelected = selectedElementId === el.id;
                     const isImage = 'src' in el;
 
-                    const elWidth = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
-                    const elHeight = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
+                    const elWidth = el.width || (!isImage && (el as WriterElement).type === 'heading' ? 200 : (!isImage && (el as WriterElement).type === 'emoji' ? (el as WriterElement).fontSize || 40 : 100));
+                    const elHeight = el.height || (!isImage && (el as WriterElement).type === 'heading' ? 40 : (!isImage && (el as WriterElement).type === 'emoji' ? (el as WriterElement).fontSize || 40 : 24));
 
                     const startDrag = (e: React.PointerEvent) => {
                       if ((e.target as HTMLElement).dataset.handle) return;
