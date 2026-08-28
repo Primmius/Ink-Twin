@@ -1467,35 +1467,76 @@ ${documentText}`;
     const scale = getScale();
     const startX = e.clientX;
     const startY = e.clientY;
+    const origX = el.x;
+    const origY = el.y;
     const startW = el.width || (el.type === 'heading' ? 200 : (el.type === 'emoji' ? el.fontSize || 40 : 100));
     const startH = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
+    const aspectRatio = startW / startH;
+    const isAspectLocked = isImage || el.type === 'emoji';
 
     const onPointerMove = (moveE: PointerEvent) => {
       moveE.preventDefault();
       const deltaX = (moveE.clientX - startX) * scale;
       const deltaY = (moveE.clientY - startY) * scale;
 
+      let newX = origX;
+      let newY = origY;
       let newW = startW;
       let newH = startH;
 
-      if (corner.includes('right')) newW = startW + deltaX;
-      if (corner.includes('left')) newW = startW - deltaX;
-      if (corner.includes('bottom')) newH = startH + deltaY;
-      if (corner.includes('top')) newH = startH - deltaY;
-
-      if (el.type === 'emoji' || isImage) {
-        const ratio = startW / startH;
-        if (Math.abs(deltaX) >= Math.abs(deltaY)) {
-          newH = newW / ratio;
-        } else {
-          newW = newH * ratio;
+      if (isAspectLocked) {
+        // Canva-style proportional corner scaling anchored to opposite corner
+        if (corner === 'bottom-right') {
+          const domDelta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY * aspectRatio;
+          newW = Math.max(30, startW + domDelta);
+          newH = newW / aspectRatio;
+          newX = origX;
+          newY = origY;
+        } else if (corner === 'bottom-left') {
+          const domDelta = Math.abs(deltaX) > Math.abs(deltaY) ? -deltaX : deltaY * aspectRatio;
+          newW = Math.max(30, startW + domDelta);
+          newH = newW / aspectRatio;
+          newX = (origX + startW) - newW;
+          newY = origY;
+        } else if (corner === 'top-right') {
+          const domDelta = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : -deltaY * aspectRatio;
+          newW = Math.max(30, startW + domDelta);
+          newH = newW / aspectRatio;
+          newX = origX;
+          newY = (origY + startH) - newH;
+        } else if (corner === 'top-left') {
+          const domDelta = Math.abs(deltaX) > Math.abs(deltaY) ? -deltaX : -deltaY * aspectRatio;
+          newW = Math.max(30, startW + domDelta);
+          newH = newW / aspectRatio;
+          newX = (origX + startW) - newW;
+          newY = (origY + startH) - newH;
+        }
+      } else {
+        // Freeform resizing anchored to opposite corner
+        if (corner.includes('right')) {
+          newW = Math.max(30, startW + deltaX);
+          newX = origX;
+        }
+        if (corner.includes('left')) {
+          newW = Math.max(30, startW - deltaX);
+          newX = (origX + startW) - newW;
+        }
+        if (corner.includes('bottom')) {
+          newH = Math.max(20, startH + deltaY);
+          newY = origY;
+        }
+        if (corner.includes('top')) {
+          newH = Math.max(20, startH - deltaY);
+          newY = (origY + startH) - newH;
         }
       }
 
       updateElement(el.id, {
-        width: Math.max(20, newW),
-        height: Math.max(20, newH),
-        ...(el.type === 'emoji' && { fontSize: Math.max(10, Math.max(20, newH)) }),
+        x: Math.round(newX),
+        y: Math.round(newY),
+        width: Math.round(newW),
+        height: Math.round(newH),
+        ...(el.type === 'emoji' && { fontSize: Math.round(Math.max(10, newH)) }),
       }, true);
     };
 
@@ -1918,20 +1959,22 @@ ${documentText}`;
                             {/* Selection border */}
                             <div className="absolute inset-[-3px] border-2 border-warning-yellow bg-warning-yellow/5 pointer-events-none" />
 
-                            {/* Corner resize handles */}
+                            {/* Corner resize handles — Canva-style circular pills with generous touch hit area */}
                             {[
-                              { pos: '-top-2 -left-2', cursor: 'cursor-nw-resize', corner: 'top-left' },
-                              { pos: '-top-2 -right-2', cursor: 'cursor-ne-resize', corner: 'top-right' },
-                              { pos: '-bottom-2 -left-2', cursor: 'cursor-sw-resize', corner: 'bottom-left' },
-                              { pos: '-bottom-2 -right-2', cursor: 'cursor-se-resize', corner: 'bottom-right' },
+                              { pos: '-top-3.5 -left-3.5', cursor: 'cursor-nwse-resize', corner: 'top-left' },
+                              { pos: '-top-3.5 -right-3.5', cursor: 'cursor-nesw-resize', corner: 'top-right' },
+                              { pos: '-bottom-3.5 -left-3.5', cursor: 'cursor-nesw-resize', corner: 'bottom-left' },
+                              { pos: '-bottom-3.5 -right-3.5', cursor: 'cursor-nwse-resize', corner: 'bottom-right' },
                             ].map(({ pos, cursor, corner }) => (
                               <div
                                 key={corner}
                                 data-handle="resize"
-                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-warning-yellow rounded-sm ${cursor} z-50 shadow touch-none select-none`}
+                                className={`absolute ${pos} w-7 h-7 flex items-center justify-center ${cursor} z-50 touch-none select-none`}
                                 style={{ touchAction: 'none' }}
                                 onPointerDown={(e) => { e.stopPropagation(); onResizeStart(e, corner); }}
-                              />
+                              >
+                                <div className="w-3.5 h-3.5 bg-white border-2 border-warning-yellow rounded-full shadow-[0_2px_4px_rgba(0,0,0,0.4)] hover:scale-125 active:scale-150 transition-transform" />
+                              </div>
                             ))}
 
                             {/* Rotation handle */}
