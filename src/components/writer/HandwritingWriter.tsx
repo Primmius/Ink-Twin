@@ -1453,6 +1453,12 @@ ${documentText}`;
   const onResizeStart = (e: React.PointerEvent, corner: string) => {
     e.stopPropagation();
     e.preventDefault();
+    const currentTarget = e.currentTarget;
+    const pointerId = e.pointerId;
+    try {
+      currentTarget.setPointerCapture(pointerId);
+    } catch (err) {}
+
     const el = pages[currentPageIndex].elements.find(element => element.id === selectedElementId) || 
                pages[currentPageIndex].images.find(img => img.id === selectedElementId);
     if (!el) return;
@@ -1465,6 +1471,7 @@ ${documentText}`;
     const startH = el.height || (el.type === 'heading' ? 40 : (el.type === 'emoji' ? el.fontSize || 40 : 24));
 
     const onPointerMove = (moveE: PointerEvent) => {
+      moveE.preventDefault();
       const deltaX = (moveE.clientX - startX) * scale;
       const deltaY = (moveE.clientY - startY) * scale;
 
@@ -1493,13 +1500,18 @@ ${documentText}`;
     };
 
     const onPointerUp = () => {
+      try {
+        currentTarget.releasePointerCapture(pointerId);
+      } catch (err) {}
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
       updateElement(el.id, {});
     };
 
-    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
     window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
   };
 
   const downloadPDF = async () => {
@@ -1836,6 +1848,13 @@ ${documentText}`;
                       if ((e.target as HTMLElement).dataset.handle) return;
                       e.stopPropagation();
                       e.preventDefault();
+                      
+                      const currentTarget = e.currentTarget;
+                      const pointerId = e.pointerId;
+                      try {
+                        currentTarget.setPointerCapture(pointerId);
+                      } catch (err) {}
+
                       setSelectedElementId(el.id);
                       const scale = getScale();
                       const startX = e.clientX;
@@ -1845,6 +1864,7 @@ ${documentText}`;
                       let moved = false;
 
                       const onMove = (me: PointerEvent) => {
+                        me.preventDefault();
                         moved = true;
                         const dx = (me.clientX - startX) * scale;
                         const dy = (me.clientY - startY) * scale;
@@ -1853,19 +1873,24 @@ ${documentText}`;
                         updateElement(el.id, { x: snapResult.x, y: snapResult.y }, true);
                       };
                       const onUp = () => {
+                        try {
+                          currentTarget.releasePointerCapture(pointerId);
+                        } catch (err) {}
                         window.removeEventListener('pointermove', onMove);
                         window.removeEventListener('pointerup', onUp);
+                        window.removeEventListener('pointercancel', onUp);
                         setSnapGuides(null);
                         if (moved) updateElement(el.id, {});
                       };
-                      window.addEventListener('pointermove', onMove);
+                      window.addEventListener('pointermove', onMove, { passive: false });
                       window.addEventListener('pointerup', onUp);
+                      window.addEventListener('pointercancel', onUp);
                     };
 
                     return (
                       <div
                         key={el.id}
-                        className={cn("absolute pointer-events-auto cursor-move select-none", isSelected ? "z-50" : "z-20")}
+                        className={cn("absolute pointer-events-auto cursor-move select-none touch-none", isSelected ? "z-50" : "z-20")}
                         style={{
                           left: el.x,
                           top: el.y,
@@ -1873,6 +1898,7 @@ ${documentText}`;
                           height: elHeight,
                           transform: `rotate(${el.rotation || 0}deg)`,
                           transformOrigin: 'center center',
+                          touchAction: 'none'
                         }}
                         onPointerDown={startDrag}
                         onClick={(e) => { e.stopPropagation(); setSelectedElementId(el.id); }}
@@ -1882,7 +1908,7 @@ ${documentText}`;
                           <img
                             src={(el as WriterImage).src}
                             draggable={false}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none', pointerEvents: 'none' }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', userSelect: 'none', pointerEvents: 'none', touchAction: 'none' }}
                             alt=""
                           />
                         )}
@@ -1902,7 +1928,8 @@ ${documentText}`;
                               <div
                                 key={corner}
                                 data-handle="resize"
-                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-warning-yellow rounded-sm ${cursor} z-50 shadow`}
+                                className={`absolute ${pos} w-3.5 h-3.5 bg-white border-2 border-warning-yellow rounded-sm ${cursor} z-50 shadow touch-none select-none`}
+                                style={{ touchAction: 'none' }}
                                 onPointerDown={(e) => { e.stopPropagation(); onResizeStart(e, corner); }}
                               />
                             ))}
@@ -1910,22 +1937,38 @@ ${documentText}`;
                             {/* Rotation handle */}
                             <div
                               data-handle="rotate"
-                              className="absolute -top-11 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-alias z-50"
+                              className="absolute -top-11 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-alias z-50 touch-none select-none"
+                              style={{ touchAction: 'none' }}
                               onPointerDown={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
+                                const currentTarget = e.currentTarget;
+                                const pointerId = e.pointerId;
+                                try {
+                                  currentTarget.setPointerCapture(pointerId);
+                                } catch (err) {}
                                 const rect = (e.currentTarget.parentElement as HTMLElement).getBoundingClientRect();
                                 const cx = rect.left + rect.width / 2;
                                 const cy = rect.top + rect.height / 2;
                                 const onMove = (me: PointerEvent) => {
+                                  me.preventDefault();
                                   let deg = Math.atan2(me.clientY - cy, me.clientX - cx) * (180 / Math.PI) + 90;
                                   const snaps = [0, 45, 90, 135, 180, 225, 270, 315, 360];
                                   for (const a of snaps) { if (Math.abs((deg % 360 + 360) % 360 - a) < 5) { deg = a; break; } }
                                   updateElement(el.id, { rotation: deg }, true);
                                 };
-                                const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); updateElement(el.id, {}); };
-                                window.addEventListener('pointermove', onMove);
+                                const onUp = () => { 
+                                  try {
+                                    currentTarget.releasePointerCapture(pointerId);
+                                  } catch (err) {}
+                                  window.removeEventListener('pointermove', onMove); 
+                                  window.removeEventListener('pointerup', onUp); 
+                                  window.removeEventListener('pointercancel', onUp); 
+                                  updateElement(el.id, {}); 
+                                };
+                                window.addEventListener('pointermove', onMove, { passive: false });
                                 window.addEventListener('pointerup', onUp);
+                                window.addEventListener('pointercancel', onUp);
                               }}
                             >
                               <div className="w-[1px] h-6 bg-warning-yellow" />
