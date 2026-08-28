@@ -53,11 +53,38 @@ export function wrapTextIntoPages(text: string, config: LayoutConfig, fontName: 
         }
       }
 
-      const tempCurrentY = line.includes('[GAP]') ? currentY + currentLineHeight : currentY;
+      const isGapLine = line.includes('[GAP]');
+      const cleanLine = line.replace(/\[GAP\]/g, '');
       const effectiveLineHeight = line.includes('[HEADING]') ? currentLineHeight * 1.4 : currentLineHeight;
 
+      if (isGapLine && cleanLine.trim() === '') {
+        if (currentY + currentLineHeight > maxHeight) {
+          pages.push(currentPageLines.join('\n'));
+          currentPageLines = [];
+          currentY = 0;
+        }
+        currentPageLines.push('[GAP]');
+        currentY += currentLineHeight;
+        return;
+      }
+
+      if (cleanLine.trim() === '') {
+        if (currentY + effectiveLineHeight > maxHeight) {
+          pages.push(currentPageLines.join('\n'));
+          currentPageLines = [];
+          currentY = 0;
+        }
+        currentPageLines.push('');
+        currentY += effectiveLineHeight;
+        return;
+      }
+
+      if (isGapLine) {
+        currentY += currentLineHeight;
+      }
+
       let currentIsBold = false;
-      const words = line.split(' ');
+      const words = cleanLine.split(' ');
       let currentLine = '';
       let currentX = 0;
 

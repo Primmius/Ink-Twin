@@ -34,6 +34,7 @@ import { PageConfig, WriterPage, AppPhase, WriterElement, WriterImage, SavedFont
 import { CanvasPage, renderCanvasPage } from './CanvasPage';
 import { wrapTextIntoPages } from '../../lib/localLayout';
 import { DEFAULT_LAYOUT_MODEL, getFallbackChain } from '../../lib/geminiModels';
+import { formatDocumentWithAI } from '../../lib/documentFormatService';
 import { ModelSelector } from '../common/ModelSelector';
 import { 
   formatExpiryLabel, 
@@ -740,6 +741,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   const [lastAIText, setLastAIText] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiProgressStatus, setAiProgressStatus] = useState<string | null>(null);
   const [showAIWarning, setShowAIWarning] = useState(false);
   const [aiPartialData, setAiPartialData] = useState<{validatedText: string, newSettings: PageConfig} | null>(null);
 
@@ -837,118 +839,9 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
 
   const handleAIEdit = async () => {
     setAiError(null);
+    setAiProgressStatus(null);
     const documentText = pages.map(p => p.content).join('\n\n');
     const userInstruction = aiUserInstruction;
-
-    const fullPrompt = `You are a handwriting document formatter. 
-Your job is to take a plain text document and 
-re-output the ENTIRE document with formatting 
-tags inserted correctly.
-
-CRITICAL RULES YOU MUST FOLLOW:
-
-RULE 1 — TAG EVERY SINGLE LINE:
-You must add an [INK:color] tag before EVERY 
-line of text in the document without exception.
-Never leave any line without an ink color tag.
-If a line has no tag the color bleeds from the 
-previous line which breaks the formatting.
-
-RULE 2 — COLOR DOES NOT AUTO RESET:
-The ink color stays the same until you 
-explicitly change it with a new [INK:] tag.
-So if you set [INK:blue] on line 5 and forget 
-to tag line 6, line 6 will also be blue.
-This is why EVERY line must have its own tag.
-
-RULE 3 — OUTPUT THE COMPLETE DOCUMENT:
-You must output every single line of the 
-input document in your response.
-Do not summarize, skip, truncate, or stop early.
-Even if the document is very long, output all of it.
-If you stop early the missing content is lost forever.
-
-RULE 4 — NEVER ADD EXTRA TEXT:
-Do not add explanations, comments, notes, 
-or any text that was not in the original document.
-Only output the original text with tags added.
-
-RULE 5 — TAG FORMAT IS EXACT:
-Tags must be written exactly like this:
-[INK:black]
-[INK:blue]
-[INK:red]
-[HEADING]
-[GAP]
-[BREAK]
-[CENTER]
-[SIZE:20]
-No spaces inside tags. No other formats accepted.
-
----
-
-HOW TO FORMAT A HOMEWORK DOCUMENT:
-
-For a document with questions and answers 
-use this logic for every single line:
-
-- Question numbers and labels → [INK:black]
-- Subject, difficulty, requirement lines → [INK:black]
-- Lines that start with Step → [INK:red]
-- Step content and explanation lines → [INK:red]
-- FINAL ANSWER label → [INK:black]
-- Answer content lines → [INK:blue]
-- QUESTION headings → [HEADING][INK:black]
-- Blank lines between sections → [GAP]
-
-EXAMPLE OF CORRECT OUTPUT:
-
-[HEADING][INK:black]QUESTION 1
-[INK:black]1. Subject Area: Mathematics
-[INK:black]2. Specific Question: Prove the square root
-[INK:black]of 2 is irrational.
-[INK:black]3. Difficulty Level: University
-[INK:black]4. Requirement: Step by step working.
-[GAP]
-[INK:red]Step 1. Assume for contradiction that root 2
-[INK:red]is rational. Write it as a/b with no common
-[INK:red]factors and b not zero.
-[GAP]
-[INK:red]Step 2. Square both sides.
-[INK:red]2 equals a squared over b squared.
-[GAP]
-[INK:black]FINAL ANSWER
-[INK:blue]The root 2 is irrational because
-[INK:blue]assuming it is rational leads to contradiction.
-[BREAK]
-
-NOTICE in the example above:
-- Every single line has [INK:tag] before it
-- Steps are red
-- Answers are blue
-- Labels and questions are black
-- [GAP] appears between sections
-- [BREAK] appears at end of each question
-
----
-
-NOW APPLY THE USER INSTRUCTION:
-
-The user's instruction tells you which colors 
-and styles to use. Follow it exactly.
-If user says steps in red, every step line gets 
-[INK:red] before it, no exceptions.
-If user says answers in blue, every answer line 
-gets [INK:blue] before it, no exceptions.
-
-Apply these rules to the ENTIRE document.
-Start from line 1 and go to the very last line.
-Do not stop until the entire document is tagged.
-
-User instruction: ${userInstruction}
-
-Document to format:
-${documentText}`;
 
     try {
       if (!apiKey || !apiKey.trim()) {
@@ -957,113 +850,38 @@ ${documentText}`;
       if (!documentText || documentText.trim() === "") {
         throw new Error("Document is empty");
       }
+      if (!userInstruction || userInstruction.trim() === "") {
+        throw new Error("Please enter an instruction for the AI (e.g. 'headings black and data blue')");
+      }
 
       // Save current state for undo
       const undoSnapshot = JSON.parse(JSON.stringify(pages));
       setLastAIPages(undoSnapshot);
       setLastAIText(inputText);
 
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: fullPrompt
-              }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.3,
-          maxOutputTokens: 8192
-        }
-      };
-
-      console.log("Gemini Request Body:", JSON.stringify(requestBody, null, 2));
       setIsAIProcessing(true);
       
       const modelToUse = isCustomModelActive && customModel.trim() ? customModel.trim() : selectedModel;
 
-      const callOnce = async (m: string) => {
-        return await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(m)}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBody)
-          }
-        );
-      };
-
-      const fallbackModels = getFallbackChain(modelToUse, false);
-      let response: Response | null = null;
-      let lastErrorText = "";
-
-      for (const m of fallbackModels) {
-        try {
-          const res = await callOnce(m);
-          if (res.ok) {
-            response = res;
-            break;
-          } else {
-            lastErrorText = await res.text();
-            console.warn(`[HandwritingWriter] Model ${m} returned HTTP ${res.status}:`, lastErrorText);
-          }
-        } catch (err: any) {
-          lastErrorText = err?.message || String(err);
-          console.warn(`[HandwritingWriter] Model ${m} fetch failed:`, err);
+      const formattedText = await formatDocumentWithAI({
+        documentText,
+        userInstruction,
+        apiKey,
+        modelName: modelToUse,
+        onProgress: (prog) => {
+          setAiProgressStatus(prog.message);
         }
-      }
+      });
 
-      if (!response || !response.ok) {
-        throw new Error("API call failed: " + lastErrorText + " (Try selecting another model in the panel)");
-      }
-
-      const data = await response.json();
-      const rawText = data.contents?.[0]?.parts?.[0]?.text 
-        || data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      console.log("Gemini Raw Response:", rawText);
-
-      if (!rawText || rawText.trim() === "") {
+      if (!formattedText || formattedText.trim() === "") {
         throw new Error("AI returned empty content — no changes made");
       }
-
-      // Line count safety check
-      const originalLines = documentText.split('\n').filter(l => l.trim() !== "").length;
-      const responseLines = rawText.split('\n').filter(l => l.trim() !== "").length;
 
       // Safe tag parser to ensure content integrity only — does NOT mutate global settings
-      // FIX 1: keep newSettings as a clean copy of current settings so that AI ink color
+      // Keep newSettings as a clean copy of current settings so that AI ink color
       // tags in the text don't permanently overwrite the user's chosen global ink color.
       let newSettings = { ...settings };
-      const parseTaggedContent = (text: string) => {
-        const parts = text.split(/(\[INK:[^\]]+\]|\[SIZE:\d+\]|\[HEADING\]|\[CENTER\]|\[GAP\]|\[BREAK\]|\[BOLD\]|\[NORMAL\]|\[LINE:\d+\])/);
-
-        let hasContent = false;
-        for (const part of parts) {
-          if (part && !part.startsWith('[') && part.trim() !== "") {
-            hasContent = true;
-            break;
-          }
-        }
-        return hasContent ? text : null;
-      };
-
-      const validatedText = parseTaggedContent(rawText);
-      if (!validatedText) {
-        throw new Error("AI returned empty content — no changes made");
-      }
-
-      if (responseLines < originalLines * 0.7) {
-        setAiPartialData({ validatedText, newSettings });
-        setShowAIWarning(true);
-        return;
-      }
-
-      applyAIResult(validatedText, newSettings);
+      applyAIResult(formattedText, newSettings);
     } catch (e: any) {
       console.error("AI Edit error:", e);
       const msg = e?.message || "";
@@ -1077,9 +895,9 @@ ${documentText}`;
       } else {
         setAiError(e.message || "Failed to call Gemini API");
       }
-      // Recovery is handled by ensuring setPages is NOT called with bad data
     } finally {
       setIsAIProcessing(false);
+      setAiProgressStatus(null);
     }
   };
 
@@ -2051,6 +1869,7 @@ ${documentText}`;
                     <h3 className="font-mono text-[10px] font-bold uppercase opacity-60 tracking-widest">Quick Presets</h3>
                     <div className="flex flex-wrap gap-2">
                       {[
+                        "Headings black, data blue",
                         "Questions black, answers blue",
                         "Student rough notes style",
                         "Exam answer sheet format",
@@ -2149,7 +1968,7 @@ ${documentText}`;
                       {isAIProcessing ? (
                         <>
                           <RefreshCw size={20} className="animate-spin" />
-                          <span>AI is editing...</span>
+                          <span className="truncate max-w-[220px]">{aiProgressStatus || "AI is editing..."}</span>
                         </>
                       ) : (
                         <>
@@ -2346,11 +2165,15 @@ ${documentText}`;
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-brutal-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white"
+            className="fixed inset-0 z-[100] bg-brutal-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-6 text-center"
           >
             <Sparkles size={80} className="animate-pulse text-warning-yellow mb-8" />
-            <h2 className="text-4xl font-display uppercase tracking-tighter mb-4">Gemini is writing...</h2>
-            <p className="font-mono text-sm opacity-60">OPTIMIZING LAYOUT & DISTRIBUTING TEXT</p>
+            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-tighter mb-4">
+              {aiProgressStatus || "Formatting Document..."}
+            </h2>
+            <p className="font-mono text-xs md:text-sm opacity-70 uppercase tracking-wider max-w-md">
+              Preserving full text & applying natural handwriting styles
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
