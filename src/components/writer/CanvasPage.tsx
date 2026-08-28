@@ -97,26 +97,35 @@ export const renderCanvasPage = async (
   // 1. Draw Background
   drawBackground(ctx, width, height, config);
 
+  if (!page) return;
+
+  const safePage: WriterPage = {
+    id: page.id || 'default',
+    content: page.content || '',
+    images: page.images || [],
+    elements: page.elements || []
+  };
+
   // 2. Draw Below Layer
   if (!skipImages) {
-    for (const img of page.images.filter(i => i.layer === 'below')) {
+    for (const img of safePage.images.filter(i => i.layer === 'below')) {
       await drawImage(ctx, img, imageCache);
     }
   }
-  for (const el of page.elements.filter(e => e.layer === 'below')) {
+  for (const el of safePage.elements.filter(e => e.layer === 'below')) {
     drawElement(ctx, el, config, fontName);
   }
 
   // 3. Draw Handwritten Text
-  drawText(ctx, page.content, config, fontName, width, height);
+  drawText(ctx, safePage.content, config, fontName, width, height);
 
   // 4. Draw Above Layer
   if (!skipImages) {
-    for (const img of page.images.filter(i => i.layer === 'above')) {
+    for (const img of safePage.images.filter(i => i.layer === 'above')) {
       await drawImage(ctx, img, imageCache);
     }
   }
-  for (const el of page.elements.filter(e => e.layer === 'above' || !e.layer)) {
+  for (const el of safePage.elements.filter(e => e.layer === 'above' || !e.layer)) {
     drawElement(ctx, el, config, fontName);
   }
 
