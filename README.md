@@ -54,6 +54,27 @@ Whether you need to **convert text to realistic handwritten notes**, **create a 
 
 ---
 
+## 🏛️ Reimagining the Smart City with Google Gemini
+
+<div align="center">
+  <img src="./docs/assets/inktwin-reimagined-city-visual.jpg" alt="InkTwin in the Reimagined Smart City" width="100%" />
+  <p><em>InkTwin ambient learning station in a sustainable smart city hub — bridging physical handwriting with Google Gemini AI vectorization.</em></p>
+</div>
+
+### Civic & Educational Impact
+* **Preserving Human Individuality**: In a future filled with sterile digital screens and homogenized synthetic fonts, InkTwin empowers citizens and students to retain their physical handwriting identity as a personal digital asset.
+* **Accessible Civic Literacy**: Bridges analog paper and digital systems for students, elderly residents, and non-technical citizens without requiring expensive hardware.
+* **Powered by Google Gemini**: Built and verified in **Google AI Studio** leveraging multimodal spatial reasoning:
+  - **`gemini-3-flash-preview`**: Spatial glyph bounding box detection and handwriting segmentation from camera snaps.
+  - **`gemini-2.0-flash`**: Step-by-step homework reasoning, STEM problem solving, and student voice humanization.
+
+<div align="center">
+  <img src="./docs/assets/google-ai-studio-proof.jpg" alt="Google AI Studio Gemini 3.8 Flash Verification" width="45%" />
+  <p><em>Google AI Studio pipeline verification with Gemini 3.8 Flash and gemini-3-flash-preview.</em></p>
+</div>
+
+---
+
 ## 🚀 Quick Start & Deployment
 
 ### Local Development
