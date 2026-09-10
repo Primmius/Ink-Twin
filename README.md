@@ -57,6 +57,11 @@ Whether you need to **convert text to realistic handwritten notes**, **create a 
 ## 🏛️ Reimagining the Smart City with Google Gemini
 
 <div align="center">
+  <img src="./docs/assets/inktwin-poster.jpg" alt="InkTwin AI Campaign Poster" width="100%" />
+  <p><em>Official Campaign Poster: InkTwin ambient homework & STEM spatial vectorization companion.</em></p>
+</div>
+
+<div align="center">
   <img src="./docs/assets/inktwin-reimagined-city-visual.jpg" alt="InkTwin in the Reimagined Smart City" width="100%" />
   <p><em>InkTwin ambient learning station in a sustainable smart city hub — bridging physical handwriting with Google Gemini AI vectorization.</em></p>
 </div>
