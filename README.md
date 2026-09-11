@@ -5,14 +5,21 @@
 ### **The #1 Free AI Web App for Text to Handwriting & Handwriting-to-Font Creation**
 #### *AI Study Helper & Homework Solver That Writes Assignments in Your Exact Personal Handwriting*
 
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-yellow.svg)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.5+-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3+-61DAFB.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.0+-646CFF.svg)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4+-38B2AC.svg)](https://tailwindcss.com/)
-[![Privacy: Client-Side BYOK](https://img.shields.io/badge/Privacy-100%25%20Client--Side%20BYOK-success.svg)](#-privacy--security)
+<p align="center">
+  <a href="https://inktwin.primuez.in"><img src="https://img.shields.io/badge/Live_App-inktwin.primuez.in-00f0ff?style=for-the-badge&logo=googlechrome&logoColor=black" alt="Live App" /></a>
+  <a href="https://github.com/Primmius"><img src="https://img.shields.io/badge/Author-Rahul_Kasturiya-f5a623?style=for-the-badge&logo=github&logoColor=black" alt="Author" /></a>
+  <a href="https://primuez.in"><img src="https://img.shields.io/badge/Ecosystem-Primuez-white?style=for-the-badge&logo=vercel&logoColor=black" alt="Ecosystem" /></a>
+</p>
 
-**[🌐 Launch Free Web App: inktwin.primuez.in](https://inktwin.primuez.in)**
+<p align="center">
+  <img src="https://img.shields.io/badge/License-AGPL_v3-yellow.svg?style=flat-square" alt="AGPL v3" />
+  <img src="https://img.shields.io/badge/TypeScript-5.5+-blue.svg?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/React-18.3+-61DAFB.svg?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Vite-6.0+-646CFF.svg?style=flat-square&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/Tailwind-3.4+-06B6D4.svg?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/AI-Google_Gemini-8E75B2.svg?style=flat-square&logo=google&logoColor=white" alt="Gemini AI" />
+  <img src="https://img.shields.io/badge/Privacy-100%25_Client--Side_BYOK-success.svg?style=flat-square" alt="Privacy" />
+</p>
 
 </div>
 
