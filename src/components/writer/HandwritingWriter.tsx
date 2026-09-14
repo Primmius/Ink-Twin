@@ -751,7 +751,8 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     const tagLabel = colorTag.replace(/\[INK:|\]/g, '');
 
     if (!textarea) {
-      const newText = `${colorTag}${inputText}`;
+      const cleaned = inputText.replace(/^(\[INK:[^\]]+\]\s*)+/, '');
+      const newText = `${colorTag}${cleaned}`;
       setInputText(newText);
       renderPage(settings, newText);
       setToast(`Applied ${tagLabel} ink!`);
@@ -763,32 +764,100 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     const val = textarea.value;
 
     if (start !== end && start >= 0 && end <= val.length) {
+      // Range is highlighted
       const selected = val.substring(start, end);
-      // Strip any existing leading ink tag
-      const cleaned = selected.replace(/^\[INK:[^\]]+\]/, '');
-      const replacement = `${colorTag}${cleaned}[INK:default]`;
+      const cleaned = selected.replace(/\[INK:[^\]]+\]\s*/g, '');
+      const replacement = colorTag === '[INK:default]' ? cleaned : `${colorTag}${cleaned}[INK:default]`;
       const newText = val.substring(0, start) + replacement + val.substring(end);
       setInputText(newText);
       renderPage(settings, newText);
-      setToast(`Applied ${tagLabel} ink to selected text!`);
+      setToast(`Applied ${tagLabel} ink to selection!`);
       setTimeout(() => {
         try {
           textarea.focus();
           textarea.setSelectionRange(start, start + replacement.length);
         } catch (e) {}
-      }, 50);
+      }, 30);
     } else {
-      const cursor = start >= 0 ? start : val.length;
-      const newText = val.substring(0, cursor) + colorTag + val.substring(cursor);
+      // Cursor is at a single position: smart replace instead of duplicate stacking
+      const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+      const nextNewline = val.indexOf('\n', start);
+      const lineEnd = nextNewline === -1 ? val.length : nextNewline;
+      const currentLine = val.substring(lineStart, lineEnd);
+
+      const beforeCursor = val.substring(0, start);
+      const afterCursor = val.substring(start);
+
+      // Check if cursor is right adjacent to an existing tag
+      const prevTagMatch = beforeCursor.match(/\[INK:[^\]]+\]\s*$/);
+      const nextTagMatch = afterCursor.match(/^\s*\[INK:[^\]]+\]/);
+
+      if (prevTagMatch) {
+        // Replace previous tag
+        const tagStart = start - prevTagMatch[0].length;
+        const newText = val.substring(0, tagStart) + (colorTag === '[INK:default]' ? '' : colorTag) + afterCursor;
+        setInputText(newText);
+        renderPage(settings, newText);
+        setToast(`Switched ink to ${tagLabel}!`);
+        setTimeout(() => {
+          try {
+            textarea.focus();
+            const newPos = tagStart + (colorTag === '[INK:default]' ? 0 : colorTag.length);
+            textarea.setSelectionRange(newPos, newPos);
+          } catch (e) {}
+        }, 30);
+        return;
+      }
+
+      if (nextTagMatch) {
+        // Replace next tag
+        const tagEnd = start + nextTagMatch[0].length;
+        const newText = beforeCursor + (colorTag === '[INK:default]' ? '' : colorTag) + val.substring(tagEnd);
+        setInputText(newText);
+        renderPage(settings, newText);
+        setToast(`Switched ink to ${tagLabel}!`);
+        setTimeout(() => {
+          try {
+            textarea.focus();
+            const newPos = start + (colorTag === '[INK:default]' ? 0 : colorTag.length);
+            textarea.setSelectionRange(newPos, newPos);
+          } catch (e) {}
+        }, 30);
+        return;
+      }
+
+      // If current line already has leading ink tags, replace them all
+      const leadingTagMatch = currentLine.match(/^(\[INK:[^\]]+\]\s*)+/);
+      if (leadingTagMatch) {
+        const lineContent = currentLine.replace(/^(\[INK:[^\]]+\]\s*)+/, '');
+        const updatedLine = colorTag === '[INK:default]' ? lineContent : `${colorTag}${lineContent}`;
+        const newText = val.substring(0, lineStart) + updatedLine + val.substring(lineEnd);
+        setInputText(newText);
+        renderPage(settings, newText);
+        setToast(`Switched line ink to ${tagLabel}!`);
+        setTimeout(() => {
+          try {
+            textarea.focus();
+            const newPos = lineStart + (colorTag === '[INK:default]' ? 0 : colorTag.length);
+            textarea.setSelectionRange(newPos, newPos);
+          } catch (e) {}
+        }, 30);
+        return;
+      }
+
+      // Otherwise prepend to line
+      const updatedLine = colorTag === '[INK:default]' ? currentLine : `${colorTag}${currentLine}`;
+      const newText = val.substring(0, lineStart) + updatedLine + val.substring(lineEnd);
       setInputText(newText);
       renderPage(settings, newText);
-      setToast(`Inserted ${tagLabel} ink at cursor`);
+      setToast(`Set line ink to ${tagLabel}`);
       setTimeout(() => {
         try {
           textarea.focus();
-          textarea.setSelectionRange(cursor + colorTag.length, cursor + colorTag.length);
+          const newPos = lineStart + (colorTag === '[INK:default]' ? 0 : colorTag.length);
+          textarea.setSelectionRange(newPos, newPos);
         } catch (e) {}
-      }, 50);
+      }, 30);
     }
   };
 
@@ -797,29 +866,42 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
       setToast("Enter text first to format Q&A!");
       return;
     }
+
     const lines = inputText.split('\n');
-    let currentBlock: 'question' | 'answer' = 'question';
+    // Strip all existing [INK:...] tags first to inspect pure text
+    const cleanedLines = lines.map(line => line.replace(/\[INK:[^\]]+\]\s*/g, '').trim());
 
-    const formatted = lines.map(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return line;
+    // Detect question lines
+    const isQuestionLine = cleanedLines.map(clean => {
+      if (!clean) return false;
+      if (/\?["')\]]*$/.test(clean) || /\?$/.test(clean)) return true;
+      if (/^(q\d*[:.]|\bquestion\b|\bque\b|\bproblem\b|\bexercise\b|\btask\b|\bprompt\b)/i.test(clean)) return true;
+      if (/^\d+[\).]\s.*(\?|find|calculate|explain|describe|what|how|why|when|where|who|which|define|state|solve|prove|list)/i.test(clean)) return true;
+      return false;
+    });
 
-      const isQuestion = 
-        /^(q\d*[:.]|\bquestion\b|\bque\b|\bproblem\b|\bexercise\b|\bprompt\b|\d+[\).]\s)/i.test(trimmed) ||
-        trimmed.endsWith('?');
+    const hasAnyQuestions = isQuestionLine.some(Boolean);
+    let currentStyle: 'black' | 'blue' = 'blue';
 
-      const isAnswer = 
-        /^(ans\d*[:.]|\banswer\b|\bsol\b|\bsolution\b)/i.test(trimmed);
+    const formatted = lines.map((line, idx) => {
+      const clean = cleanedLines[idx];
+      if (!clean) return '';
 
-      if (isQuestion) {
-        currentBlock = 'question';
-      } else if (isAnswer) {
-        currentBlock = 'answer';
+      if (hasAnyQuestions) {
+        if (isQuestionLine[idx]) {
+          currentStyle = 'black';
+        } else if (
+          /^(ans\d*[:.]|\banswer\b|\bsol\b|\bsolution\b|\ba[:.])/i.test(clean) ||
+          (idx > 0 && isQuestionLine[idx - 1])
+        ) {
+          currentStyle = 'blue';
+        }
+      } else {
+        // Fallback: alternate questions and answers
+        currentStyle = (idx % 2 === 0) ? 'black' : 'blue';
       }
 
-      const cleanLine = line.replace(/^\[INK:[^\]]+\]/, '');
-      const tag = currentBlock === 'question' ? '[INK:black]' : '[INK:blue]';
-      return `${tag}${cleanLine}`;
+      return `[INK:${currentStyle}]${clean}`;
     });
 
     const newText = formatted.join('\n');
@@ -832,14 +914,13 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     if (!inputText.trim()) return;
     const lines = inputText.split('\n');
     const formatted = lines.map(line => {
-      const trimmed = line.trim();
-      if (!trimmed) return line;
-      const isHeading = line.includes('[HEADING]') || /^(#|chapter|section|unit|experiment|topic)/i.test(trimmed);
-      const cleanLine = line.replace(/^\[INK:[^\]]+\]/, '');
+      const clean = line.replace(/\[INK:[^\]]+\]\s*/g, '').trim();
+      if (!clean) return '';
+      const isHeading = line.includes('[HEADING]') || /^(#|chapter|section|unit|experiment|topic|title)/i.test(clean);
       if (isHeading) {
-        return cleanLine.includes('[HEADING]') ? `[INK:red]${cleanLine}` : `[INK:red][HEADING]${cleanLine}`;
+        return line.includes('[HEADING]') ? `[INK:red]${clean}` : `[INK:red][HEADING]${clean}`;
       }
-      return `[INK:blue]${cleanLine}`;
+      return `[INK:blue]${clean}`;
     });
     const newText = formatted.join('\n');
     setInputText(newText);
@@ -848,7 +929,11 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
   };
 
   const clearAllInkTags = () => {
-    const cleaned = inputText.replace(/\[INK:[^\]]+\]/g, '');
+    const cleaned = inputText
+      .replace(/\[INK:[^\]]+\]\s*/g, '')
+      .split('\n')
+      .map(l => l.trimStart())
+      .join('\n');
     setInputText(cleaned);
     renderPage(settings, cleaned);
     setToast("Reset all text to document base ink");
@@ -874,9 +959,10 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
             <button
               key={ink.id}
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => applyInkToSelection(ink.tag)}
               className="group relative flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-warning-yellow active:scale-95 transition-all text-xs font-mono shadow-2xs cursor-pointer"
-              title={`Apply ${ink.label} Ink to selection or cursor`}
+              title={`Apply ${ink.label} Ink to selection or line`}
             >
               <span className="w-3 h-3 rounded-full shadow-xs shrink-0" style={{ backgroundColor: ink.color }} />
               <span className="text-[11px] font-semibold text-neutral-800 dark:text-neutral-200">{ink.label}</span>
@@ -886,7 +972,8 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
           {/* Custom Color Picker */}
           <label 
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-warning-yellow cursor-pointer text-xs font-mono shadow-2xs"
-            title="Choose custom ink color for selection"
+            title="Choose custom ink color for selection or line"
+            onMouseDown={(e) => e.preventDefault()}
           >
             <input
               type="color"
@@ -899,9 +986,10 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
 
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => applyInkToSelection('[INK:default]')}
-            className="px-2 py-1.5 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 active:scale-95 transition-colors cursor-pointer"
-            title="Revert selected text to document base ink"
+            className="px-2.5 py-1.5 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 active:scale-95 transition-colors cursor-pointer"
+            title="Revert selected text or line to document base ink"
           >
             Default
           </button>
@@ -911,6 +999,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={applySmartQAColors}
             className="px-2.5 py-1.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 text-[11px] font-display font-bold uppercase tracking-tight flex items-center gap-1 shadow-2xs active:scale-95 transition-all cursor-pointer"
             title="Instant 1-Click: Questions in Black ink, Answers in Blue ink"
@@ -921,6 +1010,7 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
 
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={applyHeadingRedBodyBlue}
             className="px-2.5 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-[10px] font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white active:scale-95 transition-all cursor-pointer"
             title="Headings in Red ink, Body text in Blue ink"
@@ -928,18 +1018,21 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
             Headings Red
           </button>
 
+          {/* Explicitly labeled Clear Tags button */}
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={clearAllInkTags}
-            className="p-1.5 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 text-[10px] font-mono cursor-pointer"
-            title="Clear all color tags"
+            className="px-2.5 py-1.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 flex items-center gap-1 active:scale-95 transition-all cursor-pointer shadow-2xs"
+            title="Remove all inline ink tags and reset to document base ink"
           >
-            <RotateCcw size={13} />
+            <RotateCcw size={12} />
+            <span>Clear Tags</span>
           </button>
         </div>
       </div>
       <p className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
-        💡 Tip: Select text and tap a color to style it, or tap <strong>⚡ Q Black · A Blue</strong> for instant homework colorization.
+        💡 Tap a color to style the current line or highlighted text. Tap <strong>⚡ Q Black · A Blue</strong> for instant Q&amp;A formatting, or <strong>Clear Tags</strong> to reset.
       </p>
     </div>
   );
