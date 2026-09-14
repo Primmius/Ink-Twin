@@ -309,7 +309,7 @@ export default function App() {
     setIsApiKeyModalOpen(true);
   };
 
-  const saveApiKey = (key: string) => {
+  const saveApiKey = (key: string, redirectOnHome = true) => {
     const cleanKey = key.trim();
     setApiKey(cleanKey);
     localStorage.setItem('geminiApiKey', cleanKey);
@@ -317,7 +317,11 @@ export default function App() {
     setIsApiKeyModalOpen(false);
     setIsSettingsOpen(false);
     setError(null);
-    setToast("API key saved!");
+    setToast("API key saved! Ready to create fonts & solve homework.");
+    if (redirectOnHome && phase === 'home') {
+      setPhase('font-creation');
+      setStep(1);
+    }
   };
 
   const handleDownloadTemplate = async () => {
@@ -561,14 +565,44 @@ export default function App() {
 
   if (phase === 'home') {
     return (
-      <LandingPage
-        onSaveKey={saveApiKey}
-        onExplore={(p) => setPhase(p || 'font-creation')}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        apiKey={apiKey}
-        onOpenApiKeyModal={() => promptApiKey()}
-      />
+      <>
+        <LandingPage
+          onSaveKey={(key) => saveApiKey(key, true)}
+          onExplore={(p) => setPhase(p || 'font-creation')}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          apiKey={apiKey}
+          onOpenApiKeyModal={() => promptApiKey()}
+        />
+
+        {/* API Key Modal on Home */}
+        <ApiKeyModal
+          isOpen={isApiKeyModalOpen || isSettingsOpen}
+          onClose={() => {
+            setIsApiKeyModalOpen(false);
+            setIsSettingsOpen(false);
+          }}
+          onSave={(key) => saveApiKey(key, true)}
+          currentKey={apiKey}
+          isInvalid={apiKeyModalInvalid}
+          customMessage={apiKeyModalMessage}
+        />
+
+        {/* Notification Toast on Home */}
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 20, scale: 0.95 }}
+              className="fixed bottom-6 right-6 z-[100] px-4 py-3 rounded-2xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 font-display text-xs uppercase font-bold tracking-wider shadow-2xl flex items-center gap-2 border border-neutral-700"
+            >
+              <Sparkles className="text-warning-yellow" size={16} />
+              <span>{toast}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </>
     );
   }
 

@@ -104,13 +104,16 @@ const features: Array<{
 export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, theme, onToggleTheme, apiKey, onOpenApiKeyModal }) => {
   const [keyInput, setKeyInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [demoText, setDemoText] = useState('InkTwin turns your handwriting into a real digital font.');
   const [demoInk, setDemoInk] = useState('#1e3a8a'); // Royal Blue
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (keyInput.trim()) {
-      onSaveKey(keyInput.trim());
+    const clean = keyInput.trim();
+    if (clean) {
+      setIsSaving(true);
+      onSaveKey(clean);
       setKeyInput('');
     }
   };
@@ -170,10 +173,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* API Key Status Badge */}
+          <button
+            onClick={() => onOpenApiKeyModal ? onOpenApiKeyModal() : null}
+            className={cn(
+              "px-2.5 py-1.5 rounded-xl border text-[11px] font-mono font-semibold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer",
+              apiKey 
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400" 
+                : "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+            )}
+            title="Google Gemini API Connection"
+          >
+            <div className={cn("w-2 h-2 rounded-full", apiKey ? "bg-emerald-500" : "bg-amber-500 animate-pulse")} />
+            <span className="hidden sm:inline">{apiKey ? "AI Connected" : "Connect AI"}</span>
+          </button>
+
           <button
             onClick={onToggleTheme}
             aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-            className="w-10 h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-800 dark:text-neutral-100 hover:bg-neutral-200 dark:hover:bg-neutral-700 active:scale-95 transition-all cursor-pointer"
           >
             {theme === 'light' ? <Moon size={18} className="text-neutral-800" /> : <Sun size={18} className="text-warning-yellow" />}
           </button>
@@ -181,7 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
           {onExplore && (
             <button
               onClick={() => onExplore('font-creation')}
-              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform"
+              className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider items-center gap-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
             >
               <span>Get Started</span>
               <ChevronRight size={16} />
@@ -284,9 +302,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 <button
                   type="button"
                   onClick={() => onOpenApiKeyModal ? onOpenApiKeyModal() : null}
-                  className="w-full sm:w-auto px-3.5 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-display font-bold uppercase tracking-wider hover:bg-neutral-100 dark:hover:bg-neutral-700 active:scale-95 transition-all text-center"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 text-xs font-display font-bold uppercase tracking-wider active:scale-95 transition-all text-center cursor-pointer shadow-xs"
                 >
-                  Manage Key
+                  Manage / Change Key
                 </button>
               </div>
             ) : (
@@ -346,11 +364,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                       </div>
                       <button
                         type="submit"
-                        disabled={!keyInput.trim()}
-                        className="w-full py-2.5 rounded-lg bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        disabled={!keyInput.trim() || isSaving}
+                        className="w-full py-2.5 rounded-lg bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
                       >
-                        <span>Save Key &amp; Start</span>
-                        <ChevronRight size={16} />
+                        {isSaving ? (
+                          <>
+                            <Sparkles size={15} className="animate-spin text-neutral-950" />
+                            <span>Saving &amp; Starting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Save Key &amp; Start</span>
+                            <ChevronRight size={16} />
+                          </>
+                        )}
                       </button>
                     </form>
                   </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Key, ChevronRight, X, ExternalLink, ShieldCheck, AlertTriangle } from 'lucide-react';
 
@@ -21,6 +21,13 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
 }) => {
   const [inputKey, setInputKey] = useState(currentKey);
   const [inputError, setInputError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setInputKey(currentKey || '');
+      setInputError(null);
+    }
+  }, [isOpen, currentKey]);
 
   if (!isOpen) return null;
 
