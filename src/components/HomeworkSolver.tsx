@@ -413,8 +413,24 @@ export const HomeworkSolver: React.FC<HomeworkSolverProps> = ({ apiKey, onSendTo
               </div>
             </div>
             {result && (
-               <div className="flex gap-2">
-                 <button onClick={copyToClipboard} className="p-2 brutal-border hover:bg-warning-yellow transition-colors" title="Copy">
+               <div className="flex items-center gap-1.5 flex-wrap">
+                 <button 
+                   onClick={() => onSendToWriter(editableAnswer)} 
+                   className="px-2.5 py-1.5 rounded-lg bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase flex items-center gap-1 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                   title="Send directly to Studio Writer in your handwriting font"
+                 >
+                   <Edit3 size={13} />
+                   <span>To Studio</span>
+                 </button>
+                 <button 
+                   onClick={() => onSendToHumanizer(editableAnswer)} 
+                   className="px-2 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 font-display font-bold text-[11px] uppercase flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                   title="Rewrite with AI Humanizer"
+                 >
+                   <Sparkles size={13} className="text-warning-yellow" />
+                   <span>Humanize</span>
+                 </button>
+                 <button onClick={copyToClipboard} className="p-2 rounded-lg border border-neutral-300 dark:border-neutral-700 hover:bg-warning-yellow hover:text-neutral-950 transition-colors" title="Copy answer">
                    <Copy size={14} />
                  </button>
                </div>

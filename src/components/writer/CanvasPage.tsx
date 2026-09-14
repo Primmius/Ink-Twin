@@ -539,7 +539,7 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
   let currentLineIndex = 0;
   let unlinedBaselineY = config.topMargin + config.fontSize * 0.85;
 
-  const rgb = hexToRgb(currentInkColor);
+  let rgb = hexToRgb(currentInkColor);
   const paragraphs = text.split('\n\n');
 
   paragraphs.forEach((paragraph, pIdx) => {
@@ -640,8 +640,8 @@ const drawTextContent = (ctx: CanvasRenderingContext2D, text: string, config: Pa
         if (part.startsWith('[INK:')) {
           const color = part.match(/\[INK:([^\]]+)\]/)?.[1];
           if (color) {
-            currentInkColor = (color === 'black' ? '#000000' : (color === 'blue' ? '#1a1aff' : (color === 'red' ? '#cc0000' : color)));
-            if (config.pageStyle === 'blackboard' && color === 'black') currentInkColor = '#FFFFFF';
+            currentInkColor = resolveInkColor(color, config);
+            rgb = hexToRgb(currentInkColor);
             if (!isShadow) ctx.fillStyle = currentInkColor;
           }
         } else if (part.startsWith('[SIZE:')) {
@@ -767,8 +767,22 @@ const applyEffects = (ctx: CanvasRenderingContext2D, w: number, h: number, effec
   }
 };
 
+export const resolveInkColor = (color: string, config: PageConfig): string => {
+  const c = color.trim().toLowerCase();
+  if (c === 'default') return config.pageStyle === 'blackboard' ? '#FFFFFF' : config.inkColor;
+  if (c === 'black') return config.pageStyle === 'blackboard' ? '#FFFFFF' : '#000000';
+  if (c === 'blue') return '#1e3a8a'; // Classic royal ballpoint blue
+  if (c === 'red') return '#cc0000';
+  if (c === 'green' || c === 'emerald') return '#047857';
+  if (c === 'purple' || c === 'violet') return '#7c3aed';
+  if (c === 'amber' || c === 'brown') return '#78350f';
+  if (c.startsWith('#')) return c;
+  return color;
+};
+
 const hexToRgb = (hex: string) => {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  const cleanHex = hex.startsWith('#') ? hex : '#000000';
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(cleanHex);
   return result ? {
     r: parseInt(result[1], 16),
     g: parseInt(result[2], 16),

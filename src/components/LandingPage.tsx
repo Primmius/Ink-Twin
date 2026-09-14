@@ -13,7 +13,11 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Key,
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
@@ -25,6 +29,8 @@ interface LandingPageProps {
   onExplore?: (phase?: AppPhase) => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  apiKey?: string;
+  onOpenApiKeyModal?: () => void;
 }
 
 const features: Array<{
@@ -95,14 +101,18 @@ const features: Array<{
   },
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, theme, onToggleTheme }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, theme, onToggleTheme, apiKey, onOpenApiKeyModal }) => {
   const [keyInput, setKeyInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [demoText, setDemoText] = useState('InkTwin turns your handwriting into a real digital font.');
   const [demoInk, setDemoInk] = useState('#1e3a8a'); // Royal Blue
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (keyInput.trim()) onSaveKey(keyInput.trim());
+    if (keyInput.trim()) {
+      onSaveKey(keyInput.trim());
+      setKeyInput('');
+    }
   };
 
   const samplePhrases = [
@@ -232,6 +242,134 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 <Zap size={14} className="text-warning-yellow" /> Instant TTF Export
               </span>
             </div>
+          </section>
+
+          {/* Gemini API Key Setup Card — Positioned prominently right after hero introduction */}
+          <section
+            className="rounded-2xl border-2 border-warning-yellow/80 dark:border-warning-yellow/60 p-4 sm:p-6 space-y-4 bg-white dark:bg-neutral-900 shadow-xl relative overflow-hidden"
+            aria-labelledby="setup-heading"
+          >
+            <div className="absolute top-0 right-0 w-36 h-36 bg-warning-yellow/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-warning-yellow/20 text-neutral-900 dark:text-warning-yellow text-[10px] font-mono font-bold uppercase tracking-widest mb-1">
+                  <Key size={12} className="text-warning-yellow" />
+                  <span>[BYOK_SETUP] FREE GEMINI API KEY</span>
+                </div>
+                <h3 id="setup-heading" className="font-display font-bold text-xl sm:text-2xl text-neutral-900 dark:text-white">
+                  {apiKey ? "Google Gemini AI Connected" : "Connect Google Gemini to Get Started"}
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono text-neutral-500 shrink-0">
+                {apiKey ? "✓ Ready to use" : "100% Free · No Card Needed"}
+              </span>
+            </div>
+
+            {apiKey ? (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500 text-neutral-950 flex items-center justify-center font-bold shrink-0">
+                    <Check size={18} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      AI Features Active ({apiKey.slice(0, 6)}...{apiKey.slice(-4)})
+                    </span>
+                    <p className="text-[11px] text-neutral-600 dark:text-neutral-400">
+                      Handwriting extraction, homework solver &amp; smart styling are fully unlocked.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onOpenApiKeyModal ? onOpenApiKeyModal() : null}
+                  className="w-full sm:w-auto px-3.5 py-2 rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-xs font-display font-bold uppercase tracking-wider hover:bg-neutral-100 dark:hover:bg-neutral-700 active:scale-95 transition-all text-center"
+                >
+                  Manage Key
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  A free Gemini API key powers handwriting character detection, homework solving, and multi-color note generation. Stored safely only in your device's browser.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700/60 flex flex-col justify-between space-y-2">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 block">
+                        Step 1 — Get Free API Key
+                      </span>
+                      <p className="text-xs text-neutral-700 dark:text-neutral-300">
+                        Takes 30 seconds on Google AI Studio. No credit card required.
+                      </p>
+                    </div>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-700 dark:hover:bg-neutral-600 text-white font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition-all"
+                    >
+                      <span>Open Google AI Studio</span>
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700/60 flex flex-col justify-between space-y-2">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 block">
+                        Step 2 — Paste &amp; Start
+                      </span>
+                      <p className="text-xs text-neutral-700 dark:text-neutral-300">
+                        Stored only on this device. Never sent to our servers.
+                      </p>
+                    </div>
+                    <form onSubmit={handleSubmit} className="space-y-2">
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          value={keyInput}
+                          onChange={(e) => setKeyInput(e.target.value)}
+                          placeholder="AIzaSy..."
+                          autoComplete="new-password"
+                          className="w-full pl-3 pr-9 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 text-xs font-mono focus:ring-2 focus:ring-warning-yellow outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-0.5"
+                          aria-label={showPassword ? "Hide key" : "Show key"}
+                        >
+                          {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={!keyInput.trim()}
+                        className="w-full py-2.5 rounded-lg bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      >
+                        <span>Save Key &amp; Start</span>
+                        <ChevronRight size={16} />
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                {onExplore && (
+                  <div className="pt-1 flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => onExplore('font-creation')}
+                      className="text-xs font-mono font-bold text-neutral-500 hover:text-neutral-900 dark:hover:text-warning-yellow inline-flex items-center gap-1 transition-colors"
+                    >
+                      <span>Explore App Without Key</span>
+                      <ChevronRight size={13} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </section>
 
           {/* Interactive Mobile Live Handwriting Demo */}
@@ -443,81 +581,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 </p>
               </div>
             </div>
-          </section>
-
-          {/* Gemini API Key Setup Card */}
-          <section
-            className="rounded-2xl border-2 border-neutral-300 dark:border-neutral-700 p-6 space-y-5 bg-white dark:bg-neutral-900 shadow-lg"
-            aria-labelledby="setup-heading"
-          >
-            <div>
-              <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 font-bold block mb-1">
-                [BYOK_SETUP] FREE GEMINI API KEY
-              </span>
-              <h3 id="setup-heading" className="font-display font-bold text-2xl text-neutral-900 dark:text-white">
-                Connect Google Gemini
-              </h3>
-              <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                A free Gemini API key enables AI character extraction and the homework solver. No credit card required.
-              </p>
-            </div>
-
-            <ol className="space-y-2.5 text-xs sm:text-sm text-neutral-700 dark:text-neutral-300">
-              <li className="flex gap-2.5 items-start">
-                <span className="w-6 h-6 rounded-md bg-warning-yellow text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
-                  1
-                </span>
-                <span>
-                  Go to{' '}
-                  <a
-                    href="https://aistudio.google.com/app/apikey"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-bold text-warning-yellow underline decoration-2 underline-offset-2 inline-flex items-center gap-0.5"
-                  >
-                    Google AI Studio <ChevronRight size={14} />
-                  </a>{' '}
-                  and click "Create API Key".
-                </span>
-              </li>
-              <li className="flex gap-2.5 items-start">
-                <span className="w-6 h-6 rounded-md bg-warning-yellow text-neutral-950 font-bold font-mono text-xs flex items-center justify-center shrink-0">
-                  2
-                </span>
-                <span>Paste your key below (stored securely only on your device).</span>
-              </li>
-            </ol>
-
-            <form onSubmit={handleSubmit} className="space-y-3 pt-2">
-              <input
-                type="password"
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="AIzaSy..."
-                autoComplete="new-password"
-                className="w-full px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-sm font-mono focus:ring-2 focus:ring-warning-yellow outline-none"
-              />
-
-              <button
-                type="submit"
-                disabled={!keyInput.trim()}
-                className="w-full py-3 rounded-xl bg-warning-yellow hover:bg-amber-300 text-black font-display font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-              >
-                <span>Save Key &amp; Start</span>
-                <ChevronRight size={18} />
-              </button>
-
-              {onExplore && (
-                <button
-                  type="button"
-                  onClick={() => onExplore('font-creation')}
-                  className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <span>Explore App Without Key</span>
-                  <ChevronRight size={14} />
-                </button>
-              )}
-            </form>
           </section>
 
           {/* Founder Note & Support */}

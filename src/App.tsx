@@ -328,6 +328,14 @@ export default function App() {
     a.href = url;
     a.download = 'InkTwin_Template.pdf';
     a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadCleanTemplate = () => {
+    const a = document.createElement('a');
+    a.href = '/InkTwin_Clean_Template.pdf';
+    a.download = 'InkTwin_Clean_Template.pdf';
+    a.click();
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -558,6 +566,8 @@ export default function App() {
         onExplore={(p) => setPhase(p || 'font-creation')}
         theme={theme}
         onToggleTheme={toggleTheme}
+        apiKey={apiKey}
+        onOpenApiKeyModal={() => promptApiKey()}
       />
     );
   }
@@ -833,7 +843,7 @@ export default function App() {
                           </label>
                         </div>
 
-                        {/* Option 3: Download A4 Grid Template */}
+                        {/* Option 3: Download A4 Printable Templates */}
                         <div className="p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-sm flex flex-col justify-between">
                           <div className="space-y-2">
                             <div className="w-10 h-10 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center">
@@ -843,16 +853,30 @@ export default function App() {
                               Download Printable Template
                             </h3>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                              Print our pre-formatted A4 boxes to write in with a black pen, then photograph it.
+                              Print our pre-formatted A4 sheets to write in with a black pen, then photograph it.
                             </p>
                           </div>
-                          <button
-                            onClick={handleDownloadTemplate}
-                            className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-display font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center gap-2 transition-colors"
-                          >
-                            <Download size={15} />
-                            Download PDF Grid
-                          </button>
+                          <div className="space-y-2">
+                            <button
+                              onClick={handleDownloadTemplate}
+                              className="w-full py-2.5 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xs active:scale-95 transition-all cursor-pointer"
+                              title="Download standard multi-page character grid template"
+                            >
+                              <Download size={15} />
+                              Standard Grid PDF
+                            </button>
+                            <button
+                              onClick={handleDownloadCleanTemplate}
+                              className="w-full py-2.5 rounded-xl border border-neutral-300 dark:border-neutral-700 font-display font-bold text-xs uppercase tracking-wider text-neutral-800 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                              title="Download clean single-sheet alternative template"
+                            >
+                              <FileText size={15} className="text-warning-yellow" />
+                              Clean Sheet PDF (Alt)
+                            </button>
+                            <span className="text-[10px] font-mono text-neutral-500 block text-center">
+                              If standard grid fails, try the clean alternative template.
+                            </span>
+                          </div>
                         </div>
 
                         {/* Option 4: Draw directly on screen */}
@@ -1434,85 +1458,85 @@ export default function App() {
 
       {/* Mobile Bottom Navigation Dock (All 6 Tabs Always Accessible) */}
       <nav 
-        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 md:hidden flex items-center justify-between px-1 py-1.5 pb-safe shadow-lg"
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg border-t border-neutral-200 dark:border-neutral-800 md:hidden flex items-center justify-between px-1.5 py-1 pb-safe shadow-lg"
         aria-label="Mobile Navigation Dock"
       >
         <button
           onClick={handleGoHome}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'home' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <Home size={16} className={phase === 'home' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Home</span>
+          <Home size={17} className={phase === 'home' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Home</span>
         </button>
 
         <button
           onClick={() => setPhase('font-creation')}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'font-creation' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <PenTool size={16} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Create</span>
+          <PenTool size={17} className={phase === 'font-creation' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Create</span>
         </button>
 
         <button
           onClick={() => setPhase('text-writer')}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'text-writer' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <FileText size={16} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Studio</span>
+          <FileText size={17} className={phase === 'text-writer' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Studio</span>
         </button>
 
         <button
           onClick={() => setPhase('homework-solver')}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'homework-solver' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <GraduationCap size={16} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Solver</span>
+          <GraduationCap size={17} className={phase === 'homework-solver' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Solver</span>
         </button>
 
         <button
           onClick={() => setPhase('ai-humanizer')}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'ai-humanizer' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <Sparkles size={16} className={phase === 'ai-humanizer' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Humanizer</span>
+          <Sparkles size={17} className={phase === 'ai-humanizer' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Humanizer</span>
         </button>
 
         <button
           onClick={() => setPhase('find-font')}
           className={cn(
-            "flex flex-col items-center justify-center gap-0.5 py-1 px-1.5 rounded-xl transition-all active:scale-90 flex-1",
+            "flex flex-col items-center justify-center gap-0.5 py-1.5 px-1 rounded-xl transition-all active:scale-90 flex-1 min-h-[48px]",
             phase === 'find-font' 
-              ? "text-warning-yellow font-bold" 
-              : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white"
+              ? "bg-warning-yellow/15 text-neutral-950 dark:text-warning-yellow font-bold" 
+              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
           )}
         >
-          <Search size={16} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
-          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap">Find Font</span>
+          <Search size={17} className={phase === 'find-font' ? "text-warning-yellow" : ""} />
+          <span className="text-[9px] font-display uppercase tracking-tight whitespace-nowrap font-bold">Find Font</span>
         </button>
       </nav>
 

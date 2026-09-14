@@ -27,7 +27,12 @@ import {
   AlertTriangle,
   Clock,
   Upload,
-  Info
+  Info,
+  Columns,
+  FileText,
+  Check,
+  Zap,
+  Eye
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { PageConfig, WriterPage, AppPhase, WriterElement, WriterImage, SavedFont } from '../../types';
@@ -736,7 +741,209 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     renderPage(next);
   };
 
-  const [inputText, setInputText] = useState('');
+  const [inputText, setInputText] = useState(initialText || 'Type your text here...');
+  const [mobileViewMode, setMobileViewMode] = useState<'split' | 'editor' | 'preview'>('split');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Smart multi-color text helpers
+  const applyInkToSelection = (colorTag: string) => {
+    const textarea = textareaRef.current;
+    const tagLabel = colorTag.replace(/\[INK:|\]/g, '');
+
+    if (!textarea) {
+      const newText = `${colorTag}${inputText}`;
+      setInputText(newText);
+      renderPage(settings, newText);
+      setToast(`Applied ${tagLabel} ink!`);
+      return;
+    }
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const val = textarea.value;
+
+    if (start !== end && start >= 0 && end <= val.length) {
+      const selected = val.substring(start, end);
+      // Strip any existing leading ink tag
+      const cleaned = selected.replace(/^\[INK:[^\]]+\]/, '');
+      const replacement = `${colorTag}${cleaned}[INK:default]`;
+      const newText = val.substring(0, start) + replacement + val.substring(end);
+      setInputText(newText);
+      renderPage(settings, newText);
+      setToast(`Applied ${tagLabel} ink to selected text!`);
+      setTimeout(() => {
+        try {
+          textarea.focus();
+          textarea.setSelectionRange(start, start + replacement.length);
+        } catch (e) {}
+      }, 50);
+    } else {
+      const cursor = start >= 0 ? start : val.length;
+      const newText = val.substring(0, cursor) + colorTag + val.substring(cursor);
+      setInputText(newText);
+      renderPage(settings, newText);
+      setToast(`Inserted ${tagLabel} ink at cursor`);
+      setTimeout(() => {
+        try {
+          textarea.focus();
+          textarea.setSelectionRange(cursor + colorTag.length, cursor + colorTag.length);
+        } catch (e) {}
+      }, 50);
+    }
+  };
+
+  const applySmartQAColors = () => {
+    if (!inputText.trim()) {
+      setToast("Enter text first to format Q&A!");
+      return;
+    }
+    const lines = inputText.split('\n');
+    let currentBlock: 'question' | 'answer' = 'question';
+
+    const formatted = lines.map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+
+      const isQuestion = 
+        /^(q\d*[:.]|\bquestion\b|\bque\b|\bproblem\b|\bexercise\b|\bprompt\b|\d+[\).]\s)/i.test(trimmed) ||
+        trimmed.endsWith('?');
+
+      const isAnswer = 
+        /^(ans\d*[:.]|\banswer\b|\bsol\b|\bsolution\b)/i.test(trimmed);
+
+      if (isQuestion) {
+        currentBlock = 'question';
+      } else if (isAnswer) {
+        currentBlock = 'answer';
+      }
+
+      const cleanLine = line.replace(/^\[INK:[^\]]+\]/, '');
+      const tag = currentBlock === 'question' ? '[INK:black]' : '[INK:blue]';
+      return `${tag}${cleanLine}`;
+    });
+
+    const newText = formatted.join('\n');
+    setInputText(newText);
+    renderPage(settings, newText);
+    setToast("Formatted: Questions in Black, Answers in Blue!");
+  };
+
+  const applyHeadingRedBodyBlue = () => {
+    if (!inputText.trim()) return;
+    const lines = inputText.split('\n');
+    const formatted = lines.map(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return line;
+      const isHeading = line.includes('[HEADING]') || /^(#|chapter|section|unit|experiment|topic)/i.test(trimmed);
+      const cleanLine = line.replace(/^\[INK:[^\]]+\]/, '');
+      if (isHeading) {
+        return cleanLine.includes('[HEADING]') ? `[INK:red]${cleanLine}` : `[INK:red][HEADING]${cleanLine}`;
+      }
+      return `[INK:blue]${cleanLine}`;
+    });
+    const newText = formatted.join('\n');
+    setInputText(newText);
+    renderPage(settings, newText);
+    setToast("Formatted: Headings in Red, Body in Blue!");
+  };
+
+  const clearAllInkTags = () => {
+    const cleaned = inputText.replace(/\[INK:[^\]]+\]/g, '');
+    setInputText(cleaned);
+    renderPage(settings, cleaned);
+    setToast("Reset all text to document base ink");
+  };
+
+  const renderInkToolbar = () => (
+    <div className="p-2.5 sm:p-3 rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 border border-neutral-200 dark:border-neutral-700 space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Swatches */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 mr-1 flex items-center gap-1">
+            <Palette size={13} className="text-warning-yellow" />
+            <span>Selective Ink:</span>
+          </span>
+
+          {[
+            { id: 'black', label: 'Black', color: '#000000', tag: '[INK:black]' },
+            { id: 'blue', label: 'Blue', color: '#1e3a8a', tag: '[INK:blue]' },
+            { id: 'red', label: 'Red', color: '#cc0000', tag: '[INK:red]' },
+            { id: 'green', label: 'Emerald', color: '#047857', tag: '[INK:green]' },
+            { id: 'purple', label: 'Violet', color: '#7c3aed', tag: '[INK:purple]' },
+          ].map(ink => (
+            <button
+              key={ink.id}
+              type="button"
+              onClick={() => applyInkToSelection(ink.tag)}
+              className="group relative flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-warning-yellow active:scale-95 transition-all text-xs font-mono shadow-2xs cursor-pointer"
+              title={`Apply ${ink.label} Ink to selection or cursor`}
+            >
+              <span className="w-3 h-3 rounded-full shadow-xs shrink-0" style={{ backgroundColor: ink.color }} />
+              <span className="text-[11px] font-semibold text-neutral-800 dark:text-neutral-200">{ink.label}</span>
+            </button>
+          ))}
+
+          {/* Custom Color Picker */}
+          <label 
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 hover:border-warning-yellow cursor-pointer text-xs font-mono shadow-2xs"
+            title="Choose custom ink color for selection"
+          >
+            <input
+              type="color"
+              defaultValue="#000000"
+              onChange={(e) => applyInkToSelection(`[INK:${e.target.value}]`)}
+              className="w-3.5 h-3.5 p-0 border-0 rounded-full cursor-pointer bg-transparent"
+            />
+            <span className="text-[11px] font-semibold text-neutral-800 dark:text-neutral-200">Custom</span>
+          </label>
+
+          <button
+            type="button"
+            onClick={() => applyInkToSelection('[INK:default]')}
+            className="px-2 py-1.5 rounded-xl border border-dashed border-neutral-300 dark:border-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-[10px] font-mono text-neutral-600 dark:text-neutral-400 active:scale-95 transition-colors cursor-pointer"
+            title="Revert selected text to document base ink"
+          >
+            Default
+          </button>
+        </div>
+
+        {/* Smart Color Presets */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={applySmartQAColors}
+            className="px-2.5 py-1.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 text-[11px] font-display font-bold uppercase tracking-tight flex items-center gap-1 shadow-2xs active:scale-95 transition-all cursor-pointer"
+            title="Instant 1-Click: Questions in Black ink, Answers in Blue ink"
+          >
+            <Zap size={13} />
+            <span>⚡ Q Black · A Blue</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={applyHeadingRedBodyBlue}
+            className="px-2.5 py-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-700 hover:bg-neutral-300 dark:hover:bg-neutral-600 text-[10px] font-display font-bold uppercase tracking-tight text-neutral-900 dark:text-white active:scale-95 transition-all cursor-pointer"
+            title="Headings in Red ink, Body text in Blue ink"
+          >
+            Headings Red
+          </button>
+
+          <button
+            type="button"
+            onClick={clearAllInkTags}
+            className="p-1.5 rounded-xl hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 text-[10px] font-mono cursor-pointer"
+            title="Clear all color tags"
+          >
+            <RotateCcw size={13} />
+          </button>
+        </div>
+      </div>
+      <p className="text-[10px] font-mono text-neutral-500 dark:text-neutral-400">
+        💡 Tip: Select text and tap a color to style it, or tap <strong>⚡ Q Black · A Blue</strong> for instant homework colorization.
+      </p>
+    </div>
+  );
+
   const [showReflowPrompt, setShowReflowPrompt] = useState(false);
   const [isAIEditPanelOpen, setIsAIEditPanelOpen] = useState(false);
   const [aiUserInstruction, setAiUserInstruction] = useState('');
@@ -1429,122 +1636,268 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
     <div className="flex flex-col h-full bg-neutral-100 dark:bg-neutral-950">
       {/* Top Toolbar */}
       {/* Header / Toolbar */}
-      <div className={cn(
-        "bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-3 sm:p-4 z-30 transition-all shadow-sm",
-        isMobile ? "flex flex-col gap-3" : "flex items-center justify-between"
-      )}>
-        <div className={cn("flex flex-wrap items-center gap-2 sm:gap-3", isMobile && "justify-between w-full")}>
-          {onNavigate && isMobile && (
-            <button 
-              onClick={() => onNavigate('home')}
-              className="brutal-btn p-2 min-h-[40px] min-w-[40px] flex items-center justify-center gap-1 text-xs"
-              title="Return to Home"
-            >
-              <ChevronLeft size={16} />
-              <span className="font-display uppercase text-[10px] font-bold">Home</span>
-            </button>
-          )}
+      <div className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 p-2.5 sm:p-4 z-30 transition-all shadow-sm">
+        {/* Mobile Header Structure */}
+        {isMobile ? (
+          <div className="space-y-2">
+            {/* Mobile Row 1: Back, View Mode Switcher, Actions */}
+            <div className="flex items-center justify-between gap-1.5">
+              <div className="flex items-center gap-1">
+                {onNavigate && (
+                  <button 
+                    onClick={() => onNavigate('home')}
+                    className="p-2 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                    title="Return to Home"
+                  >
+                    <ChevronLeft size={16} />
+                    <span className="font-display uppercase text-[10px] font-bold">Home</span>
+                  </button>
+                )}
+              </div>
 
-          <button 
-            onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
-            className="brutal-btn p-2 min-h-[40px] min-w-[40px] flex items-center justify-center"
-            title={mode === 'default' ? "Collapse sidebars" : "Expand sidebars"}
-          >
-            {mode === 'default' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700" />}
-          
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => setIsAIEditPanelOpen(true)}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-1.5 px-3 h-10 transition-colors"
-            >
-              <Sparkles size={15} />
-              <span className="font-display uppercase text-xs font-bold">✨ AI Edit</span>
-            </button>
+              {/* View Mode Switcher Pill */}
+              <div className="flex items-center bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl border border-neutral-200 dark:border-neutral-700">
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('split')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-[11px] font-display font-bold uppercase transition-all flex items-center gap-1 cursor-pointer",
+                    mobileViewMode === 'split' 
+                      ? "bg-warning-yellow text-neutral-950 shadow-xs" 
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  )}
+                  title="Split View: Live mini preview + Text Editor"
+                >
+                  <Columns size={12} />
+                  <span>Split</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('editor')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-[11px] font-display font-bold uppercase transition-all flex items-center gap-1 cursor-pointer",
+                    mobileViewMode === 'editor' 
+                      ? "bg-warning-yellow text-neutral-950 shadow-xs" 
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  )}
+                  title="Editor View: Focus on writing text"
+                >
+                  <Edit3 size={12} />
+                  <span>Write</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('preview')}
+                  className={cn(
+                    "px-2.5 py-1 rounded-lg text-[11px] font-display font-bold uppercase transition-all flex items-center gap-1 cursor-pointer",
+                    mobileViewMode === 'preview' 
+                      ? "bg-warning-yellow text-neutral-950 shadow-xs" 
+                      : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  )}
+                  title="Page View: Full page preview"
+                >
+                  <FileText size={12} />
+                  <span>Page</span>
+                </button>
+              </div>
+
+              {/* Primary Actions */}
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setIsAIEditPanelOpen(true)}
+                  className="px-2.5 py-1.5 rounded-xl bg-warning-yellow hover:bg-amber-300 text-neutral-950 font-display font-bold text-xs uppercase flex items-center gap-1 active:scale-95 shadow-xs transition-all cursor-pointer"
+                  title="AI Smart Editor"
+                >
+                  <Sparkles size={14} />
+                  <span>AI</span>
+                </button>
+                <button 
+                  onClick={downloadPDF}
+                  className="px-2.5 py-1.5 rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-950 font-display font-bold text-xs uppercase flex items-center gap-1 active:scale-95 shadow-xs transition-all cursor-pointer"
+                  title="Download Handwritten PDF"
+                >
+                  <Download size={14} />
+                  <span>PDF</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Row 2: Page Navigation, Undo/Redo, Page Manager */}
+            <div className="flex items-center justify-between gap-1 pt-1 border-t border-neutral-100 dark:border-neutral-800/80 text-xs">
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={undo} 
+                  disabled={historyIndex <= 0}
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 disabled:opacity-30 flex items-center justify-center min-w-[34px] min-h-[34px] active:scale-90 transition-all text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                  title="Undo"
+                >
+                  <Undo2 size={16} />
+                </button>
+                <button 
+                  onClick={redo} 
+                  disabled={historyIndex >= history.length - 1}
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 disabled:opacity-30 flex items-center justify-center min-w-[34px] min-h-[34px] active:scale-90 transition-all text-neutral-700 dark:text-neutral-300 cursor-pointer"
+                  title="Redo"
+                >
+                  <Redo2 size={16} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
+                <button 
+                  onClick={() => setCurrentPageIndex(Math.max(0, safePageIndex - 1))} 
+                  disabled={safePageIndex === 0}
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 disabled:opacity-30 min-w-[32px] min-h-[32px] flex items-center justify-center text-neutral-700 dark:text-neutral-300 active:scale-90 cursor-pointer"
+                  title="Previous page"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="px-1.5 text-neutral-800 dark:text-neutral-200">
+                  {safePageIndex + 1} / {pages.length}
+                </span>
+                <button 
+                  onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, safePageIndex + 1))} 
+                  disabled={safePageIndex >= pages.length - 1}
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 disabled:opacity-30 min-w-[32px] min-h-[32px] flex items-center justify-center text-neutral-700 dark:text-neutral-300 active:scale-90 cursor-pointer"
+                  title="Next page"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={addPage} 
+                  className="p-1.5 rounded-lg bg-warning-yellow/20 hover:bg-warning-yellow/40 border border-warning-yellow/60 text-neutral-900 dark:text-warning-yellow min-h-[32px] px-2 flex items-center gap-1 font-display font-bold text-[11px] uppercase active:scale-95 transition-all cursor-pointer"
+                  title="Add new page"
+                >
+                  <Plus size={14} />
+                  <span>Page</span>
+                </button>
+                <button 
+                  onClick={() => removePage(safePageIndex)} 
+                  disabled={pages.length <= 1}
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-error-red/10 hover:border-error-red/40 text-neutral-400 hover:text-error-red disabled:opacity-30 min-w-[32px] min-h-[32px] flex items-center justify-center active:scale-90 transition-colors cursor-pointer"
+                  title="Delete current page"
+                >
+                  <Trash2 size={15} />
+                </button>
+                <button 
+                  onClick={downloadAllAsZip} 
+                  className="p-1.5 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 min-h-[32px] px-2 font-display text-[10px] font-bold uppercase active:scale-95 cursor-pointer"
+                  title="Download all as ZIP"
+                >
+                  ZIP
+                </button>
+              </div>
+            </div>
           </div>
-          
-          {showReflowPrompt && (
-            <motion.button 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              onClick={() => {
-                setIsAIEditPanelOpen(true);
-                setShowReflowPrompt(false);
-              }}
-              className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-2 px-3 border-dashed h-10"
-            >
-              <RefreshCw size={14} />
-              <span className="font-mono text-[9px] font-bold uppercase">Reflow?</span>
-            </motion.button>
-          )}
-        </div>
+        ) : (
+          /* Desktop Header Structure */
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button 
+                onClick={() => setMode(mode === 'default' ? 'classic' : 'default')}
+                className="brutal-btn p-2 min-h-[40px] min-w-[40px] flex items-center justify-center"
+                title={mode === 'default' ? "Collapse sidebars" : "Expand sidebars"}
+              >
+                {mode === 'default' ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+              <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700" />
+              
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setIsAIEditPanelOpen(true)}
+                  className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-1.5 px-3 h-10 transition-colors cursor-pointer"
+                >
+                  <Sparkles size={15} />
+                  <span className="font-display uppercase text-xs font-bold">✨ AI Edit</span>
+                </button>
+              </div>
+              
+              {showReflowPrompt && (
+                <motion.button 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onClick={() => {
+                    setIsAIEditPanelOpen(true);
+                    setShowReflowPrompt(false);
+                  }}
+                  className="brutal-btn bg-warning-yellow hover:bg-amber-300 text-neutral-950 flex items-center justify-center gap-2 px-3 border-dashed h-10 cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                  <span className="font-mono text-[9px] font-bold uppercase">Reflow?</span>
+                </motion.button>
+              )}
+            </div>
 
-        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button 
-            onClick={undo} 
-            disabled={historyIndex <= 0}
-            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200"
-            title="Undo"
-          >
-            <Undo2 size={18} />
-          </button>
-          <button 
-            onClick={redo} 
-            disabled={historyIndex >= history.length - 1}
-            className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200"
-            title="Redo"
-          >
-            <Redo2 size={18} />
-          </button>
-          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
-          <span className="font-mono text-xs font-bold px-2 text-neutral-800 dark:text-neutral-200">
-            PAGE {safePageIndex + 1} OF {pages.length}
-          </span>
-          <button 
-            onClick={() => setCurrentPageIndex(Math.max(0, safePageIndex - 1))} 
-            disabled={safePageIndex === 0}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
-            title="Previous page"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button 
-            onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, safePageIndex + 1))} 
-            disabled={safePageIndex >= pages.length - 1}
-            className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200"
-            title="Next page"
-          >
-            <ChevronRight size={18} />
-          </button>
-          {!isMobile && <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />}
-          <button 
-            onClick={addPage} 
-            className="brutal-btn p-2 bg-warning-yellow hover:bg-amber-300 text-neutral-950 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs active:scale-95"
-            title="Add new page"
-          >
-            <Plus size={18} />
-          </button>
-          <button 
-            onClick={() => removePage(safePageIndex)} 
-            disabled={pages.length <= 1}
-            className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 shadow-xs active:scale-95"
-            title="Delete current page"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={undo} 
+                disabled={historyIndex <= 0}
+                className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                title="Undo"
+              >
+                <Undo2 size={18} />
+              </button>
+              <button 
+                onClick={redo} 
+                disabled={historyIndex >= history.length - 1}
+                className="brutal-btn p-2 disabled:opacity-30 flex items-center justify-center gap-1 min-h-[44px] min-w-[44px] text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                title="Redo"
+              >
+                <Redo2 size={18} />
+              </button>
+              <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />
+              <span className="font-mono text-xs font-bold px-2 text-neutral-800 dark:text-neutral-200">
+                PAGE {safePageIndex + 1} OF {pages.length}
+              </span>
+              <button 
+                onClick={() => setCurrentPageIndex(Math.max(0, safePageIndex - 1))} 
+                disabled={safePageIndex === 0}
+                className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                title="Previous page"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button 
+                onClick={() => setCurrentPageIndex(Math.min(pages.length - 1, safePageIndex + 1))} 
+                disabled={safePageIndex >= pages.length - 1}
+                className="brutal-btn p-2 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 text-neutral-800 dark:text-neutral-200 cursor-pointer"
+                title="Next page"
+              >
+                <ChevronRight size={18} />
+              </button>
+              <div className="h-7 w-[1px] bg-neutral-300 dark:bg-neutral-700 mx-1" />
+              <button 
+                onClick={addPage} 
+                className="brutal-btn p-2 bg-warning-yellow hover:bg-amber-300 text-neutral-950 min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs active:scale-95 cursor-pointer"
+                title="Add new page"
+              >
+                <Plus size={18} />
+              </button>
+              <button 
+                onClick={() => removePage(safePageIndex)} 
+                disabled={pages.length <= 1}
+                className="brutal-btn p-2 bg-error-red text-white min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-30 shadow-xs active:scale-95 cursor-pointer"
+                title="Delete current page"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
 
-        <div className={cn("flex flex-wrap items-center gap-2", isMobile && "justify-center w-full")}>
-          <button onClick={downloadPDF} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95">
-            <Download size={17} />
-            <span className="font-display uppercase text-xs font-bold">PDF</span>
-          </button>
-          <button onClick={downloadAllAsZip} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95">
-            <Download size={17} />
-            <span className="font-display uppercase text-xs font-bold">ZIP</span>
-          </button>
-        </div>
+            <div className="flex items-center gap-2">
+              <button onClick={downloadPDF} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95 cursor-pointer">
+                <Download size={17} />
+                <span className="font-display uppercase text-xs font-bold">PDF</span>
+              </button>
+              <button onClick={downloadAllAsZip} className="brutal-btn bg-neutral-900 dark:bg-warning-yellow text-white dark:text-neutral-950 hover:bg-warning-yellow hover:text-neutral-950 dark:hover:bg-amber-300 dark:hover:text-neutral-950 flex items-center justify-center gap-2 px-4 h-11 shadow-sm transition-colors active:scale-95 cursor-pointer">
+                <Download size={17} />
+                <span className="font-display uppercase text-xs font-bold">ZIP</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div 
@@ -1608,9 +1961,73 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
                     {/* Center: Canvas Area Workbench */}
                     <main className={cn(
                     "flex-grow flex flex-col items-center bg-neutral-200 dark:bg-[#0c0d11] overflow-x-hidden",
-                    isMobile ? "gap-6 p-4 pb-36 overflow-y-auto" : "gap-12 p-12 overflow-auto"
+                    isMobile ? "gap-4 p-3 pb-36 overflow-y-auto" : "gap-12 p-12 overflow-auto"
                     )}>
-                    {/* Canvas Wrapper for Scaling */}
+                    {/* Mobile Compact Split Preview */}
+                    {isMobile && mobileViewMode === 'split' && (
+                      <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-3 shadow-md space-y-2">
+                        <div className="flex items-center justify-between px-1 text-[11px] font-mono text-neutral-600 dark:text-neutral-400">
+                          <span className="font-bold flex items-center gap-1.5 text-neutral-900 dark:text-white">
+                            <FileText size={13} className="text-warning-yellow" />
+                            Live Paper (Page {safePageIndex + 1} of {pages.length})
+                          </span>
+                          <button
+                            onClick={() => setMobileViewMode('preview')}
+                            className="text-warning-yellow hover:underline font-bold flex items-center gap-1 cursor-pointer text-xs"
+                          >
+                            Full Screen ↗
+                          </button>
+                        </div>
+
+                        {/* Compact Scaled Canvas Container */}
+                        <div className="w-full flex justify-center py-1 overflow-hidden bg-neutral-100 dark:bg-black/30 rounded-xl">
+                          <div 
+                            className="relative shadow-md rounded overflow-hidden"
+                            style={{
+                              width: `${595 * 0.27}px`,
+                              height: `${842 * 0.27}px`,
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '595px',
+                                height: '842px',
+                                transform: 'scale(0.27)',
+                                transformOrigin: 'top left',
+                                pointerEvents: 'none'
+                              }}
+                            >
+                              <CanvasPage 
+                                key={`${effectiveFontName}-${fontVersion}`}
+                                page={currentPage} 
+                                config={settings} 
+                                fontName={effectiveFontName}
+                                skipImages={false}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mobile Editor Mode Banner */}
+                    {isMobile && mobileViewMode === 'editor' && (
+                      <div className="w-full max-w-lg flex items-center justify-between px-3.5 py-2.5 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow-sm text-xs font-mono">
+                        <span className="text-neutral-700 dark:text-neutral-300 font-bold">
+                          Editing Page {safePageIndex + 1} of {pages.length}
+                        </span>
+                        <button
+                          onClick={() => setMobileViewMode('preview')}
+                          className="text-warning-yellow hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <Eye size={13} />
+                          <span>View Full Page ↗</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Full Canvas Wrapper for Scaling (Desktop or Mobile Page Preview Mode) */}
+                    {(!isMobile || mobileViewMode === 'preview') && (
                     <div
                     className="relative"
                     style={isMobile ? {
@@ -1893,21 +2310,49 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
               </CanvasPage>
             </div>
           </div>
-          
-          {/* Mobile Text Input Area */}
-          {isMobile && (
-            <div className="w-full px-4 mb-32">
-              <div className="brutal-card bg-white space-y-2 p-4">
-                <h3 className="font-display uppercase text-xs opacity-70">Text Input</h3>
+          )}
+
+          {/* Floating Edit Button when viewing full page on mobile */}
+          {isMobile && mobileViewMode === 'preview' && (
+            <button
+              type="button"
+              onClick={() => setMobileViewMode('editor')}
+              className="fixed bottom-24 right-4 z-40 px-4 py-3 rounded-full bg-warning-yellow text-neutral-950 font-display font-bold text-xs uppercase tracking-wider shadow-2xl flex items-center gap-2 active:scale-95 transition-transform cursor-pointer border-2 border-neutral-900"
+            >
+              <Edit3 size={16} />
+              <span>Edit Text</span>
+            </button>
+          )}
+
+          {/* Mobile Text Input Workbench (Split & Editor modes) */}
+          {isMobile && (mobileViewMode === 'split' || mobileViewMode === 'editor') && (
+            <div className="w-full max-w-lg space-y-3 mb-32">
+              <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg p-3.5 sm:p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Edit3 size={15} className="text-warning-yellow" />
+                    <h3 className="font-display uppercase text-xs font-bold text-neutral-900 dark:text-white">
+                      Text Input &amp; Multi-Color Styling
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-mono text-neutral-500">
+                    {inputText.split(/\s+/).filter(Boolean).length} words · {inputText.length} chars
+                  </span>
+                </div>
+
+                {/* Selective Ink Toolbar */}
+                {renderInkToolbar()}
+
                 <textarea 
+                  ref={textareaRef}
                   value={inputText}
                   onChange={(e) => {
                     const val = e.target.value;
                     setInputText(val);
                     renderPage(settings, val);
                   }}
-                  className="w-full min-h-[120px] p-4 brutal-border bg-white font-mono text-base outline-none focus:ring-4 ring-warning-yellow/20"
-                  placeholder="Start typing your handwritten masterpiece..."
+                  className="w-full min-h-[170px] p-3.5 rounded-xl border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 font-mono text-sm leading-relaxed outline-none focus:ring-2 focus:ring-warning-yellow selection:bg-warning-yellow/30 shadow-inner"
+                  placeholder="Type your notes, questions, and assignments here..."
                 />
               </div>
             </div>
@@ -1915,16 +2360,31 @@ export const HandwritingWriter: React.FC<HandwritingWriterProps> = ({
 
           {/* Desktop Text Input area */}
           {!isMobile && (
-            <div className="w-full max-w-[595px] space-y-4">
-              <h3 className="font-display uppercase text-sm opacity-40">Text Input</h3>
+            <div className="w-full max-w-[595px] space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Edit3 size={16} className="text-warning-yellow" />
+                  <h3 className="font-display uppercase text-sm font-bold text-neutral-800 dark:text-neutral-200">
+                    Text Input &amp; Selective Ink Styling
+                  </h3>
+                </div>
+                <span className="text-xs font-mono text-neutral-500">
+                  {inputText.split(/\s+/).filter(Boolean).length} words · {inputText.length} chars
+                </span>
+              </div>
+
+              {/* Selective Ink Toolbar */}
+              {renderInkToolbar()}
+
               <textarea 
+                ref={textareaRef}
                 value={inputText}
                 onChange={(e) => {
                   const val = e.target.value;
                   setInputText(val);
                   renderPage(settings, val);
                 }}
-                className="w-full h-40 p-6 brutal-border bg-white font-mono text-sm outline-none focus:ring-4 ring-warning-yellow/20"
+                className="w-full h-44 p-4 rounded-xl border-2 border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 font-mono text-sm outline-none focus:ring-2 focus:ring-warning-yellow selection:bg-warning-yellow/30 shadow-inner"
                 placeholder="Start typing your handwritten masterpiece..."
               />
             </div>
