@@ -33,7 +33,9 @@ import {
   Zap,
   Info,
   ExternalLink,
-  Home
+  Home,
+  Play,
+  Video
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { Logo } from './components/Logo';
@@ -831,6 +833,43 @@ export default function App() {
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 max-w-xl">
                           Create your own .ttf font file from handwriting photos or draw glyphs directly on your screen.
                         </p>
+                      </div>
+
+                      {/* Video Tutorial Card */}
+                      <div className="p-4 sm:p-5 rounded-2xl border-2 border-warning-yellow/40 bg-white dark:bg-neutral-900 space-y-3 shadow-md">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-warning-yellow/20 text-warning-yellow flex items-center justify-center shrink-0">
+                              <Play size={16} className="fill-warning-yellow text-warning-yellow" />
+                            </div>
+                            <div>
+                              <h3 className="font-display font-bold text-sm sm:text-base text-neutral-900 dark:text-white">
+                                New to InkTwin? Watch Tutorial
+                              </h3>
+                              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                See how to photograph handwriting, vectorize characters, and export your .ttf font.
+                              </p>
+                            </div>
+                          </div>
+                          <a
+                            href="https://youtu.be/re9d0KZVLJM?si=PEyMIXsTot_bm4uf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-mono font-bold text-warning-yellow hover:underline inline-flex items-center gap-1 shrink-0"
+                          >
+                            <span>Open on YouTube</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        </div>
+                        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-black shadow-inner">
+                          <iframe
+                            src="https://www.youtube-nocookie.com/embed/re9d0KZVLJM"
+                            title="InkTwin Tutorial Video"
+                            className="absolute inset-0 w-full h-full border-0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
                       </div>
 
                       {/* Primary Action Cards */}

@@ -17,7 +17,9 @@ import {
   Key,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Play,
+  Video
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { SupportCard } from './SupportCard';
@@ -246,6 +248,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                 <FileText size={18} />
                 <span>Open Studio Writer</span>
               </button>
+
+              <a
+                href="#tutorial-video"
+                className="px-5 py-3 rounded-xl border-2 border-neutral-300 dark:border-neutral-700 hover:border-warning-yellow dark:hover:border-warning-yellow bg-white/60 dark:bg-neutral-800/60 text-neutral-900 dark:text-white font-display font-bold text-sm uppercase tracking-wider flex items-center gap-2 shadow-sm active:scale-95 transition-all"
+              >
+                <Play size={16} className="text-warning-yellow fill-warning-yellow" />
+                <span>Watch Tutorial</span>
+              </a>
             </div>
 
             {/* Trust Badges */}
@@ -607,6 +617,48 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSaveKey, onExplore, 
                   Type any text and download realistic multi-page handwritten documents with natural ink variance.
                 </p>
               </div>
+            </div>
+          </section>
+
+          {/* Video Tutorial Section */}
+          <section 
+            id="tutorial-video" 
+            className="rounded-2xl border-2 border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-4 sm:p-6 space-y-4 shadow-xl overflow-hidden scroll-mt-20"
+            aria-labelledby="tutorial-heading"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-3">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-warning-yellow/20 text-neutral-900 dark:text-warning-yellow text-[10px] font-mono font-bold uppercase tracking-widest mb-1">
+                  <Play size={12} className="text-warning-yellow fill-warning-yellow" />
+                  <span>[TUTORIAL] COMPLETE VIDEO WALKTHROUGH</span>
+                </div>
+                <h3 id="tutorial-heading" className="font-display font-bold text-xl sm:text-2xl text-neutral-900 dark:text-white">
+                  How InkTwin Works
+                </h3>
+              </div>
+              <a
+                href="https://youtu.be/re9d0KZVLJM?si=PEyMIXsTot_bm4uf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono font-bold text-neutral-500 hover:text-warning-yellow flex items-center gap-1.5 transition-colors shrink-0"
+              >
+                <span>Watch on YouTube</span>
+                <ExternalLink size={13} />
+              </a>
+            </div>
+
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              Step-by-step walkthrough: see how to scan your handwriting, let AI extract your characters, generate a real TrueType (.ttf) font file, and write realistic handwritten notes.
+            </p>
+
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-800 bg-black shadow-inner">
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/re9d0KZVLJM"
+                title="InkTwin Step-by-Step Video Tutorial"
+                className="absolute inset-0 w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
             </div>
           </section>
 
